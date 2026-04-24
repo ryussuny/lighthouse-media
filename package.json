@@ -1,0 +1,24 @@
+{
+  "name": "lighthouse-media",
+  "version": "1.0.0",
+  "description": "Lighthouse Media - AI-powered content/media company",
+  "type": "module",
+  "scripts": {
+    "dashboard": "node dashboard/server.js",
+    "agents": "node scripts/run-agents.js",
+    "daily": "node scripts/daily-routine.js",
+    "report": "node scripts/weekly-report.js",
+    "start": "concurrently \"npm run dashboard\" \"npm run agents\""
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "three": "^0.160.0",
+    "concurrently": "^8.2.2",
+    "dotenv": "^16.3.1",
+    "csv-parse": "^5.5.2",
+    "node-cron": "^3.0.3",
+    "axios": "^1.6.2"
+  }
+}

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lighthouse Media — 채널 실시간 대시보드</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard',sans-serif;background:#080810;color:#e0e0e0;min-height:100vh}
+.header{background:linear-gradient(135deg,#0a0a14,#101020);padding:20px 30px;border-bottom:1px solid rgba(29,158,117,0.2);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.header h1{font-size:18px;color:#1D9E75;display:flex;align-items:center;gap:10px}
+.live{width:8px;height:8px;background:#1D9E75;border-radius:50%;animation:pulse 1.5s infinite;box-shadow:0 0 8px #1D9E75}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.5}}
+.header-right{display:flex;align-items:center;gap:16px;font-size:13px;color:#555}
+.refresh-btn{background:rgba(29,158,117,0.15);border:1px solid rgba(29,158,117,0.3);color:#1D9E75;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600}
+.refresh-btn:hover{background:#1D9E75;color:#fff}
+
+.container{max-width:1400px;margin:0 auto;padding:24px}
+
+/* 요약 카드 */
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:30px}
+.card{background:rgba(12,12,20,0.9);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;transition:border-color 0.3s}
+.card:hover{border-color:rgba(29,158,117,0.3)}
+.card-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.card-value{font-size:32px;font-weight:800;color:#1D9E75}
+.card-value.gold{color:#BA7517}
+.card-sub{font-size:12px;color:#555;margin-top:4px}
+.card-change{font-size:12px;margin-top:6px}
+.card-change.up{color:#1D9E75}
+.card-change.down{color:#e74c3c}
+
+/* 채널 섹션 */
+.channel-section{margin-bottom:30px}
+.channel-header{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.channel-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700}
+.yt-icon{background:rgba(255,0,0,0.15);color:#ff4444}
+.ig-icon{background:linear-gradient(135deg,rgba(131,58,180,0.2),rgba(253,29,29,0.2),rgba(252,176,69,0.2));color:#e1306c}
+.fb-icon{background:rgba(24,119,242,0.15);color:#1877f2}
+.channel-name{font-size:16px;font-weight:700}
+.channel-handle{font-size:12px;color:#555}
+
+/* 테이블 */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.stat-box{background:rgba(15,15,25,0.8);border:1px solid rgba(255,255,255,0.04);border-radius:10px;padding:16px}
+.stat-label{font-size:11px;color:#666;margin-bottom:6px}
+.stat-value{font-size:24px;font-weight:700;color:#fff}
+.stat-value.green{color:#1D9E75}
+.stat-value.gold{color:#BA7517}
+
+/* 게시물 리스트 */
+.posts-list{margin-top:16px}
+.post-item{background:rgba(15,15,25,0.6);border:1px solid rgba(255,255,255,0.04);border-radius:8px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.post-title{font-size:13px;color:#ccc;flex:1}
+.post-date{font-size:11px;color:#555;margin-left:12px}
+.post-stat{font-size:12px;color:#1D9E75;margin-left:12px;white-space:nowrap}
+
+/* 매출 섹션 */
+.revenue-box{background:linear-gradient(135deg,rgba(186,117,23,0.1),rgba(29,158,117,0.1));border:1px solid rgba(186,117,23,0.2);border-radius:14px;padding:24px;margin-bottom:30px}
+.revenue-title{font-size:14px;color:#BA7517;font-weight:700;margin-bottom:16px}
+.revenue-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px}
+.rev-item{text-align:center}
+.rev-amount{font-size:28px;font-weight:800;color:#BA7517}
+.rev-label{font-size:11px;color:#888;margin-top:4px}
+
+/* 프로그레스 바 */
+.goal-section{margin-top:20px}
+.goal-label{display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:6px}
+.goal-bar{width:100%;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden}
+.goal-fill{height:100%;background:linear-gradient(90deg,#1D9E75,#BA7517);border-radius:4px;transition:width 1s ease}
+
+/* 로딩 */
+.loading{text-align:center;padding:40px;color:#555;font-size:14px}
+.spin{display:inline-block;width:20px;height:20px;border:2px solid #333;border-top-color:#1D9E75;border-radius:50%;animation:spin 0.8s linear infinite;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 상태 배지 */
+.status-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+.status-live{background:rgba(29,158,117,0.15);color:#1D9E75}
+.status-warn{background:rgba(241,196,15,0.15);color:#f1c40f}
+
+/* 자동 갱신 바 */
+.auto-refresh-bar{position:fixed;bottom:0;left:0;right:0;height:3px;background:rgba(255,255,255,0.03)}
+.auto-refresh-fill{height:100%;background:#1D9E75;transition:width 1s linear;width:0%}
+
+@media(max-width:768px){
+  .summary{grid-template-columns:repeat(2,1fr)}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .header h1{font-size:14px}
+  .card-value{font-size:24px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="live"></span>LIGHTHOUSE MEDIA 채널 대시보드</h1>
+  <div class="header-right">
+    <span id="lastUpdate">로딩 중...</span>
+    <span id="autoTimer" style="color:#1D9E75">60s</span>
+    <button class="refresh-btn" onclick="loadAll()">새로고침</button>
+  </div>
+</div>
+
+<div class="container">
+  <!-- 요약 -->
+  <div class="summary" id="summaryCards">
+    <div class="card"><div class="card-label">YouTube 구독자</div><div class="card-value" id="yt-subs">-</div><div class="card-sub" id="yt-videos">영상 -개</div></div>
+    <div class="card"><div class="card-label">Instagram 팔로워</div><div class="card-value" id="ig-followers">-</div><div class="card-sub" id="ig-posts">게시물 -개</div></div>
+    <div class="card"><div class="card-label">Facebook 팬</div><div class="card-value" id="fb-fans">-</div><div class="card-sub" id="fb-posts">게시물 -개</div></div>
+    <div class="card"><div class="card-label">전자책 주문</div><div class="card-value gold" id="orders">-</div><div class="card-sub" id="leads">리드 -명</div></div>
+    <div class="card"><div class="card-label">총 매출</div><div class="card-value gold" id="revenue">-</div><div class="card-sub">목표: 500만원/월</div></div>
+  </div>
+
+  <!-- 매출 -->
+  <div class="revenue-box">
+    <div class="revenue-title">매출 현황</div>
+    <div class="revenue-grid">
+      <div class="rev-item"><div class="rev-amount" id="rev-ebook">0원</div><div class="rev-label">전자책 판매</div></div>
+      <div class="rev-item"><div class="rev-amount" id="rev-total">0원</div><div class="rev-label">총 매출</div></div>
+      <div class="rev-item"><div class="rev-amount" id="rev-leads">0명</div><div class="rev-label">이메일 리드</div></div>
+    </div>
+    <div class="goal-section">
+      <div class="goal-label"><span>월 매출 목표 달성률</span><span id="goal-pct">0%</span></div>
+      <div class="goal-bar"><div class="goal-fill" id="goal-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- YouTube -->
+  <div class="channel-section">
+    <div class="channel-header">
+      <div class="channel-icon yt-icon">YT</div>
+      <div><div class="channel-name">YouTube <span class="status-badge status-live">LIVE</span></div><div class="channel-handle">Lighthouse Media</div></div>
+    </div>
+    <div class="stats-grid" id="yt-stats">
+      <div class="stat-box"><div class="stat-label">구독자</div><div class="stat-value green" id="yt-s">-</div></div>
+      <div class="stat-box"><div class="stat-label">총 조회수</div><div class="stat-value" id="yt-views">-</div></div>
+      <div class="stat-box"><div class="stat-label">영상 수</div><div class="stat-value" id="yt-v">-</div></div>
+      <div class="stat-box"><div class="stat-label">채널 상태</div><div class="stat-value green" style="font-size:16px" id="yt-status">확인 중</div></div>
+    </div>
+    <div class="posts-list" id="yt-videos-list"></div>
+  </div>
+
+  <!-- Instagram -->
+  <div class="channel-section">
+    <div class="channel-header">
+      <div class="channel-icon ig-icon">IG</div>
+      <div><div class="channel-name">Instagram <span class="status-badge status-live">LIVE</span></div><div class="channel-handle">@lighthouse_media77</div></div>
+    </div>
+    <div class="stats-grid" id="ig-stats">
+      <div class="stat-box"><div class="stat-label">팔로워</div><div class="stat-value green" id="ig-f">-</div></div>
+      <div class="stat-box"><div class="stat-label">게시물 수</div><div class="stat-value" id="ig-m">-</div></div>
+      <div class="stat-box"><div class="stat-label">팔로잉</div><div class="stat-value" id="ig-following">-</div></div>
+      <div class="stat-box"><div class="stat-label">계정 상태</div><div class="stat-value green" style="font-size:16px" id="ig-status">확인 중</div></div>
+    </div>
+    <div class="posts-list" id="ig-posts-list"></div>
+  </div>
+
+  <!-- Facebook -->
+  <div class="channel-section">
+    <div class="channel-header">
+      <div class="channel-icon fb-icon">FB</div>
+      <div><div class="channel-name">Facebook <span class="status-badge status-live">LIVE</span></div><div class="channel-handle">Lighthouse Media 페이지</div></div>
+    </div>
+    <div class="stats-grid" id="fb-stats">
+      <div class="stat-box"><div class="stat-label">페이지 팬</div><div class="stat-value green" id="fb-f">-</div></div>
+      <div class="stat-box"><div class="stat-label">게시물 수</div><div class="stat-value" id="fb-p">-</div></div>
+      <div class="stat-box"><div class="stat-label">카테고리</div><div class="stat-value" style="font-size:16px" id="fb-cat">-</div></div>
+      <div class="stat-box"><div class="stat-label">페이지 상태</div><div class="stat-value green" style="font-size:16px" id="fb-status">확인 중</div></div>
+    </div>
+    <div class="posts-list" id="fb-posts-list"></div>
+  </div>
+
+  <!-- 주문/리드 -->
+  <div class="channel-section">
+    <div class="channel-header">
+      <div class="channel-icon" style="background:rgba(186,117,23,0.15);color:#BA7517">$</div>
+      <div><div class="channel-name">주문 & 리드</div><div class="channel-handle">전자책 판매 + 이메일 수집</div></div>
+    </div>
+    <div class="posts-list" id="orders-list"></div>
+  </div>
+</div>
+
+<div class="auto-refresh-bar"><div class="auto-refresh-fill" id="refresh-bar"></div></div>
+
+<script>
+const API_BASE = '';
+
+async function fetchJSON(url) {
+  try {
+    const r = await fetch(url);
+    return await r.json();
+  } catch(e) {
+    return null;
+  }
+}
+
+async function loadAll() {
+  document.getElementById('lastUpdate').textContent = '갱신 중...';
+
+  // 서버 API에서 데이터 로드
+  const [stats, orders, leads, channels] = await Promise.all([
+    fetchJSON('/api/stats'),
+    fetchJSON('/api/orders'),
+    fetchJSON('/api/leads'),
+    fetchJSON('/api/channels'),
+  ]);
+
+  // 요약 카드
+  if (stats) {
+    document.getElementById('orders').textContent = (stats.orders?.total || 0) + '건';
+    document.getElementById('leads').textContent = '리드 ' + (stats.leads?.total || 0) + '명';
+    document.getElementById('revenue').textContent = (stats.revenue?.month || 0).toLocaleString() + '원';
+    document.getElementById('rev-total').textContent = (stats.revenue?.month || 0).toLocaleString() + '원';
+    document.getElementById('rev-leads').textContent = (stats.leads?.total || 0) + '명';
+    document.getElementById('rev-ebook').textContent = (stats.revenue?.month || 0).toLocaleString() + '원';
+    const pct = Math.min(100, (stats.revenue?.month || 0) / 5000000 * 100).toFixed(1);
+    document.getElementById('goal-pct').textContent = pct + '%';
+    document.getElementById('goal-fill').style.width = pct + '%';
+  }
+
+  // 채널 데이터
+  if (channels) {
+    // YouTube
+    if (channels.youtube) {
+      const yt = channels.youtube;
+      document.getElementById('yt-subs').textContent = Number(yt.subscribers || 0).toLocaleString();
+      document.getElementById('yt-s').textContent = Number(yt.subscribers || 0).toLocaleString();
+      document.getElementById('yt-views').textContent = Number(yt.views || 0).toLocaleString();
+      document.getElementById('yt-v').textContent = yt.videos || '0';
+      document.getElementById('yt-videos').textContent = '영상 ' + (yt.videos || 0) + '개';
+      document.getElementById('yt-status').textContent = '정상 운영';
+
+      const vList = document.getElementById('yt-videos-list');
+      vList.innerHTML = (yt.recentVideos || []).map(v =>
+        `<div class="post-item"><span class="post-title">${v.title}</span><span class="post-date">${v.date || ''}</span><span class="post-stat">${Number(v.views||0).toLocaleString()} views</span></div>`
+      ).join('');
+    }
+
+    // Instagram
+    if (channels.instagram) {
+      const ig = channels.instagram;
+      document.getElementById('ig-followers').textContent = Number(ig.followers || 0).toLocaleString();
+      document.getElementById('ig-f').textContent = Number(ig.followers || 0).toLocaleString();
+      document.getElementById('ig-m').textContent = ig.media_count || '0';
+      document.getElementById('ig-posts').textContent = '게시물 ' + (ig.media_count || 0) + '개';
+      document.getElementById('ig-following').textContent = ig.following || '0';
+      document.getElementById('ig-status').textContent = '정상 운영';
+
+      const iList = document.getElementById('ig-posts-list');
+      iList.innerHTML = (ig.recentPosts || []).map(p =>
+        `<div class="post-item"><span class="post-title">${(p.caption||'').substring(0,60)}...</span><span class="post-date">${(p.timestamp||'').substring(0,10)}</span><span class="post-stat">${p.media_type||''}</span></div>`
+      ).join('');
+    }
+
+    // Facebook
+    if (channels.facebook) {
+      const fb = channels.facebook;
+      document.getElementById('fb-fans').textContent = Number(fb.fans || 0).toLocaleString();
+      document.getElementById('fb-f').textContent = Number(fb.fans || 0).toLocaleString();
+      document.getElementById('fb-p').textContent = fb.posts_count || '0';
+      document.getElementById('fb-posts').textContent = '게시물 ' + (fb.posts_count || 0) + '개';
+      document.getElementById('fb-cat').textContent = fb.category || '미디어';
+      document.getElementById('fb-status').textContent = '정상 운영';
+
+      const fList = document.getElementById('fb-posts-list');
+      fList.innerHTML = (fb.recentPosts || []).map(p =>
+        `<div class="post-item"><span class="post-title">${(p.message||'').substring(0,60)}...</span><span class="post-date">${(p.created_time||'').substring(0,10)}</span></div>`
+      ).join('');
+    }
+  }
+
+  // 주문 리스트
+  if (orders) {
+    const oList = document.getElementById('orders-list');
+    const allItems = [
+      ...orders.map(o => ({...o, type: 'order'})),
+      ...(leads || []).map(l => ({...l, type: 'lead'})),
+    ].sort((a,b) => new Date(b.created) - new Date(a.created)).slice(0, 10);
+
+    oList.innerHTML = allItems.map(item => {
+      if (item.type === 'order') {
+        return `<div class="post-item"><span class="post-title">주문 #${item.id} — ${item.name} (${item.email})</span><span class="post-date">${(item.created||'').substring(0,10)}</span><span class="post-stat" style="color:#BA7517">${(item.amount||0).toLocaleString()}원</span></div>`;
+      } else {
+        return `<div class="post-item"><span class="post-title">리드 — ${item.name} (${item.email})</span><span class="post-date">${(item.created||'').substring(0,10)}</span><span class="post-stat">무료 PDF</span></div>`;
+      }
+    }).join('') || '<div class="post-item"><span class="post-title" style="color:#555">아직 주문/리드가 없습니다</span></div>';
+  }
+
+  document.getElementById('lastUpdate').textContent = '마지막 갱신: ' + new Date().toLocaleTimeString('ko-KR');
+  startRefreshTimer();
+}
+
+// 60초 자동 갱신
+let refreshInterval;
+function startRefreshTimer() {
+  let remaining = 60;
+  const bar = document.getElementById('refresh-bar');
+  const timer = document.getElementById('autoTimer');
+  clearInterval(refreshInterval);
+  bar.style.width = '0%';
+
+  refreshInterval = setInterval(() => {
+    remaining--;
+    timer.textContent = remaining + 's';
+    bar.style.width = ((60 - remaining) / 60 * 100) + '%';
+    if (remaining <= 0) {
+      clearInterval(refreshInterval);
+      loadAll();
+    }
+  }, 1000);
+}
+
+loadAll();
+</script>
+</body>
+</html>

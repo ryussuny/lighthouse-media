@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>감정에 휘둘리지 않는 기술 — Lighthouse Media</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #FAF8F3;
+    color: #333;
+    line-height: 2.0;
+  }
+  /* ── Cover ── */
+  .cover {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: #fff;
+    padding: 80px 40px;
+    text-align: center;
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+  .cover .badge {
+    display: inline-block;
+    background: #1D9E75;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 6px 20px;
+    border-radius: 20px;
+    letter-spacing: 2px;
+    margin-bottom: 30px;
+  }
+  .cover h1 {
+    font-size: clamp(32px, 6vw, 52px);
+    font-weight: 800;
+    line-height: 1.3;
+    margin-bottom: 20px;
+  }
+  .cover .subtitle {
+    font-size: clamp(16px, 3vw, 22px);
+    opacity: 0.85;
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+  .cover .author {
+    font-size: 16px;
+    opacity: 0.7;
+  }
+  .cover .brand {
+    font-size: 13px;
+    opacity: 0.5;
+    margin-top: 8px;
+  }
+  /* ── Body ── */
+  .content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 60px 30px 40px;
+  }
+  .content h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1D9E75;
+    margin: 50px 0 20px;
+    padding-left: 16px;
+    border-left: 4px solid #1D9E75;
+  }
+  .content h3 {
+    font-size: 19px;
+    font-weight: 600;
+    color: #444;
+    margin: 30px 0 12px;
+  }
+  .content p {
+    font-size: 16px;
+    margin-bottom: 18px;
+    color: #444;
+  }
+  .content ul, .content ol {
+    margin: 12px 0 18px 24px;
+    color: #444;
+  }
+  .content li {
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+  .content blockquote {
+    border-left: 4px solid #1D9E75;
+    background: rgba(29,158,117,0.06);
+    margin: 20px 0;
+    padding: 16px 24px;
+    border-radius: 0 8px 8px 0;
+    font-style: italic;
+    color: #555;
+  }
+  .content strong {
+    color: #1D9E75;
+  }
+  /* ── Buttons ── */
+  .actions {
+    text-align: center;
+    padding: 30px 20px 20px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .btn-print {
+    display: inline-block;
+    background: #1D9E75;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 14px 36px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+  .btn-print:hover { background: #178a65; }
+  /* ── CTA ── */
+  .cta {
+    background: linear-gradient(135deg, #1D9E75, #15785a);
+    color: #fff;
+    text-align: center;
+    padding: 50px 30px;
+    margin-top: 40px;
+  }
+  .cta h2 {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    border: none;
+    padding: 0;
+    color: #fff;
+  }
+  .cta p {
+    font-size: 16px;
+    opacity: 0.9;
+    margin-bottom: 24px;
+    color: #fff;
+  }
+  .cta a {
+    display: inline-block;
+    background: #fff;
+    color: #1D9E75;
+    font-weight: 700;
+    padding: 14px 36px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: transform 0.2s;
+  }
+  .cta a:hover { transform: translateY(-2px); }
+  /* ── Print ── */
+  
+    .actions, .cta { display: none; }
+    body { background: #fff; }
+    .content { padding: 40px 20px; }
+    .content h2 { page-break-after: avoid; }
+  }
+
+  /* ══════════════════════════════════════
+     소책자 스타일 PDF 인쇄 설정
+     ══════════════════════════════════════ */
+  @media print {
+    @page {
+      size: A4;
+      margin: 20mm 18mm 25mm 18mm;
+    }
+
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+    body {
+      background: #fff !important;
+      color: #222 !important;
+      font-size: 11pt !important;
+      line-height: 1.8 !important;
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* 표지: 전체 페이지 */
+    .cover, section.cover {
+      page-break-after: always !important;
+      min-height: 100vh !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      background: linear-gradient(135deg, #1a1a2e, #16213e) !important;
+      color: #fff !important;
+      padding: 60px 40px !important;
+    }
+
+    /* 본문 영역 */
+    .content, .body-content, main {
+      padding: 0 !important;
+      max-width: 100% !important;
+    }
+
+    /* 챕터 제목: 새 페이지 시작 */
+    h2 {
+      page-break-before: always !important;
+      page-break-after: avoid !important;
+      font-size: 18pt !important;
+      color: #1D9E75 !important;
+      margin-top: 0 !important;
+      padding-top: 20px !important;
+      padding-bottom: 12px !important;
+      border-left: 4px solid #1D9E75 !important;
+      padding-left: 14px !important;
+    }
+
+    /* 첫 번째 h2는 새 페이지 안함 (표지 바로 다음) */
+    .content h2:first-of-type, .body-content h2:first-of-type {
+      page-break-before: avoid !important;
+    }
+
+    h3 {
+      page-break-after: avoid !important;
+      font-size: 14pt !important;
+      color: #333 !important;
+      margin-top: 24px !important;
+      margin-bottom: 8px !important;
+    }
+
+    p {
+      font-size: 11pt !important;
+      line-height: 1.9 !important;
+      margin-bottom: 12px !important;
+      color: #333 !important;
+      orphans: 3 !important;
+      widows: 3 !important;
+      text-align: justify !important;
+      word-break: keep-all !important;
+    }
+
+    /* 리스트 */
+    ul, ol {
+      margin: 8px 0 14px 20px !important;
+      page-break-inside: avoid !important;
+    }
+    li {
+      font-size: 11pt !important;
+      line-height: 1.8 !important;
+      margin-bottom: 6px !important;
+    }
+
+    /* 인용문 */
+    blockquote {
+      border-left: 3px solid #1D9E75 !important;
+      background: #f5f5f0 !important;
+      padding: 12px 16px !important;
+      margin: 14px 0 !important;
+      font-size: 10.5pt !important;
+      page-break-inside: avoid !important;
+      border-radius: 0 !important;
+    }
+
+    /* 강조 */
+    strong { color: #1D9E75 !important; }
+    em { color: #BA7517 !important; font-style: normal !important; }
+
+    /* 코드/체크리스트 블록 */
+    pre, code {
+      background: #f0f0ea !important;
+      font-size: 10pt !important;
+      page-break-inside: avoid !important;
+    }
+
+    /* 테이블 */
+    table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      page-break-inside: avoid !important;
+      font-size: 10pt !important;
+      margin: 12px 0 !important;
+    }
+    th {
+      background: #1D9E75 !important;
+      color: #fff !important;
+      padding: 8px 10px !important;
+      font-weight: 600 !important;
+      text-align: left !important;
+    }
+    td {
+      padding: 8px 10px !important;
+      border-bottom: 1px solid #ddd !important;
+    }
+
+    /* 페이지 하단 푸터 */
+    .content::after, .body-content::after {
+      content: "Lighthouse Media | 류선희 | 실제로 삶이 나아지는 콘텐츠";
+      display: block;
+      text-align: center;
+      font-size: 8pt;
+      color: #999;
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid #ddd;
+    }
+
+    /* 숨길 요소들 */
+    .actions, .cta, .cta-box, .btn-print, .toolbar, button,
+    nav, .header-nav, .nav, .footer-cta, .follow-banner,
+    .sidebar-cta, .print-bar, .no-print {
+      display: none !important;
+    }
+
+    /* 이미지 */
+    img {
+      max-width: 100% !important;
+      page-break-inside: avoid !important;
+    }
+
+    /* 링크 URL 표시 안함 */
+    a { color: #1D9E75 !important; text-decoration: none !important; }
+    a::after { content: none !important; }
+
+    /* 카드/박스 스타일 */
+    .tip-box, .highlight-box, .note-box, .checklist-box {
+      background: #f9f9f5 !important;
+      border: 1px solid #e0e0d8 !important;
+      padding: 14px !important;
+      margin: 12px 0 !important;
+      page-break-inside: avoid !important;
+      border-radius: 6px !important;
+    }
+
+    /* 구분선 */
+    hr {
+      border: none !important;
+      border-top: 1px solid #ddd !important;
+      margin: 20px 0 !important;
+    }
+  }
+
+  /* 프린트 버튼 스타일 개선 */
+  .print-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(250,248,243,0.97);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+  }
+  .print-bar .brand-text { font-size: 13px; color: #999; font-weight: 600; }
+  .print-bar .btn-save {
+    background: #1D9E75;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    font-family: 'Pretendard', sans-serif;
+  }
+  .print-bar .btn-save:hover { background: #178a65; }
+  .print-bar .btn-home {
+    color: #999;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 8px 14px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+  }
+  .print-bar .btn-home:hover { color: #1D9E75; border-color: #1D9E75; }
+
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <span class="badge">FREE EBOOK</span>
+  <h1>감정에 휘둘리지<br>않는 기술</h1>
+  <p class="subtitle">화, 불안, 슬픔을<br>내 편으로 만드는 법</p>
+  <p class="author">류선희</p>
+  <p class="brand">Lighthouse Media</p>
+</section>
+
+
+
+<article class="content">
+<h2>감정을 이해하는 것부터 시작하기</h2>
+<p>감정은 우리 삶의 자연스러운 일부입니다. 하지만 많은 사람들이 감정을 마치 적처럼 대하며 피하거나 억누르려고 합니다. 특히 화, 불안, 슬픔과 같은 부정적 감정은 더욱 그렇죠.</p>
+<p>감정에 휘둘리지 않는 첫 번째 단계는 감정을 적이 아닌 신호로 받아들이는 것입니다. 화는 우리의 경계선이 침범당했을 때 나타나는 자연스러운 반응이고, 불안은 위험을 미리 감지하여 준비하라는 신호입니다. 슬픔은 우리에게 소중한 것을 잃었을 때 나타나는 치유 과정의 일부입니다.</p>
+<p><strong>감정을 관찰하는 연습</strong></p>
+<p>감정이 일어날 때 다음과 같이 스스로에게 물어보세요:
+- "지금 내가 느끼는 감정은 무엇인가?"
+- "이 감정이 나에게 전하려는 메시지는 무엇일까?"
+- "내 몸 어느 부분에서 이 감정을 느끼고 있나?"</p>
+<p>예를 들어, 직장에서 상사의 무리한 업무 지시에 화가 날 때, 단순히 "화가 난다"고 끝내지 말고 "나의 업무 경계선과 자존감이 침해받았다는 신호구나"라고 해석해보세요. 이렇게 감정의 메시지를 이해하면, 더 건설적인 대응이 가능해집니다.</p>
+<p>감정일기를 써보는 것도 좋은 방법입니다. 하루 중 강하게 느꼈던 감정 하나를 선택해서 그 상황, 감정의 강도, 몸의 반응을 기록해보세요. 패턴을 발견하게 될 것입니다.</p>
+<h2>화를 조절하는 스마트한 방법</h2>
+<p>화는 가장 즉각적이고 강렬한 감정 중 하나입니다. 화를 제대로 다루지 못하면 인간관계가 망가지고, 후회로 이어지기 쉽죠. 하지만 화를 완전히 없애려고 하지 마세요. 화를 건설적으로 활용하는 법을 배워보겠습니다.</p>
+<p><strong>6초 법칙 활용하기</strong></p>
+<p>화의 생리적 반응은 보통 6초 정도 지속됩니다. 이 6초만 잘 넘기면 좀 더 이성적인 판단이 가능해집니다. 화가 날 때 다음을 시도해보세요:</p>
+<ul>
+<li>천천히 6까지 세기</li>
+<li>깊게 숨 들이마시고 천천히 내쉬기</li>
+<li>"잠깐, 이 상황에서 내가 원하는 결과는 무엇인가?" 자문하기</li>
+</ul>
+<p><strong>화를 에너지로 전환하기</strong></p>
+<p>화는 강력한 에너지입니다. 이를 파괴적이 아닌 건설적으로 사용할 수 있습니다. 직장에서 불합리한 대우에 화가 났다면, 그 에너지를 자기계발에 투자하거나 더 나은 환경을 만들기 위한 행동력으로 바꿔보세요.</p>
+<p>실제 사례로, 한 직장인이 상사의 부당한 대우에 화가 났을 때, 그 감정을 억누르는 대신 "이런 상황에서 나는 어떻게 전문성을 더 키울 수 있을까?"라고 방향을 바꿨습니다. 결과적으로 새로운 기술을 익혀 더 좋은 기회를 얻게 되었죠.</p>
+<p><strong>화의 근본 원인 파악하기</strong></p>
+<p>표면적인 화 뒤에는 보통 상처받은 마음이나 두려움이 숨어있습니다. "나는 왜 이 상황에서 화가 날까?"를 깊이 탐구해보세요. 존중받고 싶은 욕구, 인정받고 싶은 마음, 또는 거절당할까 봐 두려운 마음이 화로 표현되는 경우가 많습니다.</p>
+<h2>불안감을 다스리는 실전 전략</h2>
+<p>불안은 미래에 대한 걱정에서 시작됩니다. "만약 이렇게 되면 어떡하지?" "내가 실패하면?" 이런 생각들이 끝없이 반복되죠. 하지만 불안을 제대로 이해하고 관리하면, 더 신중하고 준비된 삶을 살 수 있습니다.</p>
+<p><strong>현재에 집중하기</strong></p>
+<p>불안의 90%는 아직 일어나지 않은 일에 대한 걱정입니다. 5-4-3-2-1 기법을 활용해보세요:
+- 눈으로 볼 수 있는 것 5가지 찾기
+- 손으로 만질 수 있는 것 4가지 느끼기<br />
+- 들을 수 있는 소리 3가지 인식하기
+- 냄새 2가지 맡기
+- 맛 1가지 느끼기</p>
+<p>이 기법은 불안으로 미래에 빠진 마음을 현재로 끌어오는 데 매우 효과적입니다.</p>
+<p><strong>불안을 계획으로 바꾸기</strong></p>
+<p>불안은 종종 우리가 통제할 수 없다고 느끼는 상황에서 발생합니다. 걱정을 구체적인 행동 계획으로 바꿔보세요. </p>
+<p>예를 들어, "프레젠테이션을 망치면 어떡하지?"라는 불안이 있다면:
+1. 충분히 연습할 시간 확보하기
+2. 예상 질문에 대한 답변 준비하기<br />
+3. 최악의 시나리오에 대한 대안책 마련하기</p>
+<p>이렇게 불안을 행동 계획으로 전환하면, 막연한 걱정이 구체적인 준비가 됩니다.</p>
+<p><strong>"걱정 시간" 정하기</strong></p>
+<p>하루 중 15분 정도를 "걱정 시간"으로 정해두세요. 불안한 생각이 들면 "이건 걱정 시간에 생각하자"며 미뤘다가, 정해진 시간에 집중적으로 걱정해보세요. 대부분의 걱정거리들이 그때가 되면 시시해 보일 것입니다.</p>
+<h2>슬픔과 건강하게 마주하기</h2>
+<p>슬픔은 상실의 감정입니다. 사랑하는 사람을 잃었을 때, 꿈이 좌절되었을 때, 또는 소중한 것이 변해버렸을 때 느끼죠. 많은 사람들이 슬픔을 빨리 털어내려 하지만, 슬픔은 충분히 느껴야 치유가 됩니다.</p>
+<p><strong>슬픔을 인정하고 받아들이기</strong></p>
+<p>"슬퍼해도 괜찮다"고 스스로에게 허락해주세요. 슬픔은 사랑했다는 증거이고, 소중하게 여겼다는 표시입니다. 슬픔을 느끼는 것은 약함이 아니라 인간다움입니다.</p>
+<p>슬플 때는 다음을 시도해보세요:
+- 눈물을 참지 말고 자연스럽게 흘리기
+- 신뢰할 수 있는 사람에게 마음을 털어놓기
+- 슬픔을 글로 표현해보기</p>
+<p><strong>의미 찾기</strong></p>
+<p>슬픈 경험에서 의미를 찾는 것은 치유에 큰 도움이 됩니다. "이 경험이 나에게 가르쳐준 것은 무엇일까?" "이를 통해 내가 성장한 부분은?" 이런 질문을 통해 슬픔을 지혜로 바꿀 수 있습니다.</p>
+<p>한 예로, 직장을 잃은 슬픔을 겪은 한 분이 "이 경험을 통해 진정으로 하고 싶었던 일이 무엇인지 알게 되었다"며 새로운 길을 찾아나간 경우가 있습니다.</p>
+<p><strong>작은 기쁨 다시 찾기</strong></p>
+<p>슬픔에 빠져있을 때는 모든 게 회색빛으로 보입니다. 하지만 작은 기쁨부터 다시 찾아보세요. 좋아하는 음식 한 입, 따뜻한 햇살, 친구의 안부 인사... 이런 작은 것들이 모여서 마음을 서서히 회복시켜줍니다.</p>
+<h2>감정 균형을 위한 일상 루틴</h2>
+<p>감정을 건강하게 관리하기 위해서는 일상 속에서 꾸준히 실천할 수 있는 루틴이 필요합니다. 감정은 하루아침에 바뀌지 않으니까요. 작지만 지속가능한 습관들을 만들어보겠습니다.</p>
+<p><strong>아침 체크인 루틴</strong></p>
+<p>매일 아침 일어나서 5분 정도 자신의 감정 상태를 체크해보세요:
+- "오늘 내 마음은 어떤 날씨인가?"
+- "어떤 감정이 가장 크게 느껴지나?"
+- "오늘 내 감정을 어떻게 돌볼까?"</p>
+<p>이런 간단한 체크인만으로도 하루 종일 감정을 더 의식적으로 관리할 수 있습니다.</p>
+<p><strong>감정 해소 툴킷 만들기</strong></p>
+<p>각 감정별로 나만의 대처 방법을 미리 준비해두세요:</p>
+<p>화날 때: 산책하기, 운동하기, 믿을 만한 사람과 대화하기
+불안할 때: 심호흡하기, 명상 앱 사용하기, 할 일 목록 정리하기
+슬플 때: 좋아하는 음악 듣기, 일기 쓰기, 따뜻한 차 마시기</p>
+<p>감정이 격해졌을 때 "내 툴킷에서 뭘 꺼낼까?"라고 생각하면 좀 더 주도적으로 대응할 수 있습니다.</p>
+<p><strong>저녁 정리 시간</strong></p>
+<p>하루가 끝날 때 10분 정도 감정을 정리하는 시간을 가져보세요. 오늘 느꼈던 감정들을 돌아보고, 잘 대처한 부분은 인정해주고, 아쉬웠던 부분은 내일의 배움으로 삼으세요.</p>
+<p><strong>신체 활동의 중요성</strong></p>
+<p>감정과 몸은 밀접하게 연결되어 있습니다. 규칙적인 운동, 충분한 수면, 균형 잡힌 식사는 감정 조절에 기본이 됩니다. 특히 산책과 같은 가벼운 운동도 감정 정리에 큰 도움이 됩니다.</p>
+<p><strong>지지체계 구축하기</strong></p>
+<p>혼자서 모든 감정을 감당할 필요는 없습니다. 마음을 터놓을 수 있는 가족, 친구, 또는 전문가와의 관계를 소중히 하세요. 때로는 전문적인 도움을 받는 것도 용기 있는 선택입니다.</p>
+<h2>실천 체크리스트</h2>
+<p>감정 관리는 이론보다 실천이 중요합니다. 아래 체크리스트를 통해 오늘부터 하나씩 실천해보세요:</p>
+<p><strong>기본 인식 단계</strong>
+- [ ] 하루에 한 번 내 감정 상태 확인하기
+- [ ] 감정을 판단하지 않고 있는 그대로 관찰하기
+- [ ] 감정이 몸의 어느 부분에서 느껴지는지 인식하기</p>
+<p><strong>화 관리</strong>
+- [ ] 화날 때 6초 세기 연습하기
+- [ ] 화의 근본 원인(상처, 두려움) 찾아보기
+- [ ] 화를 건설적인 행동으로 바꾸는 방법 생각해보기</p>
+<p><strong>불안 대처</strong>
+- [ ] 5-4-3-2-1 기법으로 현재에 집중하기
+- [ ] 걱정거리를 구체적인 행동 계획으로 바꾸기
+- [ ] 하루 15분 "걱정 시간" 정해두기</p>
+<p><strong>슬픔 받아들이기</strong>
+- [ ] 슬픔을 느끼는 것을 자신에게 허락하기
+- [ ] 슬픈 경험에서 의미나 교훈</p>
+</article>
+
+<section class="cta">
+  <h2>더 깊은 변화를 원하신다면</h2>
+  <p>Lighthouse Media의 프리미엄 전자책을 만나보세요</p>
+  <a href="/shop.html">전체 전자책 보기 &rarr;</a>
+</section>
+
+</body>
+</html>

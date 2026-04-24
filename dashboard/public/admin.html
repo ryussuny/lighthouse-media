@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lighthouse Media 관리자</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',-apple-system,sans-serif;background:#0a0a14;color:#e0e0e0;min-height:100vh}
+    ::-webkit-scrollbar{width:6px}
+    ::-webkit-scrollbar-track{background:#0a0a14}
+    ::-webkit-scrollbar-thumb{background:#1D9E75;border-radius:3px}
+
+    /* Header */
+    .header{background:linear-gradient(180deg,rgba(10,10,20,0.98)80%,rgba(10,10,20,0.85));border-bottom:1px solid rgba(29,158,117,0.15);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+    .header-left{display:flex;align-items:center;gap:12px}
+    .header-left h1{font-size:18px;font-weight:700;color:#1D9E75;letter-spacing:-0.3px}
+    .pulse{width:8px;height:8px;background:#1D9E75;border-radius:50%;animation:pulse 1.5s infinite;box-shadow:0 0 12px #1D9E75}
+    @keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.4}}
+    .header-right{display:flex;align-items:center;gap:16px;font-size:13px;color:#666}
+    .badge-live{background:#e74c3c;color:#fff;padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;letter-spacing:1px}
+    .btn-export{background:rgba(186,117,23,0.15);border:1px solid rgba(186,117,23,0.4);color:#BA7517;padding:7px 16px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;transition:all .2s}
+    .btn-export:hover{background:#BA7517;color:#fff}
+
+    /* Main */
+    .main{max-width:1280px;margin:0 auto;padding:24px}
+
+    /* Summary Cards */
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:28px}
+    .card{background:rgba(15,15,25,0.9);border:1px solid rgba(29,158,117,0.12);border-radius:12px;padding:20px;transition:border-color .2s}
+    .card:hover{border-color:rgba(29,158,117,0.35)}
+    .card-label{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600}
+    .card-value{font-size:28px;font-weight:800;color:#1D9E75}
+    .card-value.accent{color:#BA7517}
+    .card-sub{font-size:11px;color:#444;margin-top:4px}
+
+    /* Section */
+    .section{margin-bottom:32px}
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .section-title{font-size:15px;font-weight:700;color:#ccc;display:flex;align-items:center;gap:8px}
+    .section-title::before{content:'';width:3px;height:16px;background:#1D9E75;border-radius:2px;display:inline-block}
+    .section-count{font-size:11px;color:#444;font-weight:400}
+
+    /* Table */
+    .table-wrap{overflow-x:auto;background:rgba(15,15,25,0.9);border:1px solid rgba(29,158,117,0.1);border-radius:12px}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    thead th{text-align:left;padding:12px 14px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#555;font-weight:700;border-bottom:1px solid rgba(255,255,255,0.04);white-space:nowrap}
+    tbody tr{transition:background .15s;border-bottom:1px solid rgba(255,255,255,0.02)}
+    tbody tr:hover{background:rgba(29,158,117,0.04)}
+    tbody tr:last-child{border-bottom:none}
+    tbody td{padding:10px 14px;white-space:nowrap}
+    td.name{color:#e0e0e0;font-weight:600}
+    td.email{color:#888}
+    td.phone{color:#666}
+    td.amount{color:#BA7517;font-weight:700;font-size:14px}
+    td.product{color:#aaa}
+
+    /* Status badges */
+    .status{display:inline-block;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;user-select:none;transition:all .2s;letter-spacing:0.3px}
+    .status:hover{transform:scale(1.05)}
+    .status.pending{background:rgba(241,196,15,0.12);color:#f1c40f;border:1px solid rgba(241,196,15,0.25)}
+    .status.confirmed{background:rgba(29,158,117,0.12);color:#1D9E75;border:1px solid rgba(29,158,117,0.25)}
+    .status.refunded{background:rgba(231,76,60,0.12);color:#e74c3c;border:1px solid rgba(231,76,60,0.25)}
+    .status.new{background:rgba(52,152,219,0.12);color:#3498db;border:1px solid rgba(52,152,219,0.25)}
+    .status.contacted{background:rgba(241,196,15,0.12);color:#f1c40f;border:1px solid rgba(241,196,15,0.25)}
+    .status.converted{background:rgba(29,158,117,0.12);color:#1D9E75;border:1px solid rgba(29,158,117,0.25)}
+
+    /* Empty state */
+    .empty{text-align:center;padding:40px;color:#333;font-size:13px}
+
+    /* Toast */
+    .toast{position:fixed;bottom:24px;right:24px;background:rgba(29,158,117,0.95);color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;font-weight:600;transform:translateY(80px);opacity:0;transition:all .3s;z-index:999}
+    .toast.show{transform:translateY(0);opacity:1}
+
+    /* Refresh indicator */
+    .refresh-bar{position:fixed;top:0;left:0;height:2px;background:#1D9E75;z-index:200;transition:width .3s;opacity:0}
+    .refresh-bar.active{opacity:1}
+
+    @media(max-width:768px){
+      .header{padding:12px 16px;flex-direction:column;gap:10px}
+      .main{padding:16px}
+      .cards{grid-template-columns:repeat(2,1fr);gap:10px}
+      .card{padding:14px}
+      .card-value{font-size:22px}
+    }
+    @media(max-width:480px){
+      .cards{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+<div class="refresh-bar" id="refreshBar"></div>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <span class="pulse"></span>
+    <h1>LIGHTHOUSE MEDIA 관리자</h1>
+    <span class="badge-live">LIVE</span>
+  </div>
+  <div class="header-right">
+    <span id="clock"></span>
+    <button class="btn-export" onclick="exportCSV()">CSV 다운로드</button>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+
+  <!-- Summary Cards -->
+  <div class="cards">
+    <div class="card">
+      <div class="card-label">총 주문 수</div>
+      <div class="card-value" id="statOrders">0</div>
+      <div class="card-sub">전체 누적</div>
+    </div>
+    <div class="card">
+      <div class="card-label">총 매출액</div>
+      <div class="card-value accent" id="statRevenue">0원</div>
+      <div class="card-sub">전체 누적</div>
+    </div>
+    <div class="card">
+      <div class="card-label">오늘 주문</div>
+      <div class="card-value" id="statToday">0</div>
+      <div class="card-sub" id="statTodayDate"></div>
+    </div>
+    <div class="card">
+      <div class="card-label">리드 (이메일)</div>
+      <div class="card-value" id="statLeads">0</div>
+      <div class="card-sub">잠재 고객</div>
+    </div>
+  </div>
+
+  <!-- Orders Table -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">주문 내역 <span class="section-count" id="orderCount"></span></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>날짜</th>
+            <th>이름</th>
+            <th>이메일</th>
+            <th>연락처</th>
+            <th>상품</th>
+            <th>금액</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody">
+          <tr><td colspan="8" class="empty">주문 데이터를 불러오는 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Leads Table -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-title">리드 목록 <span class="section-count" id="leadCount"></span></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>날짜</th>
+            <th>이름</th>
+            <th>이메일</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+        <tbody id="leadsBody">
+          <tr><td colspan="5" class="empty">리드 데이터를 불러오는 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<!-- Socket.IO -->
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function(){
+  // ===== State =====
+  let orders = [];
+  let leads = [];
+  const ORDER_STATUSES = ['pending','confirmed','refunded'];
+  const ORDER_STATUS_LABELS = {pending:'입금대기',confirmed:'확인',refunded:'환불'};
+  const LEAD_STATUSES = ['new','contacted','converted'];
+  const LEAD_STATUS_LABELS = {new:'신규',contacted:'연락완료',converted:'전환'};
+
+  // ===== Clock =====
+  function updateClock(){
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth()+1).padStart(2,'0');
+    const d = String(now.getDate()).padStart(2,'0');
+    const h = String(now.getHours()).padStart(2,'0');
+    const mi = String(now.getMinutes()).padStart(2,'0');
+    const s = String(now.getSeconds()).padStart(2,'0');
+    document.getElementById('clock').textContent = y+'.'+m+'.'+d+' '+h+':'+mi+':'+s;
+  }
+  updateClock();
+  setInterval(updateClock,1000);
+  document.getElementById('statTodayDate').textContent = new Date().toLocaleDateString('ko-KR');
+
+  // ===== Toast =====
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),3000);
+  }
+
+  // ===== Refresh bar =====
+  function flashRefresh(){
+    const bar = document.getElementById('refreshBar');
+    bar.style.width = '0%';
+    bar.classList.add('active');
+    let w = 0;
+    const iv = setInterval(()=>{
+      w += 20;
+      bar.style.width = w+'%';
+      if(w>=100){clearInterval(iv);setTimeout(()=>{bar.classList.remove('active');bar.style.width='0%'},200)}
+    },40);
+  }
+
+  // ===== Format currency =====
+  function formatWon(n){
+    return Number(n||0).toLocaleString('ko-KR')+'원';
+  }
+
+  // ===== Format date =====
+  function formatDate(d){
+    if(!d) return '-';
+    const dt = new Date(d);
+    if(isNaN(dt)) return d;
+    const m = String(dt.getMonth()+1).padStart(2,'0');
+    const day = String(dt.getDate()).padStart(2,'0');
+    const h = String(dt.getHours()).padStart(2,'0');
+    const mi = String(dt.getMinutes()).padStart(2,'0');
+    return m+'/'+day+' '+h+':'+mi;
+  }
+
+  // ===== Fetch Stats =====
+  async function fetchStats(){
+    try{
+      const res = await fetch('/api/stats');
+      if(!res.ok) throw new Error();
+      const s = await res.json();
+      document.getElementById('statOrders').textContent = (s.totalOrders||0).toLocaleString();
+      document.getElementById('statRevenue').textContent = formatWon(s.totalRevenue);
+      document.getElementById('statToday').textContent = (s.todayOrders||0).toLocaleString();
+      document.getElementById('statLeads').textContent = (s.totalLeads||0).toLocaleString();
+    }catch(e){
+      // If stats endpoint not available, compute from local data
+      computeLocalStats();
+    }
+  }
+
+  function computeLocalStats(){
+    const today = new Date().toISOString().slice(0,10);
+    const totalOrders = orders.length;
+    const totalRevenue = orders.reduce((s,o)=>s+(Number(o.amount)||0),0);
+    const todayOrders = orders.filter(o=>(o.date||o.createdAt||'').slice(0,10)===today).length;
+    const totalLeads = leads.length;
+    document.getElementById('statOrders').textContent = totalOrders.toLocaleString();
+    document.getElementById('statRevenue').textContent = formatWon(totalRevenue);
+    document.getElementById('statToday').textContent = todayOrders.toLocaleString();
+    document.getElementById('statLeads').textContent = totalLeads.toLocaleString();
+  }
+
+  // ===== Fetch Orders =====
+  async function fetchOrders(){
+    try{
+      const res = await fetch('/api/orders');
+      if(!res.ok) throw new Error();
+      orders = await res.json();
+      renderOrders();
+    }catch(e){
+      document.getElementById('ordersBody').innerHTML = '<tr><td colspan="8" class="empty">주문 데이터를 불러올 수 없습니다</td></tr>';
+    }
+  }
+
+  function renderOrders(){
+    const tbody = document.getElementById('ordersBody');
+    document.getElementById('orderCount').textContent = '('+orders.length+'건)';
+    if(!orders.length){
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">주문이 없습니다</td></tr>';
+      return;
+    }
+    tbody.innerHTML = orders.map((o,i)=>{
+      const st = o.status || 'pending';
+      const label = ORDER_STATUS_LABELS[st]||st;
+      return '<tr>'+
+        '<td style="color:#444">'+(i+1)+'</td>'+
+        '<td style="color:#666">'+formatDate(o.date||o.createdAt)+'</td>'+
+        '<td class="name">'+(o.name||'-')+'</td>'+
+        '<td class="email">'+(o.email||'-')+'</td>'+
+        '<td class="phone">'+(o.phone||'-')+'</td>'+
+        '<td class="product">'+(o.product||o.productName||'-')+'</td>'+
+        '<td class="amount">'+formatWon(o.amount)+'</td>'+
+        '<td><span class="status '+st+'" data-id="'+(o.id||o._id)+'" data-type="order" onclick="cycleOrderStatus(this)">'+label+'</span></td>'+
+        '</tr>';
+    }).join('');
+  }
+
+  // ===== Fetch Leads =====
+  async function fetchLeads(){
+    try{
+      const res = await fetch('/api/leads');
+      if(!res.ok) throw new Error();
+      leads = await res.json();
+      renderLeads();
+    }catch(e){
+      document.getElementById('leadsBody').innerHTML = '<tr><td colspan="5" class="empty">리드 데이터를 불러올 수 없습니다</td></tr>';
+    }
+  }
+
+  function renderLeads(){
+    const tbody = document.getElementById('leadsBody');
+    document.getElementById('leadCount').textContent = '('+leads.length+'명)';
+    if(!leads.length){
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">리드가 없습니다</td></tr>';
+      return;
+    }
+    tbody.innerHTML = leads.map((l,i)=>{
+      const st = l.status || 'new';
+      const label = LEAD_STATUS_LABELS[st]||st;
+      return '<tr>'+
+        '<td style="color:#444">'+(i+1)+'</td>'+
+        '<td style="color:#666">'+formatDate(l.date||l.createdAt)+'</td>'+
+        '<td class="name">'+(l.name||'-')+'</td>'+
+        '<td class="email">'+(l.email||'-')+'</td>'+
+        '<td><span class="status '+st+'" data-id="'+(l.id||l._id)+'" data-type="lead">'+label+'</span></td>'+
+        '</tr>';
+    }).join('');
+  }
+
+  // ===== Cycle order status =====
+  window.cycleOrderStatus = async function(el){
+    const id = el.dataset.id;
+    const currentClass = ORDER_STATUSES.find(s=>el.classList.contains(s)) || 'pending';
+    const idx = ORDER_STATUSES.indexOf(currentClass);
+    const next = ORDER_STATUSES[(idx+1) % ORDER_STATUSES.length];
+    try{
+      const res = await fetch('/api/orders/'+id,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({status:next})
+      });
+      if(!res.ok) throw new Error();
+      // Update local
+      el.classList.remove(...ORDER_STATUSES);
+      el.classList.add(next);
+      el.textContent = ORDER_STATUS_LABELS[next];
+      const order = orders.find(o=>(o.id||o._id)==id);
+      if(order) order.status = next;
+      showToast('주문 상태: '+ORDER_STATUS_LABELS[next]);
+    }catch(e){
+      showToast('상태 변경 실패');
+    }
+  };
+
+  // ===== CSV Export =====
+  window.exportCSV = function(){
+    if(!orders.length){showToast('내보낼 주문이 없습니다');return}
+    const BOM = '\uFEFF';
+    const header = ['번호','날짜','이름','이메일','연락처','상품','금액','상태'];
+    const rows = orders.map((o,i)=>[
+      i+1,
+      o.date||o.createdAt||'',
+      o.name||'',
+      o.email||'',
+      o.phone||'',
+      o.product||o.productName||'',
+      o.amount||0,
+      ORDER_STATUS_LABELS[o.status]||o.status||''
+    ]);
+    const csv = BOM + [header,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+    const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const d = new Date();
+    a.download = 'lighthouse_orders_'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('CSV 다운로드 완료');
+  };
+
+  // ===== Socket.IO =====
+  try{
+    const socket = io({transports:['websocket','polling']});
+    socket.on('connect',()=>{console.log('Socket connected')});
+    socket.on('new-order',(order)=>{
+      orders.unshift(order);
+      renderOrders();
+      fetchStats();
+      showToast('새 주문: '+(order.name||'')+ ' - '+formatWon(order.amount));
+    });
+    socket.on('new-lead',(lead)=>{
+      leads.unshift(lead);
+      renderLeads();
+      fetchStats();
+      showToast('새 리드: '+(lead.email||''));
+    });
+    socket.on('order-updated',(updated)=>{
+      const idx = orders.findIndex(o=>(o.id||o._id)==(updated.id||updated._id));
+      if(idx>=0){orders[idx]=updated;renderOrders()}
+    });
+  }catch(e){
+    console.log('Socket.IO not available, using polling only');
+  }
+
+  // ===== Initial load =====
+  async function loadAll(){
+    flashRefresh();
+    await Promise.all([fetchOrders(),fetchLeads(),fetchStats()]);
+  }
+  loadAll();
+
+  // ===== Auto-refresh every 30s =====
+  setInterval(loadAll,30000);
+
+})();
+</script>
+</body>
+</html>

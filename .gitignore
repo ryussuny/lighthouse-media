@@ -1,0 +1,11 @@
+*.bat
+.env
+config/tokens.json
+data/
+data/finance.json
+logs/
+node_modules/
+output/
+scripts/
+generate_ebooks.py
+*.bat

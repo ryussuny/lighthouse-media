@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>퇴근 후 나를 찾는 시간 - Lighthouse Media</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: #FAF8F3;
+  color: #333;
+  line-height: 2.0;
+  font-size: 16px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 28px 80px;
+  word-break: keep-all;
+}
+
+/* 커버 */
+.cover {
+  background: linear-gradient(135deg,#1a1a2e,#16213e);
+  color: #fff;
+  padding: 70px 40px;
+  border-radius: 20px;
+  text-align: center;
+  margin-bottom: 50px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+.cover h1 { font-size: 30px; line-height: 1.4; margin-bottom: 14px; font-weight: 800; }
+.cover .sub { color: #1D9E75; font-size: 17px; line-height: 1.6; }
+.cover .author { color: #888; margin-top: 24px; font-size: 14px; }
+.badge {
+  display: inline-block;
+  background: #1D9E75;
+  color: #fff;
+  padding: 5px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* 본문 타이포그래피 */
+h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 48px 0 20px;
+  line-height: 1.4;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1D9E75;
+  margin: 44px 0 18px;
+  padding: 14px 0 14px 16px;
+  border-left: 4px solid #1D9E75;
+  background: rgba(29,158,117,0.03);
+  border-radius: 0 8px 8px 0;
+  line-height: 1.4;
+}
+h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2a2a2a;
+  margin: 32px 0 14px;
+  line-height: 1.5;
+}
+p {
+  margin-bottom: 18px;
+  font-size: 16px;
+  line-height: 2.0;
+  color: #444;
+  letter-spacing: -0.2px;
+}
+strong { color: #1a1a2e; font-weight: 700; }
+em { color: #1D9E75; font-style: normal; font-weight: 600; }
+
+/* 리스트 */
+ul, ol {
+  margin: 14px 0 20px 24px;
+  line-height: 2.0;
+}
+li {
+  margin-bottom: 10px;
+  padding-left: 4px;
+  color: #444;
+}
+li strong { color: #2a2a2a; }
+
+/* 구분선 */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ddd, transparent);
+  margin: 36px 0;
+}
+
+/* 인용 */
+blockquote {
+  border-left: 3px solid #1D9E75;
+  background: rgba(29,158,117,0.04);
+  padding: 16px 20px;
+  margin: 20px 0;
+  border-radius: 0 10px 10px 0;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.9;
+}
+
+/* 테이블 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+}
+th {
+  background: #1D9E75;
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+}
+tr:nth-child(even) td { background: #f9f9f6; }
+
+/* 코드 블록 (체크리스트 등) */
+code {
+  background: #f0ede6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #1D9E75;
+}
+pre {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 20px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 20px 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* PDF 저장 버튼 */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(250,248,243,0.95);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.toolbar .brand { font-size: 13px; color: #999; font-weight: 600; }
+.toolbar .btn {
+  background: #1D9E75;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+.toolbar .btn:hover { opacity: 0.9; }
+
+/* CTA (무료 전자책 하단) */
+.cta-box {
+  background: linear-gradient(135deg, rgba(29,158,117,0.08), rgba(186,117,23,0.06));
+  border: 1px solid rgba(29,158,117,0.2);
+  border-radius: 14px;
+  padding: 30px;
+  margin-top: 40px;
+  text-align: center;
+}
+.cta-box h3 { color: #1a1a2e; margin-bottom: 8px; }
+.cta-box p { font-size: 14px; color: #888; margin-bottom: 16px; }
+.cta-box a {
+  display: inline-block;
+  background: #1D9E75;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* 푸터 */
+.footer {
+  text-align: center;
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.8;
+}
+
+/* 인쇄 */
+
+  body { max-width: 100%; padding: 20px; font-size: 14px; }
+  h2 { page-break-before: always; }
+  p, li { orphans: 3; widows: 3; }
+}
+
+/* 모바일 */
+@media (max-width: 600px) {
+  body { padding: 20px 16px 60px; font-size: 15px; }
+  .cover { padding: 50px 24px; }
+  .cover h1 { font-size: 24px; }
+  h2 { font-size: 19px; }
+}
+
+  /* ══════════════════════════════════════
+     소책자 스타일 PDF 인쇄 설정
+     ══════════════════════════════════════ */
+  @media print {
+    @page {
+      size: A4;
+      margin: 20mm 18mm 25mm 18mm;
+    }
+
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+    body {
+      background: #fff !important;
+      color: #222 !important;
+      font-size: 11pt !important;
+      line-height: 1.8 !important;
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* 표지: 전체 페이지 */
+    .cover, section.cover {
+      page-break-after: always !important;
+      min-height: 100vh !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      background: linear-gradient(135deg, #1a1a2e, #16213e) !important;
+      color: #fff !important;
+      padding: 60px 40px !important;
+    }
+
+    /* 본문 영역 */
+    .content, .body-content, main {
+      padding: 0 !important;
+      max-width: 100% !important;
+    }
+
+    /* 챕터 제목: 새 페이지 시작 */
+    h2 {
+      page-break-before: always !important;
+      page-break-after: avoid !important;
+      font-size: 18pt !important;
+      color: #1D9E75 !important;
+      margin-top: 0 !important;
+      padding-top: 20px !important;
+      padding-bottom: 12px !important;
+      border-left: 4px solid #1D9E75 !important;
+      padding-left: 14px !important;
+    }
+
+    /* 첫 번째 h2는 새 페이지 안함 (표지 바로 다음) */
+    .content h2:first-of-type, .body-content h2:first-of-type {
+      page-break-before: avoid !important;
+    }
+
+    h3 {
+      page-break-after: avoid !important;
+      font-size: 14pt !important;
+      color: #333 !important;
+      margin-top: 24px !important;
+      margin-bottom: 8px !important;
+    }
+
+    p {
+      font-size: 11pt !important;
+      line-height: 1.9 !important;
+      margin-bottom: 12px !important;
+      color: #333 !important;
+      orphans: 3 !important;
+      widows: 3 !important;
+      text-align: justify !important;
+      word-break: keep-all !important;
+    }
+
+    /* 리스트 */
+    ul, ol {
+      margin: 8px 0 14px 20px !important;
+      page-break-inside: avoid !important;
+    }
+    li {
+      font-size: 11pt !important;
+      line-height: 1.8 !important;
+      margin-bottom: 6px !important;
+    }
+
+    /* 인용문 */
+    blockquote {
+      border-left: 3px solid #1D9E75 !important;
+      background: #f5f5f0 !important;
+      padding: 12px 16px !important;
+      margin: 14px 0 !important;
+      font-size: 10.5pt !important;
+      page-break-inside: avoid !important;
+      border-radius: 0 !important;
+    }
+
+    /* 강조 */
+    strong { color: #1D9E75 !important; }
+    em { color: #BA7517 !important; font-style: normal !important; }
+
+    /* 코드/체크리스트 블록 */
+    pre, code {
+      background: #f0f0ea !important;
+      font-size: 10pt !important;
+      page-break-inside: avoid !important;
+    }
+
+    /* 테이블 */
+    table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      page-break-inside: avoid !important;
+      font-size: 10pt !important;
+      margin: 12px 0 !important;
+    }
+    th {
+      background: #1D9E75 !important;
+      color: #fff !important;
+      padding: 8px 10px !important;
+      font-weight: 600 !important;
+      text-align: left !important;
+    }
+    td {
+      padding: 8px 10px !important;
+      border-bottom: 1px solid #ddd !important;
+    }
+
+    /* 페이지 하단 푸터 */
+    .content::after, .body-content::after {
+      content: "Lighthouse Media | 류선희 | 실제로 삶이 나아지는 콘텐츠";
+      display: block;
+      text-align: center;
+      font-size: 8pt;
+      color: #999;
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid #ddd;
+    }
+
+    /* 숨길 요소들 */
+    .actions, .cta, .cta-box, .btn-print, .toolbar, button,
+    nav, .header-nav, .nav, .footer-cta, .follow-banner,
+    .sidebar-cta, .print-bar, .no-print {
+      display: none !important;
+    }
+
+    /* 이미지 */
+    img {
+      max-width: 100% !important;
+      page-break-inside: avoid !important;
+    }
+
+    /* 링크 URL 표시 안함 */
+    a { color: #1D9E75 !important; text-decoration: none !important; }
+    a::after { content: none !important; }
+
+    /* 카드/박스 스타일 */
+    .tip-box, .highlight-box, .note-box, .checklist-box {
+      background: #f9f9f5 !important;
+      border: 1px solid #e0e0d8 !important;
+      padding: 14px !important;
+      margin: 12px 0 !important;
+      page-break-inside: avoid !important;
+      border-radius: 6px !important;
+    }
+
+    /* 구분선 */
+    hr {
+      border: none !important;
+      border-top: 1px solid #ddd !important;
+      margin: 20px 0 !important;
+    }
+  }
+
+  /* 프린트 버튼 스타일 개선 */
+  .print-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(250,248,243,0.97);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+  }
+  .print-bar .brand-text { font-size: 13px; color: #999; font-weight: 600; }
+  .print-bar .btn-save {
+    background: #1D9E75;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    font-family: 'Pretendard', sans-serif;
+  }
+  .print-bar .btn-save:hover { background: #178a65; }
+  .print-bar .btn-home {
+    color: #999;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 8px 14px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+  }
+  .print-bar .btn-home:hover { color: #1D9E75; border-color: #1D9E75; }
+
+</style>
+</head>
+<body>
+
+
+
+<div class="cover">
+  <span class="badge">FREE EBOOK</span>
+  <h1>퇴근 후<br>나를 찾는 시간</h1>
+  <p class="sub">지친 하루를 회복하는 | 저녁 셀프케어 가이드</p>
+  <div class="author">류선희 | Lighthouse Media</div>
+</div>
+
+<h1 id="_1">퇴근 후 나를 찾는 시간</h1>
+<h2 id="_2">지친 하루를 회복하는 저녁 셀프케어 가이드</h2>
+<p><strong>저자: 류선희 (Lighthouse Media)</strong></p>
+<hr />
+<h3 id="_3">들어가며</h3>
+<p>오늘도 긴 하루를 보내셨나요? </p>
+<p>회사에서 집으로 향하는 길, 문득 '오늘 하루 나는 어디에 있었을까'라는 생각이 들 때가 있습니다. 업무에 치이고, 사람들 사이에서 맞춰가며, 어느새 진짜 내 모습을 잊고 살아가는 것은 아닌지 돌아보게 됩니다.</p>
+<p>퇴근 후 시간은 단순히 내일을 위한 준비 시간이 아닙니다. 하루 종일 바깥을 향해 있던 에너지를 다시 나에게로 돌려주는, 소중한 회복의 시간입니다.</p>
+<p>이 책은 바쁜 일상 속에서도 실천할 수 있는 작고 구체적인 방법들을 담았습니다. 거창한 변화를 약속하지 않습니다. 다만, 매일 조금씩 나를 돌보는 작은 습관들이 쌓여 더 건강하고 균형 잡힌 삶으로 이어질 수 있다고 믿습니다.</p>
+<hr />
+<h2 id="chapter-1">Chapter 1. 마음의 짐 내려놓기</h2>
+<p>집에 도착해서 가장 먼저 해야 할 일은 하루 동안 쌓인 마음의 짐을 내려놓는 것입니다. 우리는 종종 몸의 피로는 느끼면서도 마음의 피로는 놓치기 쉽습니다.</p>
+<p><strong>오늘 하루 떠올리기</strong>
+문을 열고 들어서면서 심호흡을 세 번 하세요. 그리고 오늘 하루를 떠올려봅니다. 어떤 감정들이 있었는지, 무엇이 힘들었고 무엇이 좋았는지 그저 있는 그대로 인정해주세요. 판단하거나 평가하지 말고, 단지 '그런 하루였구나' 하고 받아들이는 것입니다.</p>
+<p><strong>감정 일기 쓰기</strong>
+5분만 투자해서 오늘의 감정을 간단히 적어보세요. "오늘은 프레젠테이션 때문에 긴장했다", "동료와의 대화에서 기분이 좋았다" 같은 간단한 문장이면 충분합니다. 감정을 글로 표현하는 것만으로도 마음이 한결 가벼워집니다.</p>
+<p><strong>의식적인 전환</strong>
+집에 들어오면서 일과 개인 시간을 구분하는 나만의 의식을 만들어보세요. 외투를 벗으면서 "오늘 일은 여기까지", 손을 씻으면서 "이제 나만의 시간" 같은 간단한 다짐도 좋습니다. 물리적 행동과 함께하는 마음의 전환이 더욱 효과적입니다.</p>
+<p>작은 실천이지만 매일 반복하다 보면, 퇴근 후 시간이 진정한 휴식의 시간으로 느껴질 것입니다. 마음의 짐을 내려놓는 것부터 나를 찾는 여행이 시작됩니다.</p>
+<h2 id="chapter-2">Chapter 2. 몸이 말하는 신호 듣기</h2>
+<p>하루 종일 책상에 앉아있거나 긴장 상태를 유지한 몸은 우리가 생각하는 것보다 더 많은 것을 말하고 있습니다. 이번에는 몸의 소리에 귀 기울여보겠습니다.</p>
+<p><strong>몸 스캔하기</strong>
+편안한 자세로 앉아서 머리끝부터 발끝까지 천천히 몸의 상태를 살펴보세요. 어깨가 굳어있나요? 목이 뻣뻣한가요? 어디가 피곤한지 확인하는 것만으로도 몸과 마음의 연결고리를 찾을 수 있습니다. 이때 "이렇게 피곤하면 안 되는데"라고 자책하지 마세요. 그저 "많이 힘들었구나" 하고 인정해주세요.</p>
+<p><strong>간단한 스트레칭</strong>
+거창한 운동이 아니라 5-10분 정도의 가벼운 스트레칭으로 충분합니다. 목과 어깨를 천천히 돌리고, 손목과 발목도 풀어주세요. 특히 하루 종일 같은 자세로 있었다면 반대 방향으로 몸을 움직여주는 것이 좋습니다. 책상에 앉아있었다면 등을 뒤로 젖히고, 서서 일했다면 다리를 쭉 뻗어보세요.</p>
+<p><strong>따뜻한 물의 힘</strong>
+샤워나 족욕, 또는 따뜻한 차 한 잔도 몸과 마음을 동시에 달래주는 좋은 방법입니다. 물의 온기가 긴장된 근육을 풀어주고, 동시에 하루의 스트레스도 함께 씻어내 줍니다. 이때도 급하게 서두르지 말고, 물의 따뜻함을 온전히 느끼며 현재 순간에 집중해보세요.</p>
+<p>몸이 편안해야 마음도 편안해집니다. 몸의 신호를 듣고 반응해주는 것은 나 자신을 소중히 여기는 첫걸음입니다.</p>
+<h2 id="chapter-3">Chapter 3. 나만의 공간 만들기</h2>
+<p>집이라는 물리적 공간 안에서도 온전히 나만의 시간과 공간을 갖는 것은 중요합니다. 아무리 작은 공간이라도 나를 위한 특별한 영역을 만들어보세요.</p>
+<p><strong>작은 코너의 마법</strong>
+꼭 별도의 방이 필요한 것은 아닙니다. 거실 한편의 의자, 침대 옆 작은 테이블, 심지어 창가의 작은 공간도 충분합니다. 이곳을 나만의 휴식 공간으로 정해보세요. 좋아하는 책 몇 권, 향초 하나, 작은 화분 같은 것들로 공간을 꾸미면 더욱 특별해집니다.</p>
+<p><strong>디지털 경계 설정하기</strong>
+나만의 공간에서는 가능한 한 업무 관련 알림을 차단해보세요. 스마트폰을 다른 곳에 두거나 알림을 끄고, 오로지 나를 위한 시간을 만들어보는 것입니다. 처음에는 불편할 수 있지만, 점차 이 시간이 얼마나 소중한지 깨닫게 될 것입니다.</p>
+<p><strong>감각적 환경 조성</strong>
+조명을 조금 어둡게 하거나, 좋아하는 음악을 작게 틀어놓거나, 향을 피우는 것도 좋습니다. 시각, 청각, 후각 등 감각적 요소들이 마음의 평안을 가져다줍니다. 중요한 것은 나에게 편안함을 주는 요소들을 찾아 조합하는 것입니다.</p>
+<p><strong>의식적인 시간 만들기</strong>
+이 공간에서는 특별한 무언가를 하지 않아도 됩니다. 그저 차 한 잔을 마시며 창밖을 바라보거나, 좋아하는 책 몇 페이지를 읽거나, 일기를 쓰는 것만으로도 충분합니다. 중요한 것은 이 시간이 온전히 나만을 위한 시간이라는 것을 인식하는 것입니다.</p>
+<p>공간이 주는 안정감은 생각보다 큽니다. 나만의 작은 sanctuary를 만들어보세요.</p>
+<h2 id="chapter-4">Chapter 4. 내 마음과 대화하기</h2>
+<p>바쁜 일상 속에서 정작 나 자신과는 대화할 시간을 갖지 못하는 경우가 많습니다. 퇴근 후 시간은 내면의 목소리에 귀 기울일 수 있는 귀중한 기회입니다.</p>
+<p><strong>질문과 답변의 시간</strong>
+"오늘 가장 기뻤던 순간은 언제였을까?", "무엇이 나를 힘들게 했을까?", "지금 내가 가장 필요로 하는 것은 무엇일까?" 같은 간단한 질문들을 스스로에게 던져보세요. 답을 찾으려고 애쓰지 말고, 그저 질문과 함께 머물러보는 것만으로도 의미가 있습니다.</p>
+<p><strong>감정의 이름 붙이기</strong>
+막연한 기분 나쁨이나 좋음을 좀 더 구체적으로 표현해보세요. "짜증"이 아니라 "실망스러움"일 수도 있고, "기쁨"이 아니라 "안도감"일 수도 있습니다. 감정에 정확한 이름을 붙이는 것은 나를 더 잘 이해하는 첫걸음입니다.</p>
+<p><strong>미래의 나에게 편지쓰기</strong>
+일주일 후, 한 달 후의 나에게 짧은 편지를 써보세요. 오늘의 고민을 털어놓거나, 응원의 메시지를 전하거나, 작은 소망을 적어보는 것입니다. 시간이 지나 그 편지를 다시 읽어볼 때, 내가 어떻게 성장했는지 확인할 수 있는 소중한 기록이 될 것입니다.</p>
+<p><strong>있는 그대로의 나 인정하기</strong>
+완벽하지 않은 오늘의 나, 실수했을 수도 있는 나, 때로는 게으를 수도 있는 나를 그대로 받아들이는 연습을 해보세요. 자책보다는 이해를, 비판보다는 격려를 스스로에게 건네보는 것입니다.</p>
+<p>내 마음과의 대화는 가장 중요하면서도 가장 소홀히 하기 쉬운 시간입니다. 매일 조금씩이라도 나와 만나는 시간을 가져보세요.</p>
+<h2 id="chapter-5">Chapter 5. 내일을 위한 부드러운 준비</h2>
+<p>하루를 마무리하며 내일을 준비하는 것도 셀프케어의 일부입니다. 하지만 이것은 조바심 내며 하는 준비가 아니라, 나를 위한 배려의 마음으로 하는 준비입니다.</p>
+<p><strong>감사 인벤토리</strong>
+하루를 마감하기 전, 오</p>
+
+<div class='cta-box'><h3>더 깊은 내용이 궁금하다면</h3><p>유료 전자책에서 실전 가이드를 만나보세요</p><a href="/shop.html">전자책 보러가기</a></div>
+
+<div class="footer">
+  <strong>Lighthouse Media</strong><br>
+  류선희 | 실제로 삶이 나아지는 콘텐츠<br>
+  <a href="/free.html" style="color:#1D9E75;text-decoration:none;">무료 PDF 더 받기</a>
+</div>
+
+</body>
+</html>

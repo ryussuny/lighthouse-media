@@ -1,0 +1,397 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>아침 5분으로 달라지는 하루 - Lighthouse Media</title>
+<style>@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard',sans-serif;background:#FAF8F3;color:#2a2a2a;line-height:1.8;max-width:700px;margin:0 auto;padding:40px 24px}
+.cover{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:60px 40px;border-radius:16px;text-align:center;margin-bottom:40px}
+.cover h1{font-size:28px;margin-bottom:12px}.cover p{color:#1D9E75;font-size:16px}
+.badge{display:inline-block;background:#1D9E75;color:#fff;padding:4px 12px;border-radius:8px;font-size:12px;font-weight:700;margin-bottom:16px}
+h2{color:#1D9E75;margin:32px 0 16px;font-size:22px;border-left:4px solid #1D9E75;padding-left:12px}
+h3{margin:20px 0 10px;font-size:18px}p{margin-bottom:14px}ul,ol{margin:10px 0 14px 20px}li{margin-bottom:6px}
+.btn{position:fixed;top:16px;right:16px;background:#1D9E75;color:#fff;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;font-weight:700;z-index:100}
+body{max-width:100%}}
+  /* ══════════════════════════════════════
+     소책자 스타일 PDF 인쇄 설정
+     ══════════════════════════════════════ */
+  @media print {
+    @page {
+      size: A4;
+      margin: 20mm 18mm 25mm 18mm;
+    }
+
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+    body {
+      background: #fff !important;
+      color: #222 !important;
+      font-size: 11pt !important;
+      line-height: 1.8 !important;
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* 표지: 전체 페이지 */
+    .cover, section.cover {
+      page-break-after: always !important;
+      min-height: 100vh !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      background: linear-gradient(135deg, #1a1a2e, #16213e) !important;
+      color: #fff !important;
+      padding: 60px 40px !important;
+    }
+
+    /* 본문 영역 */
+    .content, .body-content, main {
+      padding: 0 !important;
+      max-width: 100% !important;
+    }
+
+    /* 챕터 제목: 새 페이지 시작 */
+    h2 {
+      page-break-before: always !important;
+      page-break-after: avoid !important;
+      font-size: 18pt !important;
+      color: #1D9E75 !important;
+      margin-top: 0 !important;
+      padding-top: 20px !important;
+      padding-bottom: 12px !important;
+      border-left: 4px solid #1D9E75 !important;
+      padding-left: 14px !important;
+    }
+
+    /* 첫 번째 h2는 새 페이지 안함 (표지 바로 다음) */
+    .content h2:first-of-type, .body-content h2:first-of-type {
+      page-break-before: avoid !important;
+    }
+
+    h3 {
+      page-break-after: avoid !important;
+      font-size: 14pt !important;
+      color: #333 !important;
+      margin-top: 24px !important;
+      margin-bottom: 8px !important;
+    }
+
+    p {
+      font-size: 11pt !important;
+      line-height: 1.9 !important;
+      margin-bottom: 12px !important;
+      color: #333 !important;
+      orphans: 3 !important;
+      widows: 3 !important;
+      text-align: justify !important;
+      word-break: keep-all !important;
+    }
+
+    /* 리스트 */
+    ul, ol {
+      margin: 8px 0 14px 20px !important;
+      page-break-inside: avoid !important;
+    }
+    li {
+      font-size: 11pt !important;
+      line-height: 1.8 !important;
+      margin-bottom: 6px !important;
+    }
+
+    /* 인용문 */
+    blockquote {
+      border-left: 3px solid #1D9E75 !important;
+      background: #f5f5f0 !important;
+      padding: 12px 16px !important;
+      margin: 14px 0 !important;
+      font-size: 10.5pt !important;
+      page-break-inside: avoid !important;
+      border-radius: 0 !important;
+    }
+
+    /* 강조 */
+    strong { color: #1D9E75 !important; }
+    em { color: #BA7517 !important; font-style: normal !important; }
+
+    /* 코드/체크리스트 블록 */
+    pre, code {
+      background: #f0f0ea !important;
+      font-size: 10pt !important;
+      page-break-inside: avoid !important;
+    }
+
+    /* 테이블 */
+    table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      page-break-inside: avoid !important;
+      font-size: 10pt !important;
+      margin: 12px 0 !important;
+    }
+    th {
+      background: #1D9E75 !important;
+      color: #fff !important;
+      padding: 8px 10px !important;
+      font-weight: 600 !important;
+      text-align: left !important;
+    }
+    td {
+      padding: 8px 10px !important;
+      border-bottom: 1px solid #ddd !important;
+    }
+
+    /* 페이지 하단 푸터 */
+    .content::after, .body-content::after {
+      content: "Lighthouse Media | 류선희 | 실제로 삶이 나아지는 콘텐츠";
+      display: block;
+      text-align: center;
+      font-size: 8pt;
+      color: #999;
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid #ddd;
+    }
+
+    /* 숨길 요소들 */
+    .actions, .cta, .cta-box, .btn-print, .toolbar, button,
+    nav, .header-nav, .nav, .footer-cta, .follow-banner,
+    .sidebar-cta, .print-bar, .no-print {
+      display: none !important;
+    }
+
+    /* 이미지 */
+    img {
+      max-width: 100% !important;
+      page-break-inside: avoid !important;
+    }
+
+    /* 링크 URL 표시 안함 */
+    a { color: #1D9E75 !important; text-decoration: none !important; }
+    a::after { content: none !important; }
+
+    /* 카드/박스 스타일 */
+    .tip-box, .highlight-box, .note-box, .checklist-box {
+      background: #f9f9f5 !important;
+      border: 1px solid #e0e0d8 !important;
+      padding: 14px !important;
+      margin: 12px 0 !important;
+      page-break-inside: avoid !important;
+      border-radius: 6px !important;
+    }
+
+    /* 구분선 */
+    hr {
+      border: none !important;
+      border-top: 1px solid #ddd !important;
+      margin: 20px 0 !important;
+    }
+  }
+
+  /* 프린트 버튼 스타일 개선 */
+  .print-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(250,248,243,0.97);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+  }
+  .print-bar .brand-text { font-size: 13px; color: #999; font-weight: 600; }
+  .print-bar .btn-save {
+    background: #1D9E75;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    font-family: 'Pretendard', sans-serif;
+  }
+  .print-bar .btn-save:hover { background: #178a65; }
+  .print-bar .btn-home {
+    color: #999;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 8px 14px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+  }
+  .print-bar .btn-home:hover { color: #1D9E75; border-color: #1D9E75; }
+
+</style></head>
+<body>
+<div class="cover"><span class="badge">FREE EBOOK</span><h1>아침 5분으로<br>달라지는 하루</h1><p>번아웃에서 벗어나는 | 간단한 모닝 루틴</p><div style="color:#888;margin-top:20px;font-size:14px">ryusunhee | Lighthouse Media</div></div>
+# 아침 5분으로 달라지는 하루
+## 번아웃에서 벗어나는 간단한 모닝 루틴
+
+**저자: ryusunhee**
+
+---
+
+## 목차
+
+1. [왜 아침 5분이 중요할까요?](#chapter1)
+2. [마음챙김 1분: 깊게 숨쉬기](#chapter2)
+3. [감사 1분: 작은 것부터 찾아보기](#chapter3)
+4. [목표 설정 2분: 오늘 하나만](#chapter4)
+5. [에너지 충전 1분: 몸과 마음 깨우기](#chapter5)
+6. [5분 모닝 루틴 체크리스트](#checklist)
+
+---
+
+## 1. 왜 아침 5분이 중요할까요? {#chapter1}
+
+안녕하세요. 매일 반복되는 일상에 지치셨나요? 
+
+번아웃이란 단순히 일이 많아서 생기는 게 아니에요. 내가 나를 잃어버릴 때, 하루하루가 그냥 흘러갈 때 찾아오죠. 
+
+하지만 걱정하지 마세요. 거창한 변화는 필요 없어요. 
+
+**단 5분만 투자하면 됩니다.**
+
+아침은 하루의 첫 시작이에요. 이 시간을 어떻게 보내느냐에 따라 하루 전체의 에너지가 달라져요. 복잡한 루틴은 오히려 부담이 되죠. 
+
+5분이면 충분해요. 누구나 할 수 있고, 부담스럽지 않아요.
+
+---
+
+## 2. 마음챙김 1분: 깊게 숨쉬기 {#chapter2}
+
+**첫 번째 1분 - 마음챙김**
+
+눈을 뜨자마자 스마트폰을 보는 습관, 있으시죠? 오늘부터는 잠시만 미뤄보세요.
+
+**방법:**
+- 편안하게 앉거나 누워있기
+- 눈을 감고 코로 깊게 들이쉬기 (4초)
+- 잠시 숨 멈추기 (2초) 
+- 입으로 천천히 내쉬기 (6초)
+- 이것을 4-5번 반복하기
+
+이 1분 동안은 오직 호흡에만 집중해보세요. 다른 생각이 들어와도 괜찮아요. 다시 호흡으로 돌아오면 돼요.
+
+**효과:**
+마음이 차분해지고, 하루를 내 페이스로 시작할 수 있어요. 스트레스 호르몬도 줄어들고요.
+
+---
+
+## 3. 감사 1분: 작은 것부터 찾아보기 {#chapter3}
+
+**두 번째 1분 - 감사**
+
+"감사할 게 뭐 있어?" 라고 생각하실 수도 있어요. 거창한 것일 필요는 없어요.
+
+**방법:**
+- 어제 있었던 작은 좋은 일 하나
+- 지금 내 곁에 있는 소중한 것 하나  
+- 오늘 맞이할 수 있는 기회 하나
+
+예를 들어:
+- "푹 잘 수 있었던 침대가 고마워"
+- "맛있는 커피를 마실 수 있어서 감사해"
+- "건강한 몸으로 하루를 시작할 수 있어서 고마워"
+
+**효과:**
+감사는 뇌의 행복 회로를 활성화시켜요. 부정적인 생각의 악순환을 끊고, 긍정적인 에너지를 만들어내죠.
+
+---
+
+## 4. 목표 설정 2분: 오늘 하나만 {#chapter4}
+
+**세 번째와 네 번째 분 - 목표 설정**
+
+할 일이 너무 많아서 압도당하는 기분, 아시죠? 오늘은 다르게 접근해보세요.
+
+**방법:**
+- 오늘 꼭 해야 할 일들을 떠올리기
+- 그 중에서 가장 중요한 것 **하나만** 선택하기
+- 언제, 어떻게 할지 구체적으로 정하기
+- 그것을 완료했을 때의 기분 상상해보기
+
+**예시:**
+- "오후 2시에 중요한 보고서 초안 완성하기"
+- "저녁 6시에 30분 산책하기"  
+- "점심시간에 친구에게 안부 인사하기"
+
+**핵심 포인트:**
+하나에만 집중하세요. 하나를 완벽하게 해내는 것이 여러 개를 대충 하는 것보다 훨씬 만족스러워요.
+
+---
+
+## 5. 에너지 충전 1분: 몸과 마음 깨우기 {#chapter5}
+
+**마지막 1분 - 에너지 충전**
+
+이제 몸과 마음을 완전히 깨워볼 시간이에요.
+
+**방법 (하나 선택):**
+
+**A. 스트레칭**
+- 팔을 위로 쭉 뻗어 만세하기
+- 어깨를 앞뒤로 돌리기
+- 목을 좌우로 천천히 돌리기
+
+**B. 긍정 확언**  
+- "나는 오늘도 할 수 있어"
+- "나는 소중한 존재야"
+- "오늘도 좋은 하루가 될 거야"
+
+**C. 미소 짓기**
+- 거울을 보며 활짝 웃어보기
+- 억지로라도 웃어보세요
+- 웃는 표정만으로도 기분이 좋아져요
+
+**효과:**
+몸의 에너지가 깨어나고, 하루를 긍정적으로 시작할 수 있는 마음가짐이 생겨요.
+
+---
+
+## 5분 모닝 루틴 체크리스트 {#checklist}
+
+매일 아침 이 체크리스트를 활용해보세요!
+
+### 📋 나의 5분 모닝 루틴
+
+**□ 1분 - 마음챙김**
+- 깊게 호흡하기 (4-6초 호흡법)
+- 마음 차분하게 만들기
+
+**□ 1분 - 감사**  
+- 어제의 좋았던 일 하나 떠올리기
+- 지금 곁에 있는 소중한 것 인정하기
+- 오늘의 기회에 감사하기
+
+**□ 2분 - 목표 설정**
+- 오늘 할 일들 떠올리기  
+- 가장 중요한 것 하나만 선택하기
+- 언제, 어떻게 할지 구체적으로 정하기
+
+**□ 1분 - 에너지 충전**
+- 스트레칭 / 긍정 확언 / 미소 중 선택
+- 몸과 마음 깨우기
+
+---
+
+**💡 실천 팁:**
+
+1. **완벽하지 않아도 돼요** - 처음엔 2-3분만 해도 충분해요
+2. **꾸준함이 핵심** - 매일 조금씩이라도 계속해보세요  
+3. **나만의 방식** - 이 틀을 바탕으로 나에게 맞게 조정하세요
+4. **기록하기** - 달력에 체크하거나 간단히 기록해보세요
+
+---
+
+**마무리 인사**
+
+번아웃은 하루아침에 생기지 않았듯이, 회복도 시간이 필요해요. 하지만 이 작은 5분이 변화의 시작이 될 거예요.
+
+당신의 하루가 더 평화롭고 의미있게 바뀌길 응원합니다.
+
+**- ryusunhee**</body></html>

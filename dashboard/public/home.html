@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lighthouse Media — 실제로 삶이 나아지는 콘텐츠</title>
+  <meta name="description" content="지쳐있는 당신에게 빛이 되는 콘텐츠. 번아웃 회복, 마음 관리, 습관 설계 전자책 — Lighthouse Media">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --main: #1D9E75;
+      --main-dark: #167a5a;
+      --main-deeper: #0f5c42;
+      --main-light: #e8f5ef;
+      --accent: #BA7517;
+      --accent-light: #d4941f;
+      --accent-soft: #fef5e7;
+      --bg: #FAF8F3;
+      --bg-alt: #F3F0E8;
+      --text: #2C2C2C;
+      --text-light: #6B6B6B;
+      --text-muted: #9A9A9A;
+      --card-bg: #FFFFFF;
+      --shadow-xs: 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
+      --shadow: 0 4px 24px rgba(0,0,0,0.07);
+      --shadow-lg: 0 16px 56px rgba(0,0,0,0.10);
+      --shadow-xl: 0 24px 80px rgba(0,0,0,0.14);
+      --radius: 16px;
+      --radius-sm: 10px;
+      --radius-lg: 24px;
+      --transition: 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      --nav-h: 72px;
+    }
+
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+    body {
+      font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 16px;
+      overflow-x: hidden;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+    }
+
+    ::selection { background: var(--main); color: #fff; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--main); border-radius: 3px; }
+
+    /* ════════════════════════════════════════
+       NAVIGATION
+    ════════════════════════════════════════ */
+    .nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      padding: 0 24px;
+      transition: background 0.4s ease, box-shadow 0.4s ease;
+      background: transparent;
+    }
+    .nav.scrolled {
+      background: rgba(250, 248, 243, 0.92);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      box-shadow: 0 1px 24px rgba(0,0,0,0.06);
+    }
+    /* On hero section: white text */
+    .nav:not(.scrolled) .nav-logo { color: #fff; }
+    .nav:not(.scrolled) .nav-links a { color: rgba(255,255,255,0.85); }
+    .nav:not(.scrolled) .nav-links a:hover { color: #fff; }
+    .nav:not(.scrolled) .hamburger span { background: #fff; }
+
+    .nav-inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      height: var(--nav-h);
+    }
+    .nav-logo {
+      font-size: 15px; font-weight: 800; letter-spacing: 3px;
+      color: var(--main); text-decoration: none;
+      display: flex; align-items: center; gap: 10px;
+      transition: color 0.4s;
+    }
+    .nav-logo-icon {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--main), var(--main-dark));
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .nav-logo-icon svg { width: 18px; height: 18px; }
+    .nav-links { display: flex; align-items: center; gap: 36px; list-style: none; }
+    .nav-links a {
+      text-decoration: none; color: var(--text); font-size: 14px; font-weight: 500;
+      position: relative; padding: 4px 0; transition: color var(--transition);
+    }
+    .nav-links a::after {
+      content: ''; position: absolute; bottom: -2px; left: 0;
+      width: 0; height: 2px; background: var(--main); border-radius: 1px;
+      transition: width var(--transition);
+    }
+    .nav-links a:hover::after { width: 100%; }
+
+    .hamburger {
+      display: none; flex-direction: column; gap: 5px; cursor: pointer;
+      padding: 8px; z-index: 1001; background: none; border: none;
+    }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 1px; transition: all 0.3s ease; }
+    .hamburger.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+    .hamburger.active span:nth-child(2) { opacity: 0; }
+    .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+    .mobile-menu {
+      display: none; position: fixed; inset: 0;
+      background: rgba(250, 248, 243, 0.98);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      z-index: 999; flex-direction: column; align-items: center; justify-content: center; gap: 32px;
+    }
+    .mobile-menu.active { display: flex; }
+    .mobile-menu a { text-decoration: none; color: var(--text); font-size: 22px; font-weight: 600; transition: color 0.3s; }
+    .mobile-menu a:hover { color: var(--main); }
+
+    /* ════════════════════════════════════════
+       HERO
+    ════════════════════════════════════════ */
+    .hero {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden; padding: 120px 24px 80px;
+    }
+    .hero-bg {
+      position: absolute; inset: 0;
+      background: linear-gradient(160deg, #0d1b2a 0%, #1b2838 30%, #132e22 60%, #0d1b2a 100%);
+    }
+    /* Animated gradient overlay */
+    .hero-bg::after {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(29,158,117,0.12), transparent 70%),
+                  radial-gradient(ellipse 60% 50% at 80% 70%, rgba(186,117,23,0.08), transparent 60%);
+      animation: heroGlow 8s ease-in-out infinite alternate;
+    }
+    @keyframes heroGlow {
+      0% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+
+    /* Particles */
+    .hero-particles {
+      position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+    }
+    .particle {
+      position: absolute; width: 3px; height: 3px;
+      background: rgba(29,158,117,0.4); border-radius: 50%;
+      animation: particleFloat linear infinite;
+    }
+    @keyframes particleFloat {
+      0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-10vh) translateX(40px); opacity: 0; }
+    }
+
+    .hero-content {
+      position: relative; z-index: 2; text-align: center; max-width: 720px;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(29,158,117,0.12); border: 1px solid rgba(29,158,117,0.25);
+      padding: 8px 20px; border-radius: 100px;
+      font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.8);
+      margin-bottom: 32px;
+    }
+    .hero-badge-dot {
+      width: 6px; height: 6px; background: var(--main); border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.5); }
+    }
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 64px); font-weight: 800;
+      line-height: 1.3; color: #fff; margin-bottom: 20px; letter-spacing: -1px;
+    }
+    .hero h1 .highlight {
+      background: linear-gradient(135deg, #4fd1a5, var(--main));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-subtitle {
+      font-size: clamp(16px, 2.5vw, 20px); color: rgba(255,255,255,0.6);
+      font-weight: 400; margin-bottom: 16px; line-height: 1.6;
+    }
+    .hero-tags {
+      display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+    .hero-tag {
+      padding: 6px 16px; border-radius: 100px; font-size: 13px; font-weight: 500;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.7);
+    }
+    .hero-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 48px; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 16px 36px; border-radius: 12px; font-size: 15px; font-weight: 600;
+      text-decoration: none; cursor: pointer; border: none;
+      transition: all var(--transition); position: relative; overflow: hidden;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--main), var(--main-dark));
+      color: #fff; box-shadow: 0 4px 20px rgba(29,158,117,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(29,158,117,0.45); }
+    .btn-secondary {
+      background: rgba(255,255,255,0.08); color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.2);
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.35); transform: translateY(-2px); }
+    .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .btn-sm { padding: 12px 28px; font-size: 14px; }
+
+    .hero-counter {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 15px; color: rgba(255,255,255,0.5);
+    }
+    .hero-counter .num {
+      font-weight: 800; color: var(--main); font-size: 18px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hero-scroll {
+      position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      color: rgba(255,255,255,0.3); font-size: 11px; letter-spacing: 2px;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-8px); }
+    }
+    .scroll-line { width: 1px; height: 40px; background: linear-gradient(to bottom, rgba(255,255,255,0.3), transparent); }
+
+    /* ════════════════════════════════════════
+       SECTION COMMON
+    ════════════════════════════════════════ */
+    section { padding: 100px 24px; }
+    .section-inner { max-width: 1200px; margin: 0 auto; }
+    .section-label {
+      display: inline-block; font-size: 12px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase; color: var(--main);
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 42px); font-weight: 800;
+      line-height: 1.3; margin-bottom: 16px; letter-spacing: -0.5px;
+    }
+    .section-desc { font-size: 17px; color: var(--text-light); max-width: 560px; line-height: 1.7; }
+    .section-header { margin-bottom: 60px; }
+    .section-header.center { text-align: center; }
+    .section-header.center .section-desc { margin: 0 auto; }
+
+    /* Fade-in */
+    .fade-in {
+      opacity: 0; transform: translateY(32px);
+      transition: opacity 0.7s cubic-bezier(0.22,1,0.36,1), transform 0.7s cubic-bezier(0.22,1,0.36,1);
+    }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+    .fade-in-delay-1 { transition-delay: 0.1s; }
+    .fade-in-delay-2 { transition-delay: 0.2s; }
+    .fade-in-delay-3 { transition-delay: 0.3s; }
+
+    /* ════════════════════════════════════════
+       ABOUT
+    ════════════════════════════════════════ */
+    .about { background: var(--card-bg); }
+    .about-heading { text-align: center; margin-bottom: 56px; }
+    .values-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+      margin-bottom: 64px;
+    }
+    .value-card {
+      background: var(--bg); border-radius: var(--radius-lg); padding: 40px 28px;
+      text-align: center; border: 1px solid rgba(0,0,0,0.04);
+      transition: all var(--transition);
+    }
+    .value-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+    .value-icon {
+      width: 56px; height: 56px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px; font-size: 24px;
+    }
+    .value-card:nth-child(1) .value-icon { background: var(--main-light); color: var(--main); }
+    .value-card:nth-child(2) .value-icon { background: var(--accent-soft); color: var(--accent); }
+    .value-card:nth-child(3) .value-icon { background: #ededff; color: #6C63FF; }
+    .value-icon svg { width: 26px; height: 26px; }
+    .value-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .value-card p { font-size: 14px; color: var(--text-light); line-height: 1.6; }
+
+    .ceo-box {
+      display: flex; align-items: center; gap: 32px;
+      background: var(--bg); border-radius: var(--radius-lg); padding: 40px;
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    .ceo-avatar {
+      width: 100px; height: 100px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--main), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; font-weight: 800; color: #fff;
+      box-shadow: 0 12px 40px rgba(29,158,117,0.15);
+    }
+    .ceo-quote { flex: 1; }
+    .ceo-quote blockquote {
+      font-size: 16px; line-height: 1.8; color: var(--text-light);
+      margin-bottom: 16px; position: relative; padding-left: 20px;
+      border-left: 3px solid var(--main);
+    }
+    .ceo-quote .ceo-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .ceo-quote .ceo-title-text { font-size: 13px; color: var(--text-muted); }
+
+    /* ════════════════════════════════════════
+       EBOOK LIBRARY
+    ════════════════════════════════════════ */
+    .ebook-section { background: var(--bg); padding-bottom: 80px; }
+
+    .ebook-header {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      margin-bottom: 32px; flex-wrap: wrap; gap: 12px;
+    }
+    .ebook-header .section-title { margin-bottom: 0; }
+    .ebook-count {
+      font-size: 14px; color: var(--text-muted); font-weight: 500;
+      padding: 6px 16px; background: var(--card-bg); border-radius: 100px;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .ebook-count strong { color: var(--main); }
+
+    /* Filter bar */
+    .filter-bar {
+      position: sticky; top: var(--nav-h); z-index: 50;
+      background: rgba(250,248,243,0.95);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      padding: 16px 0; margin-bottom: 32px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+    .filter-bar-inner {
+      max-width: 1200px; margin: 0 auto; padding: 0 24px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .filter-row {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .filter-search {
+      flex: 1; min-width: 200px; max-width: 360px; position: relative;
+    }
+    .filter-search input {
+      width: 100%; padding: 10px 16px 10px 40px;
+      border: 1.5px solid #e0ddd6; border-radius: var(--radius-sm);
+      background: var(--card-bg); font-size: 14px; font-family: inherit;
+      outline: none; transition: border-color 0.2s; color: var(--text);
+    }
+    .filter-search input:focus { border-color: var(--main); }
+    .filter-search input::placeholder { color: var(--text-muted); }
+    .filter-search svg {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; color: var(--text-muted);
+    }
+
+    .pill-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    .pill {
+      padding: 8px 18px; border-radius: 100px; font-size: 13px; font-weight: 600;
+      border: 1.5px solid #e0ddd6; background: var(--card-bg); color: var(--text-light);
+      cursor: pointer; transition: all 0.2s; font-family: inherit; white-space: nowrap;
+    }
+    .pill:hover { border-color: var(--main); color: var(--main); }
+    .pill.active { background: var(--main); border-color: var(--main); color: #fff; }
+
+    .tag-scroll {
+      display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; padding-bottom: 2px;
+    }
+    .tag-scroll::-webkit-scrollbar { display: none; }
+    .tag-pill {
+      padding: 6px 14px; border-radius: 100px; font-size: 12px; font-weight: 500;
+      border: 1px solid #e0ddd6; background: transparent; color: var(--text-muted);
+      cursor: pointer; transition: all 0.2s; font-family: inherit; white-space: nowrap;
+    }
+    .tag-pill:hover { border-color: var(--main); color: var(--main); }
+    .tag-pill.active { background: var(--main-light); border-color: var(--main); color: var(--main); }
+
+    .sort-group { display: flex; gap: 6px; margin-left: auto; }
+    .sort-btn {
+      padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      border: 1.5px solid #e0ddd6; background: transparent; color: var(--text-muted);
+      cursor: pointer; transition: all 0.2s; font-family: inherit;
+    }
+    .sort-btn:hover { border-color: var(--main); color: var(--main); }
+    .sort-btn.active { background: var(--main); border-color: var(--main); color: #fff; }
+
+    /* Book grid */
+    .book-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+      max-width: 1200px; margin: 0 auto; padding: 0 24px;
+    }
+    .book-card {
+      background: var(--card-bg); border-radius: var(--radius); overflow: hidden;
+      box-shadow: var(--shadow-sm); transition: all 0.35s ease;
+      opacity: 0; transform: translateY(20px);
+      animation: cardAppear 0.5s ease forwards;
+    }
+    .book-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+    @keyframes cardAppear {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .book-cover {
+      height: 200px; position: relative; overflow: hidden;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      padding: 28px 20px; text-align: center;
+    }
+    .book-cover.free-cover {
+      background: linear-gradient(160deg, #0d1b2a 0%, #1a3a2f 100%);
+    }
+    .book-cover.paid-cover {
+      background: linear-gradient(160deg, #1a1208 0%, #2a1f0a 100%);
+    }
+    .book-cover::before {
+      content: ''; position: absolute; top: -40%; right: -30%;
+      width: 200px; height: 200px; border-radius: 50%;
+    }
+    .book-cover.free-cover::before { background: radial-gradient(circle, rgba(29,158,117,0.2), transparent 70%); }
+    .book-cover.paid-cover::before { background: radial-gradient(circle, rgba(186,117,23,0.2), transparent 70%); }
+    .book-cover::after {
+      content: ''; position: absolute; bottom: -30%; left: -20%;
+      width: 160px; height: 160px; border-radius: 50%;
+    }
+    .book-cover.free-cover::after { background: radial-gradient(circle, rgba(29,158,117,0.08), transparent 70%); }
+    .book-cover.paid-cover::after { background: radial-gradient(circle, rgba(186,117,23,0.08), transparent 70%); }
+
+    .book-cover-title {
+      color: #fff; font-size: 16px; font-weight: 700; line-height: 1.5;
+      position: relative; z-index: 1;
+    }
+    .book-cover-sub {
+      font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 8px;
+      position: relative; z-index: 1; line-height: 1.4;
+    }
+    .book-badge {
+      position: absolute; top: 12px; right: 12px;
+      padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 700;
+      z-index: 2; letter-spacing: 0.3px;
+    }
+    .book-badge.free { background: var(--main); color: #fff; }
+    .book-badge.paid { background: var(--accent); color: #fff; }
+
+    .book-info { padding: 18px; }
+    .book-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
+    .book-tag {
+      padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;
+      background: var(--bg); color: var(--text-muted);
+    }
+    .book-info-title {
+      font-size: 15px; font-weight: 700; line-height: 1.4; margin-bottom: 4px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .book-info-sub {
+      font-size: 12px; color: var(--text-muted); margin-bottom: 14px;
+      display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .book-price { font-size: 15px; font-weight: 800; margin-bottom: 12px; }
+    .book-price.free { color: var(--main); }
+    .book-price.paid { color: var(--accent); }
+
+    .book-actions { display: flex; flex-direction: column; gap: 6px; }
+    .book-dl-btn {
+      display: block; width: 100%; padding: 12px; border: none; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 700; cursor: pointer; text-align: center;
+      text-decoration: none; color: #fff; transition: all 0.2s; font-family: inherit;
+    }
+    .book-dl-btn.free { background: linear-gradient(135deg, var(--main), var(--main-dark)); }
+    .book-dl-btn.paid { background: linear-gradient(135deg, var(--accent), #8a570f); }
+    .book-dl-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .book-email-link {
+      text-align: center; font-size: 12px; color: var(--text-muted);
+      text-decoration: underline; cursor: pointer; transition: color 0.2s;
+    }
+    .book-email-link:hover { color: var(--main); }
+
+    /* Load more */
+    .load-more-wrap { text-align: center; margin-top: 48px; padding: 0 24px; }
+    .load-more-btn {
+      padding: 14px 48px; border-radius: var(--radius-sm);
+      font-size: 15px; font-weight: 600; border: 2px solid #e0ddd6;
+      background: var(--card-bg); color: var(--text-light); cursor: pointer;
+      transition: all var(--transition); font-family: inherit;
+    }
+    .load-more-btn:hover { border-color: var(--main); color: var(--main); }
+
+    .no-results {
+      text-align: center; padding: 80px 24px; color: var(--text-muted);
+      font-size: 16px; grid-column: 1 / -1;
+    }
+    .no-results-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+
+    /* ════════════════════════════════════════
+       NEWSLETTER
+    ════════════════════════════════════════ */
+    .newsletter {
+      background: linear-gradient(135deg, var(--main), var(--main-deeper));
+      color: #fff; text-align: center; position: relative; overflow: hidden;
+    }
+    .newsletter::before {
+      content: ''; position: absolute; top: -50%; right: -20%;
+      width: 600px; height: 600px; background: rgba(255,255,255,0.04); border-radius: 50%;
+    }
+    .newsletter::after {
+      content: ''; position: absolute; bottom: -30%; left: -10%;
+      width: 400px; height: 400px; background: rgba(255,255,255,0.03); border-radius: 50%;
+    }
+    .newsletter .section-inner { position: relative; z-index: 1; }
+    .newsletter .section-label { color: rgba(255,255,255,0.6); }
+    .newsletter .section-title { color: #fff; }
+    .newsletter .section-desc { color: rgba(255,255,255,0.8); margin: 0 auto 40px; }
+
+    .newsletter-form { display: flex; gap: 12px; max-width: 480px; margin: 0 auto 20px; }
+    .newsletter-form input {
+      flex: 1; padding: 16px 20px; border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 12px; background: rgba(255,255,255,0.1); color: #fff;
+      font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.3s;
+    }
+    .newsletter-form input::placeholder { color: rgba(255,255,255,0.5); }
+    .newsletter-form input:focus { border-color: rgba(255,255,255,0.5); }
+    .btn-white {
+      background: #fff; color: var(--main); font-weight: 700;
+      padding: 16px 32px; border-radius: 12px; border: none;
+      font-size: 15px; cursor: pointer; font-family: inherit;
+      transition: all var(--transition); white-space: nowrap;
+    }
+    .btn-white:hover { background: #f0f0f0; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+    .newsletter-message {
+      margin-top: 12px; font-size: 14px; opacity: 0; transition: opacity 0.3s;
+    }
+    .newsletter-message.show { opacity: 1; }
+    .newsletter-message.success { color: #a8ffd4; }
+    .newsletter-message.error { color: #ffa8a8; }
+
+    /* ════════════════════════════════════════
+       SOCIAL CHANNELS
+    ════════════════════════════════════════ */
+    .channels { background: var(--card-bg); }
+    .channels-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .channel-card {
+      background: var(--bg); border-radius: var(--radius-lg); padding: 36px 28px;
+      text-align: center; border: 1px solid rgba(0,0,0,0.04);
+      transition: all var(--transition);
+    }
+    .channel-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+    .channel-icon {
+      width: 56px; height: 56px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .channel-icon.yt { background: #fee2e2; color: #dc2626; }
+    .channel-icon.ig { background: linear-gradient(135deg, #fce7f3, #ede9fe); color: #c026d3; }
+    .channel-icon.fb { background: #dbeafe; color: #2563eb; }
+    .channel-icon svg { width: 26px; height: 26px; }
+    .channel-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .channel-card .channel-handle { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+    .channel-stat { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+    .channel-stat.yt-color { color: #dc2626; }
+    .channel-stat.ig-color { color: #c026d3; }
+    .channel-stat.fb-color { color: #2563eb; }
+    .channel-stat-label { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+    .channel-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 24px; border-radius: var(--radius-sm);
+      font-size: 14px; font-weight: 600; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .channel-link.yt-link { background: #fee2e2; color: #dc2626; }
+    .channel-link.ig-link { background: #fce7f3; color: #c026d3; }
+    .channel-link.fb-link { background: #dbeafe; color: #2563eb; }
+    .channel-link:hover { transform: translateY(-1px); opacity: 0.85; }
+
+    /* ════════════════════════════════════════
+       FOOTER
+    ════════════════════════════════════════ */
+    .footer { background: #111; color: rgba(255,255,255,0.6); padding: 64px 24px 40px; }
+    .footer-inner { max-width: 1200px; margin: 0 auto; }
+    .footer-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 48px; flex-wrap: wrap; gap: 40px;
+    }
+    .footer-brand h3 { font-size: 14px; font-weight: 800; letter-spacing: 2px; color: var(--main); margin-bottom: 12px; }
+    .footer-brand p { font-size: 14px; line-height: 1.6; max-width: 280px; }
+    .footer-links-wrap { display: flex; gap: 48px; }
+    .footer-col h4 { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.9); margin-bottom: 16px; letter-spacing: 0.5px; }
+    .footer-col a {
+      display: block; text-decoration: none; color: rgba(255,255,255,0.5);
+      font-size: 14px; padding: 4px 0; transition: color 0.3s;
+    }
+    .footer-col a:hover { color: var(--main); }
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.06); padding-top: 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .footer-bottom p { font-size: 13px; }
+    .footer-motto { font-style: italic; color: rgba(255,255,255,0.3); }
+
+    /* ════════════════════════════════════════
+       RESPONSIVE
+    ════════════════════════════════════════ */
+    @media (max-width: 1100px) {
+      .book-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 900px) {
+      .values-grid { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; }
+      .ceo-box { flex-direction: column; text-align: center; }
+      .ceo-quote blockquote { border-left: none; padding-left: 0; border-top: 3px solid var(--main); padding-top: 16px; }
+      .book-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+      .channels-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+      .footer-top { flex-direction: column; }
+      .footer-links-wrap { gap: 32px; }
+      .filter-search { max-width: 100%; }
+    }
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .hamburger { display: flex; }
+      section { padding: 72px 20px; }
+      .hero { padding: 100px 20px 60px; }
+      .hero-buttons { flex-direction: column; max-width: 320px; margin-left: auto; margin-right: auto; margin-bottom: 40px; }
+      .hero-buttons .btn { width: 100%; justify-content: center; }
+      .newsletter-form { flex-direction: column; }
+      .btn-white { width: 100%; }
+      .filter-row { flex-direction: column; align-items: stretch; }
+      .sort-group { margin-left: 0; }
+      .footer-bottom { flex-direction: column; text-align: center; }
+    }
+    @media (max-width: 640px) {
+      .book-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; padding: 0 20px; }
+      .filter-bar-inner { padding: 0 20px; }
+    }
+    @media (max-width: 480px) {
+      .ebook-header { padding: 0 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════ NAVIGATION ═══════ -->
+  <nav class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="/home.html" class="nav-logo">
+        <div class="nav-logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L12 6"/>
+            <path d="M12 6C12 6 6 12 6 16C6 19.3 8.7 22 12 22C15.3 22 18 19.3 18 16C18 12 12 6 12 6Z"/>
+          </svg>
+        </div>
+        LIGHTHOUSE MEDIA
+      </a>
+      <ul class="nav-links">
+        <li><a href="#about">소개</a></li>
+        <li><a href="#ebooks">전자책</a></li>
+        <li><a href="#newsletter">뉴스레터</a></li>
+        <li><a href="#channels">채널</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="메뉴 열기">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ═══════ MOBILE MENU ═══════ -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#about" onclick="closeMobile()">소개</a>
+    <a href="#ebooks" onclick="closeMobile()">전자책</a>
+    <a href="#newsletter" onclick="closeMobile()">뉴스레터</a>
+    <a href="#channels" onclick="closeMobile()">채널</a>
+  </div>
+
+  <!-- ═══════ HERO ═══════ -->
+  <section class="hero" id="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-particles" id="particles"></div>
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        실제로 삶이 나아지는 콘텐츠
+      </div>
+      <h1>지쳐있는 당신에게,<br><span class="highlight">빛이 되는 콘텐츠</span></h1>
+      <p class="hero-subtitle">번아웃과 무기력 속에서도 다시 일어설 수 있도록.<br>따뜻하고 실용적인 콘텐츠를 만듭니다.</p>
+      <div class="hero-tags">
+        <span class="hero-tag">번아웃 회복</span>
+        <span class="hero-tag">자기계발</span>
+        <span class="hero-tag">마음관리</span>
+      </div>
+      <div class="hero-buttons">
+        <a href="#ebooks" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          무료 전자책 보기
+        </a>
+        <a href="https://www.instagram.com/lighthouse_media77/" target="_blank" rel="noopener" class="btn btn-secondary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          채널 구독하기
+        </a>
+      </div>
+      <div class="hero-counter">
+        <span class="num" id="heroCount">0</span><span>명이 함께하고 있습니다</span>
+      </div>
+    </div>
+    <div class="hero-scroll">
+      <span>SCROLL</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- ═══════ ABOUT ═══════ -->
+  <section class="about" id="about">
+    <div class="section-inner">
+      <div class="about-heading fade-in">
+        <span class="section-label">About</span>
+        <h2 class="section-title">Lighthouse Media는</h2>
+        <p class="section-desc" style="margin:0 auto;">
+          삶의 방향을 잃고 지쳐있는 사람들에게 작은 빛이 되고 싶다는 마음으로 시작했습니다.
+        </p>
+      </div>
+
+      <div class="values-grid">
+        <div class="value-card fade-in">
+          <div class="value-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </div>
+          <h3>진정성</h3>
+          <p>이론이 아닌, 직접 경험하고 효과를 검증한 콘텐츠만 만듭니다.</p>
+        </div>
+        <div class="value-card fade-in fade-in-delay-1">
+          <div class="value-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h3>실용성</h3>
+          <p>읽고 나면 바로 적용할 수 있는, 오늘 당장 쓸 수 있는 방법을 담습니다.</p>
+        </div>
+        <div class="value-card fade-in fade-in-delay-2">
+          <div class="value-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <h3>지속가능성</h3>
+          <p>거창한 변화가 아닌, 매일 조금씩 나아지는 작은 습관을 설계합니다.</p>
+        </div>
+      </div>
+
+      <div class="ceo-box fade-in">
+        <div class="ceo-avatar">류</div>
+        <div class="ceo-quote">
+          <blockquote>
+            "거창한 변화가 아니라, 오늘 하루를 조금 더 괜찮게 만드는 것.
+            그것이 Lighthouse Media가 추구하는 가치입니다."
+          </blockquote>
+          <div class="ceo-name">류선희</div>
+          <div class="ceo-title-text">Lighthouse Media 대표</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ EBOOK LIBRARY ═══════ -->
+  <section class="ebook-section" id="ebooks">
+    <div class="section-inner">
+      <div class="ebook-header fade-in">
+        <div>
+          <span class="section-label">Library</span>
+          <h2 class="section-title">전자책 라이브러리</h2>
+        </div>
+        <span class="ebook-count">총 <strong id="ebookTotal">0</strong>권</span>
+      </div>
+    </div>
+
+    <!-- Sticky filter bar -->
+    <div class="filter-bar" id="filterBar">
+      <div class="filter-bar-inner">
+        <div class="filter-row">
+          <div class="filter-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="searchInput" placeholder="전자책 검색...">
+          </div>
+          <div class="pill-group" id="categoryPills">
+            <button class="pill active" data-cat="all">전체</button>
+            <button class="pill" data-cat="free">무료</button>
+            <button class="pill" data-cat="paid">유료</button>
+          </div>
+          <div class="sort-group" id="sortGroup">
+            <button class="sort-btn active" data-sort="newest">최신순</button>
+            <button class="sort-btn" data-sort="popular">인기순</button>
+          </div>
+        </div>
+        <div class="tag-scroll" id="tagScroll">
+          <button class="tag-pill active" data-tag="all">전체</button>
+          <button class="tag-pill" data-tag="번아웃">번아웃 회복</button>
+          <button class="tag-pill" data-tag="감정">감정 관리</button>
+          <button class="tag-pill" data-tag="습관">습관 설계</button>
+          <button class="tag-pill" data-tag="아침">아침 루틴</button>
+          <button class="tag-pill" data-tag="저녁">저녁 회복</button>
+          <button class="tag-pill" data-tag="에너지">에너지 관리</button>
+          <button class="tag-pill" data-tag="마음">마음관리</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Book grid -->
+    <div class="book-grid" id="bookGrid"></div>
+
+    <!-- Load more -->
+    <div class="load-more-wrap" id="loadMoreWrap" style="display:none;">
+      <button class="load-more-btn" id="loadMoreBtn">더 보기</button>
+    </div>
+  </section>
+
+  <!-- ═══════ NEWSLETTER ═══════ -->
+  <section class="newsletter" id="newsletter">
+    <div class="section-inner">
+      <div class="section-header center fade-in">
+        <span class="section-label">Newsletter</span>
+        <h2 class="section-title">매주 일요일, 마음을 채우는 뉴스레터</h2>
+        <p class="section-desc">
+          한 주를 시작하기 전, 마음을 따뜻하게 채워줄 이야기를 보내드립니다.
+        </p>
+      </div>
+      <form class="newsletter-form fade-in" id="newsletterForm">
+        <input type="email" id="nlEmail" placeholder="이메일 주소를 입력해주세요" required>
+        <button type="submit" class="btn-white">구독하기</button>
+      </form>
+      <p class="newsletter-message" id="nlMessage"></p>
+    </div>
+  </section>
+
+  <!-- ═══════ SOCIAL CHANNELS ═══════ -->
+  <section class="channels" id="channels">
+    <div class="section-inner">
+      <div class="section-header center fade-in">
+        <span class="section-label">Follow Us</span>
+        <h2 class="section-title">우리와 함께하세요</h2>
+        <p class="section-desc">다양한 채널에서 Lighthouse Media의 콘텐츠를 만나보세요.</p>
+      </div>
+      <div class="channels-grid">
+        <div class="channel-card fade-in">
+          <div class="channel-icon yt">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+          </div>
+          <h3>YouTube</h3>
+          <p class="channel-handle">Lighthouse Media</p>
+          <div class="channel-stat yt-color" id="ytCount">-</div>
+          <div class="channel-stat-label">구독자</div>
+          <a href="https://youtube.com" target="_blank" rel="noopener" class="channel-link yt-link">구독하기</a>
+        </div>
+        <div class="channel-card fade-in fade-in-delay-1">
+          <div class="channel-icon ig">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          </div>
+          <h3>Instagram</h3>
+          <p class="channel-handle">@lighthouse_media77</p>
+          <div class="channel-stat ig-color" id="igCount">-</div>
+          <div class="channel-stat-label">팔로워</div>
+          <a href="https://www.instagram.com/lighthouse_media77/" target="_blank" rel="noopener" class="channel-link ig-link">팔로우</a>
+        </div>
+        <div class="channel-card fade-in fade-in-delay-2">
+          <div class="channel-icon fb">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          </div>
+          <h3>Facebook</h3>
+          <p class="channel-handle">Lighthouse Media</p>
+          <div class="channel-stat fb-color" id="fbCount">-</div>
+          <div class="channel-stat-label">팬</div>
+          <a href="https://facebook.com" target="_blank" rel="noopener" class="channel-link fb-link">좋아요</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ FOOTER ═══════ -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <h3>LIGHTHOUSE MEDIA</h3>
+          <p>실제로 삶이 나아지는 콘텐츠를 만듭니다. 지쳐있는 당신에게 빛이 되겠습니다.</p>
+        </div>
+        <div class="footer-links-wrap">
+          <div class="footer-col">
+            <h4>콘텐츠</h4>
+            <a href="#ebooks">전자책</a>
+            <a href="/shop.html">판매페이지</a>
+          </div>
+          <div class="footer-col">
+            <h4>회사</h4>
+            <a href="#about">소개</a>
+            <a href="#channels">채널</a>
+            <a href="#newsletter">뉴스레터</a>
+          </div>
+          <div class="footer-col">
+            <h4>소셜</h4>
+            <a href="https://www.instagram.com/lighthouse_media77/" target="_blank" rel="noopener">@lighthouse_media77</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>Lighthouse Media | 류선희</p>
+        <p class="footer-motto">"실제로 삶이 나아지는 콘텐츠"</p>
+        <p>&copy; 2026 Lighthouse Media. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* ════════════════════════════════════════
+       STATE
+    ════════════════════════════════════════ */
+    let allBooks = [];
+    let filteredBooks = [];
+    let visibleCount = 12;
+    const BOOKS_PER_PAGE = 8;
+
+    let currentCategory = 'all';
+    let currentTag = 'all';
+    let currentSort = 'newest';
+    let searchQuery = '';
+
+    /* Tag keywords for auto-tagging */
+    const TAG_MAP = {
+      '번아웃': ['번아웃', '피로', '지친', '지치', '회복', '리셋', '에너지', '충전'],
+      '감정': ['감정', '마음', '심리', '불안', '스트레스', '다독', '위로', '짐', '정리'],
+      '습관': ['습관', '루틴', '시스템', '설계', '계획', '목표', '실천'],
+      '아침': ['아침', '새벽', '모닝', '기상', '출근'],
+      '저녁': ['저녁', '퇴근', '힐링', '수면', '밤'],
+      '에너지': ['에너지', '뱅킹', '생산성', '집중', '체력', '컨디션'],
+      '마음': ['마음', '명상', '감사', '긍정', '치유', '내면']
+    };
+
+    function autoTag(title) {
+      const tags = [];
+      const t = title.replace(/\n/g, ' ');
+      for (const [tag, keywords] of Object.entries(TAG_MAP)) {
+        if (keywords.some(k => t.includes(k))) tags.push(tag);
+      }
+      if (tags.length === 0) tags.push('마음');
+      return tags;
+    }
+
+    /* ════════════════════════════════════════
+       NAVIGATION
+    ════════════════════════════════════════ */
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 60);
+    }, { passive: true });
+
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobileMenu');
+    hamburger.addEventListener('click', () => {
+      hamburger.classList.toggle('active');
+      mobileMenu.classList.toggle('active');
+      document.body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : '';
+    });
+    function closeMobile() {
+      hamburger.classList.remove('active');
+      mobileMenu.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    /* Smooth scroll */
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', function(e) {
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          e.preventDefault();
+          const top = target.getBoundingClientRect().top + window.scrollY - 72;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+      });
+    });
+
+    /* ════════════════════════════════════════
+       PARTICLES
+    ════════════════════════════════════════ */
+    (function initParticles() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 20; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDuration = (8 + Math.random() * 12) + 's';
+        p.style.animationDelay = Math.random() * 10 + 's';
+        p.style.width = p.style.height = (2 + Math.random() * 3) + 'px';
+        p.style.opacity = 0.2 + Math.random() * 0.4;
+        container.appendChild(p);
+      }
+    })();
+
+    /* ════════════════════════════════════════
+       INTERSECTION OBSERVER
+    ════════════════════════════════════════ */
+    const fadeObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          fadeObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
+
+    /* ════════════════════════════════════════
+       ANIMATED COUNTER
+    ════════════════════════════════════════ */
+    function animateCounter(el, target, duration) {
+      const startTime = performance.now();
+      function update(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(target * eased).toLocaleString();
+        if (progress < 1) requestAnimationFrame(update);
+      }
+      requestAnimationFrame(update);
+    }
+
+    /* ════════════════════════════════════════
+       FETCH DATA
+    ════════════════════════════════════════ */
+
+    /* Stats → hero counter */
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        const total = data.leads?.total || 0;
+        animateCounter(document.getElementById('heroCount'), total, 2000);
+      } catch(e) {
+        document.getElementById('heroCount').textContent = '-';
+      }
+    }
+
+    /* Channels */
+    async function fetchChannels() {
+      try {
+        const res = await fetch('/api/channels');
+        const data = await res.json();
+        const yt = document.getElementById('ytCount');
+        const ig = document.getElementById('igCount');
+        const fb = document.getElementById('fbCount');
+
+        if (data.youtube) {
+          yt.textContent = (data.youtube.subscribers || 0).toLocaleString();
+        } else { yt.textContent = '0'; }
+
+        if (data.instagram) {
+          ig.textContent = (data.instagram.followers || 0).toLocaleString();
+        } else { ig.textContent = '0'; }
+
+        if (data.facebook) {
+          fb.textContent = (data.facebook.fans || data.facebook.followers || 0).toLocaleString();
+        } else { fb.textContent = '0'; }
+      } catch(e) {
+        console.log('Channels fetch failed', e);
+      }
+    }
+
+    /* Ebooks */
+    async function fetchEbooks() {
+      try {
+        const res = await fetch('/api/ebooks');
+        const data = await res.json();
+        allBooks = data.map((b, i) => ({
+          ...b,
+          tags: autoTag(b.title || ''),
+          index: i,
+          titleClean: (b.title || '').replace(/\n/g, ' ')
+        }));
+        document.getElementById('ebookTotal').textContent = allBooks.length;
+        applyFilters();
+      } catch(e) {
+        console.log('Ebooks fetch failed', e);
+        document.getElementById('bookGrid').innerHTML = '<div class="no-results"><div class="no-results-icon">&#128218;</div>전자책을 불러올 수 없습니다.</div>';
+      }
+    }
+
+    /* ════════════════════════════════════════
+       FILTER LOGIC
+    ════════════════════════════════════════ */
+    function applyFilters() {
+      let books = [...allBooks];
+
+      /* Category */
+      if (currentCategory !== 'all') {
+        books = books.filter(b => b.type === currentCategory);
+      }
+
+      /* Tag */
+      if (currentTag !== 'all') {
+        books = books.filter(b => b.tags.includes(currentTag));
+      }
+
+      /* Search */
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        books = books.filter(b =>
+          b.titleClean.toLowerCase().includes(q) ||
+          (b.subtitle || '').toLowerCase().includes(q)
+        );
+      }
+
+      /* Sort */
+      if (currentSort === 'popular') {
+        /* Paid first as "popular", then by index */
+        books.sort((a, b) => {
+          if (a.type === 'paid' && b.type !== 'paid') return -1;
+          if (a.type !== 'paid' && b.type === 'paid') return 1;
+          return a.index - b.index;
+        });
+      }
+      /* newest = default order (already reverse-chronological from API) */
+
+      filteredBooks = books;
+      visibleCount = BOOKS_PER_PAGE;
+      renderBooks();
+    }
+
+    function renderBooks() {
+      const grid = document.getElementById('bookGrid');
+      const visible = filteredBooks.slice(0, visibleCount);
+
+      if (visible.length === 0) {
+        grid.innerHTML = '<div class="no-results"><div class="no-results-icon">&#128269;</div>검색 결과가 없습니다.</div>';
+        document.getElementById('loadMoreWrap').style.display = 'none';
+        return;
+      }
+
+      grid.innerHTML = visible.map((b, i) => {
+        const isFree = b.type === 'free';
+        const title = (b.title || '').replace(/\n/g, '<br>');
+        const titleClean = b.titleClean;
+        const subtitle = (b.subtitle || '').replace(/\n/g, ' ');
+        const priceText = isFree ? '무료' : ((b.price || 7900).toLocaleString() + '원');
+        const btnText = isFree ? '무료 다운로드' : priceText;
+        const coverClass = isFree ? 'free-cover' : 'paid-cover';
+        const badgeClass = isFree ? 'free' : 'paid';
+        const delay = Math.min(i * 0.06, 0.5);
+
+        return `
+          <div class="book-card" style="animation-delay:${delay}s">
+            <div class="book-cover ${coverClass}">
+              <span class="book-badge ${badgeClass}">${isFree ? 'FREE' : 'PAID'}</span>
+              <div class="book-cover-title">${title}</div>
+              ${subtitle ? `<div class="book-cover-sub">${subtitle}</div>` : ''}
+            </div>
+            <div class="book-info">
+              <div class="book-tags">${b.tags.map(t => `<span class="book-tag">${t}</span>`).join('')}</div>
+              <div class="book-info-title">${titleClean}</div>
+              ${subtitle ? `<div class="book-info-sub">${subtitle}</div>` : ''}
+              <div class="book-price ${badgeClass}">${priceText}</div>
+              <div class="book-actions">
+                <a href="${b.url || '#'}" target="_blank" rel="noopener" class="book-dl-btn ${badgeClass}">${btnText}</a>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      /* Load more */
+      const loadMoreWrap = document.getElementById('loadMoreWrap');
+      loadMoreWrap.style.display = visibleCount < filteredBooks.length ? 'block' : 'none';
+    }
+
+    /* ════════════════════════════════════════
+       FILTER EVENT LISTENERS
+    ════════════════════════════════════════ */
+
+    /* Category pills */
+    document.querySelectorAll('#categoryPills .pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#categoryPills .pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentCategory = btn.dataset.cat;
+        applyFilters();
+      });
+    });
+
+    /* Tag pills */
+    document.querySelectorAll('#tagScroll .tag-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#tagScroll .tag-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTag = btn.dataset.tag;
+        applyFilters();
+      });
+    });
+
+    /* Sort */
+    document.querySelectorAll('#sortGroup .sort-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#sortGroup .sort-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentSort = btn.dataset.sort;
+        applyFilters();
+      });
+    });
+
+    /* Search (debounced) */
+    let searchTimeout;
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        searchQuery = e.target.value.trim();
+        applyFilters();
+      }, 250);
+    });
+
+    /* Load more */
+    document.getElementById('loadMoreBtn').addEventListener('click', () => {
+      visibleCount += BOOKS_PER_PAGE;
+      renderBooks();
+    });
+
+    /* ════════════════════════════════════════
+       NEWSLETTER
+    ════════════════════════════════════════ */
+    document.getElementById('newsletterForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('nlEmail').value.trim();
+      const msgEl = document.getElementById('nlMessage');
+      if (!email) return;
+
+      try {
+        const res = await fetch('/api/lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: '뉴스레터', email })
+        });
+        if (res.ok) {
+          msgEl.textContent = '구독해주셔서 감사합니다! 매주 일요일에 만나요.';
+          msgEl.className = 'newsletter-message show success';
+          document.getElementById('nlEmail').value = '';
+        } else { throw new Error(); }
+      } catch(err) {
+        msgEl.textContent = '잠시 후 다시 시도해주세요.';
+        msgEl.className = 'newsletter-message show error';
+      }
+      setTimeout(() => msgEl.classList.remove('show'), 5000);
+    });
+
+    /* ════════════════════════════════════════
+       INIT
+    ════════════════════════════════════════ */
+    fetchStats();
+    fetchChannels();
+    fetchEbooks();
+
+    /* Auto-refresh ebooks every 60s */
+    setInterval(fetchEbooks, 60000);
+  </script>
+
+</body>
+</html>

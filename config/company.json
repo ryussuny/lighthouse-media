@@ -1,0 +1,42 @@
+{
+  "name": "Lighthouse Media",
+  "ceo": "류선희",
+  "mission": "실제로 삶이 나아지는 콘텐츠",
+  "target": {
+    "age": "25-44",
+    "occupation": "직장인",
+    "interests": ["번아웃", "자기계발", "마음관리"],
+    "pain_points": ["만성 피로", "방향 상실", "관계 스트레스", "동기 부족"]
+  },
+  "tone": {
+    "style": "따뜻하고 지적이며 실용적",
+    "banned": ["과장", "선동", "꿀팁", "레전드", "완벽한", "놓치면 후회", "인생이 바뀝니다"]
+  },
+  "revenue_goal": {
+    "monthly": 5000000,
+    "breakdown": {
+      "youtube_adsense": 1000000,
+      "instagram_sponsorship": 1500000,
+      "ebook_sales": 2000000,
+      "newsletter_affiliate": 500000
+    }
+  },
+  "channels": {
+    "youtube": { "upload_days": ["화", "목", "토"], "upload_time": "19:00" },
+    "instagram": { "feed_per_week": 4, "reels_per_week": 3, "stories_per_day": 3 },
+    "newsletter": { "day": "일", "time": "20:00" },
+    "threads": { "posts_per_day": 2 }
+  },
+  "design_system": {
+    "colors": { "main": "#1D9E75", "accent": "#BA7517", "background": "#FAF8F3" },
+    "fonts": { "title": "Pretendard Bold", "body": "Pretendard Regular" },
+    "card_size": "1080x1350"
+  },
+  "products": [
+    { "tier": 0, "name": "무료 리드마그넷", "price": 0, "format": "7페이지 PDF" },
+    { "tier": 1, "name": "전자책", "price": 14900, "format": "50-80페이지" },
+    { "tier": 2, "name": "전자책+워크북", "price": 29900, "format": "전자책+실습" },
+    { "tier": 3, "name": "온라인 강의", "price": 149000, "format": "영상 강의" },
+    { "tier": 4, "name": "멤버십", "price": 19900, "format": "월간 구독" }
+  ]
+}

@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lighthouse Media - Book Covers</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0a14;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      overflow-x: hidden;
+    }
+
+    /* ── Page Header ── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 70px;
+    }
+
+    .page-header .brand {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.35);
+      margin-bottom: 16px;
+    }
+
+    .page-header h1 {
+      font-size: 32px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    .page-header h1 span {
+      background: linear-gradient(135deg, #1D9E75, #BA7517);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── Books Container ── */
+    .books-container {
+      display: flex;
+      gap: 100px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .book-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+    }
+
+    /* ── 3D Book Wrapper ── */
+    .book-3d {
+      perspective: 1200px;
+      cursor: pointer;
+    }
+
+    .book-3d:hover .book-inner {
+      transform: rotateY(-25deg) rotateX(2deg);
+    }
+
+    .book-inner {
+      position: relative;
+      width: 400px;
+      height: 560px;
+      transform-style: preserve-3d;
+      transform: rotateY(-18deg) rotateX(3deg);
+      transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    /* ── Book Front Face ── */
+    .book-front {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 4px 16px 16px 4px;
+      transform: translateZ(18px);
+      overflow: hidden;
+      box-shadow:
+        5px 5px 20px rgba(0, 0, 0, 0.5),
+        0 0 60px rgba(0, 0, 0, 0.3);
+    }
+
+    /* ── Book Spine ── */
+    .book-spine {
+      position: absolute;
+      width: 36px;
+      height: 100%;
+      left: 0;
+      transform: rotateY(90deg) translateZ(0px) translateX(-18px);
+      border-radius: 4px 0 0 4px;
+    }
+
+    /* ── Book Side (Pages) ── */
+    .book-pages-edge {
+      position: absolute;
+      width: 36px;
+      height: calc(100% - 8px);
+      top: 4px;
+      right: -2px;
+      transform: rotateY(90deg) translateZ(380px) translateX(-18px);
+      background: linear-gradient(
+        180deg,
+        #f8f4ee 0%,
+        #e8e2d8 2%,
+        #f5f1eb 4%,
+        #ece6dc 6%,
+        #f5f1eb 8%,
+        #e8e2d8 10%,
+        #f5f1eb 100%
+      );
+      border-radius: 0 2px 2px 0;
+    }
+
+    /* ── Book Bottom Shadow ── */
+    .book-shadow {
+      position: absolute;
+      width: 380px;
+      height: 40px;
+      bottom: -30px;
+      left: 10px;
+      background: radial-gradient(ellipse, rgba(0,0,0,0.4) 0%, transparent 70%);
+      transform: rotateX(90deg) translateZ(-20px);
+      filter: blur(8px);
+    }
+
+    /* ══════════════════════════════════════
+       BOOK COVER: FREE LEAD MAGNET
+    ══════════════════════════════════════ */
+    .book-cover-free {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(160deg, #0d2b22 0%, #0a1f18 30%, #071912 70%, #040f0b 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .book-cover-free::before {
+      content: '';
+      position: absolute;
+      top: -60%;
+      right: -40%;
+      width: 120%;
+      height: 120%;
+      background: radial-gradient(circle, rgba(29, 158, 117, 0.12) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .book-cover-free::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(to top, rgba(29, 158, 117, 0.06) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .book-cover-free .cover-top {
+      padding: 40px 36px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .book-cover-free .badge {
+      display: inline-block;
+      background: #1D9E75;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 100px;
+      margin-bottom: 30px;
+    }
+
+    .book-cover-free .cover-title {
+      font-size: 30px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.35;
+      letter-spacing: -0.5px;
+      margin-bottom: 18px;
+    }
+
+    .book-cover-free .cover-title em {
+      font-style: normal;
+      color: #1D9E75;
+    }
+
+    .book-cover-free .cover-subtitle {
+      font-size: 14px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.5);
+      line-height: 1.6;
+    }
+
+    /* Decorative element */
+    .book-cover-free .cover-deco {
+      position: relative;
+      z-index: 1;
+      padding: 0 36px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .book-cover-free .deco-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, rgba(29, 158, 117, 0.4), transparent);
+    }
+
+    .book-cover-free .deco-icon {
+      width: 48px;
+      height: 48px;
+      border: 2px solid rgba(29, 158, 117, 0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .book-cover-free .cover-bottom {
+      padding: 0 36px 36px;
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid rgba(29, 158, 117, 0.15);
+      margin: 0 36px;
+      padding: 24px 0 36px;
+    }
+
+    .book-cover-free .cover-bottom .author {
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 6px;
+    }
+
+    .book-cover-free .cover-bottom .brand-name {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(29, 158, 117, 0.5);
+    }
+
+    .book-cover-free .page-count {
+      position: absolute;
+      bottom: 36px;
+      right: 36px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.3);
+      font-weight: 500;
+    }
+
+    /* Spine for free book */
+    .book-item:nth-child(1) .book-spine {
+      background: linear-gradient(180deg, #1D9E75, #147a5a);
+    }
+
+    /* ══════════════════════════════════════
+       BOOK COVER: PAID EBOOK
+    ══════════════════════════════════════ */
+    .book-cover-paid {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(160deg, #141428 0%, #0f0f24 30%, #0b0b1e 70%, #080816 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .book-cover-paid::before {
+      content: '';
+      position: absolute;
+      top: -30%;
+      left: -30%;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(186, 117, 23, 0.1) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .book-cover-paid::after {
+      content: '';
+      position: absolute;
+      top: 60px;
+      right: -80px;
+      width: 300px;
+      height: 300px;
+      border: 1px solid rgba(186, 117, 23, 0.08);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .book-cover-paid .cover-accent-bar {
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(to right, #BA7517, #d4952e, #BA7517);
+    }
+
+    .book-cover-paid .cover-top {
+      padding: 36px 36px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .book-cover-paid .badge {
+      display: inline-block;
+      background: rgba(186, 117, 23, 0.15);
+      border: 1px solid rgba(186, 117, 23, 0.3);
+      color: #d4952e;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 100px;
+      margin-bottom: 28px;
+    }
+
+    .book-cover-paid .cover-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.4;
+      letter-spacing: -0.5px;
+      margin-bottom: 18px;
+    }
+
+    .book-cover-paid .cover-title em {
+      font-style: normal;
+      color: #d4952e;
+    }
+
+    .book-cover-paid .cover-subtitle {
+      font-size: 13.5px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.45);
+      line-height: 1.7;
+    }
+
+    /* Decorative divider */
+    .book-cover-paid .cover-divider {
+      position: relative;
+      z-index: 1;
+      padding: 0 36px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .book-cover-paid .divider-line {
+      flex: 1;
+      height: 1px;
+      background: rgba(186, 117, 23, 0.2);
+    }
+
+    .book-cover-paid .divider-diamond {
+      width: 10px;
+      height: 10px;
+      border: 1.5px solid rgba(186, 117, 23, 0.4);
+      transform: rotate(45deg);
+    }
+
+    .book-cover-paid .cover-bottom {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid rgba(186, 117, 23, 0.12);
+      margin: 0 36px;
+      padding: 24px 0 36px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .book-cover-paid .cover-bottom .author {
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 6px;
+    }
+
+    .book-cover-paid .cover-bottom .brand-name {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: rgba(186, 117, 23, 0.45);
+    }
+
+    .book-cover-paid .cover-bottom .price-tag {
+      font-size: 13px;
+      font-weight: 700;
+      color: #d4952e;
+      text-align: right;
+    }
+
+    .book-cover-paid .cover-bottom .price-tag .amount {
+      font-size: 20px;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .book-cover-paid .page-count {
+      position: absolute;
+      top: 46px;
+      right: 36px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.2);
+      font-weight: 500;
+      letter-spacing: 1px;
+      z-index: 2;
+    }
+
+    /* Spine for paid book */
+    .book-item:nth-child(2) .book-spine {
+      background: linear-gradient(180deg, #BA7517, #8a5710);
+    }
+
+    /* ── CTA Buttons ── */
+    .cta-section {
+      text-align: center;
+    }
+
+    .cta-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.3);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 16px 40px;
+      border-radius: 14px;
+      font-family: 'Pretendard', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+      border: none;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn-free {
+      background: linear-gradient(135deg, #1D9E75, #17805e);
+      color: #fff;
+      box-shadow:
+        0 4px 20px rgba(29, 158, 117, 0.3),
+        0 0 0 1px rgba(29, 158, 117, 0.2);
+    }
+
+    .btn-free:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 30px rgba(29, 158, 117, 0.4),
+        0 0 0 1px rgba(29, 158, 117, 0.3);
+    }
+
+    .btn-paid {
+      background: linear-gradient(135deg, #BA7517, #a06612);
+      color: #fff;
+      box-shadow:
+        0 4px 20px rgba(186, 117, 23, 0.3),
+        0 0 0 1px rgba(186, 117, 23, 0.2);
+    }
+
+    .btn-paid:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 8px 30px rgba(186, 117, 23, 0.4),
+        0 0 0 1px rgba(186, 117, 23, 0.3);
+    }
+
+    .btn .btn-icon {
+      font-size: 18px;
+    }
+
+    .btn .btn-sub {
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0.8;
+      margin-left: 4px;
+    }
+
+    /* ── Floating particles ── */
+    .particle {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: float linear infinite;
+      opacity: 0;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(100vh) scale(0); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { transform: translateY(-20vh) scale(1); opacity: 0; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 960px) {
+      .books-container {
+        gap: 60px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .book-inner {
+        width: 300px;
+        height: 420px;
+      }
+
+      .book-cover-free .cover-title,
+      .book-cover-paid .cover-title {
+        font-size: 22px;
+      }
+
+      .book-cover-free .cover-top,
+      .book-cover-paid .cover-top {
+        padding: 28px 24px 0;
+      }
+
+      .book-cover-free .cover-bottom,
+      .book-cover-paid .cover-bottom {
+        margin: 0 24px;
+        padding: 18px 0 28px;
+      }
+
+      .books-container {
+        gap: 50px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Particles -->
+  <div class="particle" style="width:3px;height:3px;background:rgba(29,158,117,0.4);left:10%;animation-duration:12s;animation-delay:0s;"></div>
+  <div class="particle" style="width:2px;height:2px;background:rgba(186,117,23,0.4);left:30%;animation-duration:16s;animation-delay:2s;"></div>
+  <div class="particle" style="width:4px;height:4px;background:rgba(29,158,117,0.3);left:55%;animation-duration:14s;animation-delay:4s;"></div>
+  <div class="particle" style="width:2px;height:2px;background:rgba(186,117,23,0.3);left:75%;animation-duration:18s;animation-delay:1s;"></div>
+  <div class="particle" style="width:3px;height:3px;background:rgba(29,158,117,0.3);left:90%;animation-duration:15s;animation-delay:6s;"></div>
+
+  <!-- Header -->
+  <header class="page-header">
+    <div class="brand">Lighthouse Media</div>
+    <h1><span>Our Books</span></h1>
+  </header>
+
+  <!-- Books -->
+  <div class="books-container">
+
+    <!-- ═══ Book 1: Free Lead Magnet ═══ -->
+    <div class="book-item">
+      <div class="book-3d">
+        <div class="book-inner">
+          <div class="book-front">
+            <div class="book-cover-free">
+              <div class="cover-top">
+                <div class="badge">Free Guide</div>
+                <h2 class="cover-title">지친 하루를<br><em>3분 만에</em><br>리셋하는 법</h2>
+                <p class="cover-subtitle">바쁜 직장인을 위한<br>마이크로 회복 가이드</p>
+              </div>
+              <div class="cover-deco">
+                <div class="deco-line"></div>
+                <div class="deco-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(29,158,117,0.6)" stroke-width="1.5">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                  </svg>
+                </div>
+                <div class="deco-line" style="background:linear-gradient(to left, rgba(29,158,117,0.4), transparent);"></div>
+              </div>
+              <div class="cover-bottom">
+                <div class="author">류선희</div>
+                <div class="brand-name">Lighthouse Media</div>
+              </div>
+              <div class="page-count">7 pages</div>
+            </div>
+          </div>
+          <div class="book-spine"></div>
+          <div class="book-pages-edge"></div>
+          <div class="book-shadow"></div>
+        </div>
+      </div>
+      <div class="cta-section">
+        <div class="cta-label">무료 다운로드</div>
+        <a href="/free.html" class="btn btn-free">
+          <span class="btn-icon">&#10549;</span>
+          다운로드
+        </a>
+      </div>
+    </div>
+
+    <!-- ═══ Book 2: Paid Ebook ═══ -->
+    <div class="book-item">
+      <div class="book-3d">
+        <div class="book-inner">
+          <div class="book-front">
+            <div class="book-cover-paid">
+              <div class="cover-accent-bar"></div>
+              <div class="cover-top">
+                <div class="badge">Premium Ebook</div>
+                <h2 class="cover-title"><em>월요일이<br>기다려지는</em><br>사람들의 비밀</h2>
+                <p class="cover-subtitle">번아웃 없이 일하는 직장인의<br>마인드셋과 루틴</p>
+              </div>
+              <div class="cover-divider">
+                <div class="divider-line"></div>
+                <div class="divider-diamond"></div>
+                <div class="divider-line"></div>
+              </div>
+              <div class="cover-bottom">
+                <div>
+                  <div class="author">류선희</div>
+                  <div class="brand-name">Lighthouse Media</div>
+                </div>
+                <div class="price-tag">
+                  정가
+                  <span class="amount">14,900원</span>
+                </div>
+              </div>
+              <div class="page-count">60 pages</div>
+            </div>
+          </div>
+          <div class="book-spine"></div>
+          <div class="book-pages-edge"></div>
+          <div class="book-shadow"></div>
+        </div>
+      </div>
+      <div class="cta-section">
+        <div class="cta-label">지금 구매하기</div>
+        <a href="/shop.html" class="btn btn-paid">
+          구매하기
+          <span class="btn-sub">14,900원</span>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

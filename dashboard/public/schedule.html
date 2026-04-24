@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lighthouse Media — 스케줄러</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard',sans-serif;background:#080810;color:#e0e0e0;min-height:100vh}
+.header{background:linear-gradient(135deg,#0a0a14,#101020);padding:16px 24px;border-bottom:1px solid rgba(29,158,117,0.2);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.header h1{font-size:17px;color:#1D9E75;display:flex;align-items:center;gap:8px}
+.live{width:8px;height:8px;background:#1D9E75;border-radius:50%;animation:p 1.5s infinite;box-shadow:0 0 8px #1D9E75}
+@keyframes p{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.4}}
+.container{max-width:1100px;margin:0 auto;padding:24px}
+
+/* 현재 시간 */
+.now-bar{background:linear-gradient(135deg,rgba(29,158,117,0.12),rgba(186,117,23,0.08));border:1px solid rgba(29,158,117,0.2);border-radius:14px;padding:24px;margin-bottom:24px;text-align:center}
+.now-time{font-size:48px;font-weight:800;color:#1D9E75;font-variant-numeric:tabular-nums}
+.now-date{font-size:15px;color:#888;margin-top:4px}
+.now-next{margin-top:14px;font-size:14px;color:#BA7517}
+
+/* 타임라인 */
+.timeline{position:relative;padding-left:40px}
+.timeline::before{content:'';position:absolute;left:15px;top:0;bottom:0;width:2px;background:rgba(29,158,117,0.15)}
+.time-block{margin-bottom:20px;position:relative}
+.time-dot{position:absolute;left:-33px;top:6px;width:12px;height:12px;border-radius:50%;border:2px solid #1D9E75;background:#080810}
+.time-dot.active{background:#1D9E75;box-shadow:0 0 10px rgba(29,158,117,0.5)}
+.time-dot.done{background:#333;border-color:#333}
+.time-dot.upcoming{border-color:#BA7517}
+.time-label{font-size:12px;color:#555;font-weight:600;margin-bottom:6px;letter-spacing:0.5px}
+
+.task-card{background:rgba(12,12,22,0.9);border:1px solid rgba(255,255,255,0.05);border-radius:10px;padding:14px 18px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;transition:all 0.2s}
+.task-card:hover{border-color:rgba(29,158,117,0.3);transform:translateX(4px)}
+.task-card.running{border-color:#1D9E75;background:rgba(29,158,117,0.06)}
+.task-card.done{opacity:0.5}
+.task-left{display:flex;align-items:center;gap:12px}
+.task-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.task-name{font-size:14px;font-weight:600}
+.task-desc{font-size:11px;color:#666;margin-top:2px}
+.task-right{text-align:right}
+.task-time{font-size:13px;font-weight:700;color:#1D9E75}
+.task-status{font-size:10px;margin-top:2px}
+.status-done{color:#333}
+.status-running{color:#1D9E75}
+.status-upcoming{color:#BA7517}
+.status-waiting{color:#555}
+
+/* 주간 캘린더 */
+.week-section{margin-top:30px}
+.week-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:14px}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.day-col{background:rgba(12,12,22,0.9);border:1px solid rgba(255,255,255,0.04);border-radius:10px;padding:12px;min-height:200px}
+.day-col.today{border-color:rgba(29,158,117,0.4);background:rgba(29,158,117,0.04)}
+.day-header{text-align:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.day-name{font-size:11px;color:#666;font-weight:600}
+.day-num{font-size:20px;font-weight:800;color:#fff;margin-top:2px}
+.day-col.today .day-num{color:#1D9E75}
+.day-task{font-size:10px;padding:4px 6px;margin-bottom:4px;border-radius:4px;border-left:2px solid}
+.dt-research{border-color:#1abc9c;background:rgba(26,188,156,0.08);color:#1abc9c}
+.dt-content{border-color:#3498db;background:rgba(52,152,219,0.08);color:#3498db}
+.dt-upload{border-color:#BA7517;background:rgba(186,117,23,0.08);color:#BA7517}
+.dt-bible{border-color:#9b59b6;background:rgba(155,89,182,0.08);color:#9b59b6}
+.dt-youtube{border-color:#e74c3c;background:rgba(231,76,60,0.08);color:#e74c3c}
+
+/* 내보내기 버튼 */
+.export-bar{display:flex;gap:8px;margin-top:20px;justify-content:center;flex-wrap:wrap}
+.exp-btn{background:rgba(29,158,117,0.1);border:1px solid rgba(29,158,117,0.3);color:#1D9E75;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.exp-btn:hover{background:#1D9E75;color:#fff}
+.exp-btn.google{border-color:rgba(66,133,244,0.4);color:#4285f4}
+.exp-btn.google:hover{background:#4285f4;color:#fff}
+.exp-btn.notion{border-color:rgba(255,255,255,0.2);color:#fff}
+.exp-btn.notion:hover{background:#fff;color:#000}
+.exp-btn.ical{border-color:rgba(186,117,23,0.4);color:#BA7517}
+.exp-btn.ical:hover{background:#BA7517;color:#fff}
+
+/* 링크 */
+.nav-links{display:flex;gap:10px;flex-wrap:wrap}
+.nav-links a{font-size:11px;color:#555;text-decoration:none;padding:4px 8px;border:1px solid rgba(255,255,255,0.06);border-radius:4px}
+.nav-links a:hover{color:#1D9E75;border-color:rgba(29,158,117,0.3)}
+
+@media(max-width:768px){
+  .week-grid{grid-template-columns:1fr}
+  .now-time{font-size:36px}
+  .container{padding:16px}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1><span class="live"></span>LIGHTHOUSE MEDIA 스케줄러</h1>
+  <div class="nav-links">
+    <a href="/home.html">홈</a>
+    <a href="/dashboard.html">3D 대시보드</a>
+    <a href="/channel-dashboard.html">채널</a>
+    <a href="/admin.html">관리자</a>
+    <a href="/shop.html">판매</a>
+  </div>
+</div>
+
+<div class="container">
+  <!-- 현재 시간 -->
+  <div class="now-bar">
+    <div class="now-time" id="nowTime">--:--:--</div>
+    <div class="now-date" id="nowDate">----년 --월 --일</div>
+    <div class="now-next" id="nextTask">다음 작업 계산 중...</div>
+  </div>
+
+  <!-- 오늘의 타임라인 -->
+  <h2 style="font-size:16px;margin-bottom:16px;color:#fff">오늘의 스케줄</h2>
+  <div class="timeline" id="timeline"></div>
+
+  <!-- 주간 캘린더 -->
+  <div class="week-section">
+    <div class="week-title">이번 주 캘린더</div>
+    <div class="week-grid" id="weekGrid"></div>
+  </div>
+
+  <!-- 내보내기 -->
+  <div class="export-bar">
+    <a class="exp-btn google" href="#" onclick="exportGoogle()">Google 캘린더에 추가</a>
+    <a class="exp-btn ical" href="#" onclick="downloadICS()">ICS 파일 다운로드</a>
+    <a class="exp-btn notion" href="#" onclick="copyNotion()">Notion 복사</a>
+    <a class="exp-btn" href="#" onclick="copyText()">텍스트 복사</a>
+  </div>
+</div>
+
+<script>
+// 스케줄 데이터
+const SCHEDULES = [
+  { time: "03:00", name: "보안 백업", desc: "콘텐츠/DB 자동 백업", icon: "🔒", color: "#2c3e50", category: "system" },
+  { time: "06:00", name: "오늘의 말씀", desc: "성경 묵상 자동 생성 → txt 저장", icon: "📖", color: "#9b59b6", category: "bible" },
+  { time: "06:00", name: "글로벌 채널 조사", desc: "TOP 채널 분석 + 트렌드 + 콘텐츠 기획", icon: "🔍", color: "#1abc9c", category: "research" },
+  { time: "06:30", name: "카카오 말씀 발송", desc: "카카오톡 PC 자동 발송", icon: "💬", color: "#f1c40f", category: "bible" },
+  { time: "08:00", name: "콘텐츠 디렉터", desc: "AI 에이전트 → 주제 선정 → 스크립트 → 카피 → SEO", icon: "🎬", color: "#3498db", category: "content" },
+  { time: "10:00", name: "디자인 제작", desc: "카드뉴스/썸네일/영상 자동 생성", icon: "🎨", color: "#e67e22", category: "content" },
+  { time: "12:00", name: "인스타 포스팅", desc: "카드뉴스 + 릴스 자동 게시", icon: "📸", color: "#e1306c", category: "upload" },
+  { time: "19:00", name: "유튜브 업로드", desc: "화/목/토 롱폼 영상 업로드", icon: "▶️", color: "#ff0000", category: "youtube", days: [2,4,6] },
+  { time: "21:00", name: "자동 게시", desc: "AI 콘텐츠 → 인스타/페이스북/유튜브 숏츠 동시 게시", icon: "🚀", color: "#BA7517", category: "upload" },
+  { time: "22:00", name: "일일 리포트", desc: "전 채널 성과 분석 → CEO 리포트", icon: "📊", color: "#1D9E75", category: "research" },
+];
+
+const now = new Date();
+const todayStr = now.toISOString().split('T')[0];
+
+function getStatus(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  const taskTime = new Date(now);
+  taskTime.setHours(h, m, 0, 0);
+  const diff = taskTime - now;
+  if (diff < -3600000) return 'done';
+  if (diff < 0) return 'running';
+  if (diff < 3600000) return 'upcoming';
+  return 'waiting';
+}
+
+function getStatusText(s) {
+  if (s === 'done') return '<span class="status-done">완료</span>';
+  if (s === 'running') return '<span class="status-running">진행 중</span>';
+  if (s === 'upcoming') return '<span class="status-upcoming">곧 시작</span>';
+  return '<span class="status-waiting">대기</span>';
+}
+
+function renderTimeline() {
+  const el = document.getElementById('timeline');
+  el.innerHTML = SCHEDULES.map(s => {
+    const st = getStatus(s.time);
+    return `<div class="time-block">
+      <div class="time-dot ${st}"></div>
+      <div class="time-label">${s.time}</div>
+      <div class="task-card ${st === 'running' ? 'running' : st === 'done' ? 'done' : ''}">
+        <div class="task-left">
+          <div class="task-icon" style="background:${s.color}22;color:${s.color}">${s.icon}</div>
+          <div><div class="task-name">${s.name}</div><div class="task-desc">${s.desc}</div></div>
+        </div>
+        <div class="task-right">
+          <div class="task-time">${s.time}</div>
+          <div class="task-status">${getStatusText(st)}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderWeek() {
+  const grid = document.getElementById('weekGrid');
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    const isToday = d.toDateString() === now.toDateString();
+    const dayNum = d.getDay();
+
+    html += `<div class="day-col ${isToday ? 'today' : ''}">
+      <div class="day-header">
+        <div class="day-name">${dayNames[i]}</div>
+        <div class="day-num">${d.getDate()}</div>
+      </div>`;
+
+    // 매일 작업
+    html += `<div class="day-task dt-bible">06:00 말씀</div>`;
+    html += `<div class="day-task dt-research">06:00 채널조사</div>`;
+    html += `<div class="day-task dt-content">08:00 콘텐츠</div>`;
+    html += `<div class="day-task dt-upload">21:00 자동게시</div>`;
+
+    // 화/목/토 유튜브
+    if ([2, 4, 6].includes(dayNum)) {
+      html += `<div class="day-task dt-youtube">19:00 YT 업로드</div>`;
+    }
+
+    html += '</div>';
+  }
+  grid.innerHTML = html;
+}
+
+function updateClock() {
+  const n = new Date();
+  document.getElementById('nowTime').textContent = n.toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('nowDate').textContent = n.toLocaleDateString('ko-KR', {year:'numeric',month:'long',day:'numeric',weekday:'long'});
+
+  // 다음 작업 찾기
+  const upcoming = SCHEDULES.filter(s => {
+    const [h,m] = s.time.split(':').map(Number);
+    const t = new Date(n); t.setHours(h,m,0,0);
+    return t > n;
+  });
+  if (upcoming.length > 0) {
+    const next = upcoming[0];
+    const [h,m] = next.time.split(':').map(Number);
+    const t = new Date(n); t.setHours(h,m,0,0);
+    const diff = Math.floor((t - n) / 60000);
+    const hrs = Math.floor(diff / 60);
+    const mins = diff % 60;
+    document.getElementById('nextTask').textContent = `다음: ${next.icon} ${next.name} (${hrs > 0 ? hrs + '시간 ' : ''}${mins}분 후)`;
+  } else {
+    document.getElementById('nextTask').textContent = '오늘 모든 작업 완료';
+  }
+}
+
+// Google Calendar URL 생성
+function exportGoogle() {
+  const events = SCHEDULES.map(s => {
+    const [h,m] = s.time.split(':');
+    const start = `${todayStr.replace(/-/g,'')}T${h}${m}00`;
+    const endH = String(Number(h)+1).padStart(2,'0');
+    const end = `${todayStr.replace(/-/g,'')}T${endH}${m}00`;
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('[LM] ' + s.name)}&details=${encodeURIComponent(s.desc)}&dates=${start}/${end}&recur=RRULE:FREQ=DAILY`;
+  });
+  // 첫 번째 이벤트 열기 (전체는 ICS로)
+  const msg = SCHEDULES.map(s => `${s.time} ${s.name}`).join('\n');
+  if (confirm('Google 캘린더에 반복 일정을 추가합니다.\n\n' + msg + '\n\nICS 파일로 한번에 추가하시겠습니까?')) {
+    downloadICS();
+  }
+}
+
+// ICS 파일 생성 + 다운로드
+function downloadICS() {
+  let ics = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Lighthouse Media//Schedule//KO\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\n`;
+
+  SCHEDULES.forEach(s => {
+    const [h,m] = s.time.split(':');
+    const endH = String(Math.min(23, Number(h)+1)).padStart(2,'0');
+    ics += `BEGIN:VEVENT\n`;
+    ics += `DTSTART:${todayStr.replace(/-/g,'')}T${h}${m}00\n`;
+    ics += `DTEND:${todayStr.replace(/-/g,'')}T${endH}${m}00\n`;
+    ics += `RRULE:FREQ=DAILY\n`;
+    ics += `SUMMARY:[LM] ${s.name}\n`;
+    ics += `DESCRIPTION:${s.desc}\n`;
+    ics += `END:VEVENT\n`;
+  });
+
+  ics += `END:VCALENDAR`;
+
+  const blob = new Blob([ics], {type: 'text/calendar;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'lighthouse-media-schedule.ics';
+  a.click();
+}
+
+// Notion용 텍스트 복사
+function copyNotion() {
+  const text = `# Lighthouse Media 일일 스케줄\n\n` +
+    SCHEDULES.map(s => `| ${s.time} | ${s.icon} ${s.name} | ${s.desc} |`).join('\n') +
+    `\n\n## 주간 특별 일정\n- 화/목/토 19:00: 유튜브 롱폼 업로드\n- 일 20:00: 뉴스레터 발송`;
+  navigator.clipboard.writeText(text).then(() => alert('Notion 형식으로 복사되었습니다.\nNotion에 붙여넣기 하세요.'));
+}
+
+function copyText() {
+  const text = SCHEDULES.map(s => `${s.time} ${s.name} — ${s.desc}`).join('\n');
+  navigator.clipboard.writeText(text).then(() => alert('텍스트로 복사되었습니다.'));
+}
+
+// 초기화
+renderTimeline();
+renderWeek();
+updateClock();
+setInterval(updateClock, 1000);
+setInterval(renderTimeline, 60000);
+</script>
+</body>
+</html>

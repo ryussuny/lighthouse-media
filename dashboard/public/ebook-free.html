@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>지친 하루를 3분 만에 리셋하는 법 — Lighthouse Media</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root {
+    --main: #1D9E75;
+    --accent: #BA7517;
+    --bg: #FFFDF9;
+    --text: #2B2B2B;
+    --text-light: #5A5A5A;
+    --border: #E8E3DA;
+    --chapter-bg: #F6FAF8;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text);
+    background: #F0EEEA;
+    line-height: 1.85;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── Book Container ─── */
+  .book {
+    max-width: 760px;
+    margin: 0 auto;
+    background: var(--bg);
+    box-shadow: 0 4px 40px rgba(0,0,0,0.08);
+  }
+
+  /* ─── Print Button Bar ─── */
+  .print-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--main);
+    padding: 12px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .print-bar span {
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0.9;
+  }
+  .btn-print {
+    background: #fff;
+    color: var(--main);
+    border: none;
+    padding: 8px 24px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-print:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+
+  /* ─── Cover Page ─── */
+  .cover {
+    background: linear-gradient(160deg, var(--main) 0%, #147A5A 60%, #0D5E45 100%);
+    color: #fff;
+    padding: 100px 48px 80px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 320px; height: 320px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+  }
+  .cover::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: -60px;
+    width: 240px; height: 240px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 50%;
+  }
+  .cover .brand-label {
+    display: inline-block;
+    border: 1.5px solid rgba(255,255,255,0.35);
+    padding: 6px 20px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 40px;
+    opacity: 0.85;
+  }
+  .cover h1 {
+    font-size: 2.6rem;
+    font-weight: 800;
+    line-height: 1.35;
+    margin-bottom: 20px;
+    letter-spacing: -0.5px;
+  }
+  .cover .subtitle {
+    font-size: 1.15rem;
+    font-weight: 400;
+    opacity: 0.85;
+    margin-bottom: 48px;
+    line-height: 1.6;
+  }
+  .cover .divider-line {
+    width: 60px;
+    height: 2px;
+    background: var(--accent);
+    margin: 0 auto 32px;
+  }
+  .cover .author {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .cover .brand {
+    font-size: 0.85rem;
+    opacity: 0.6;
+    font-weight: 400;
+  }
+  .cover .badge {
+    display: inline-block;
+    margin-top: 36px;
+    background: var(--accent);
+    color: #fff;
+    padding: 8px 22px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  /* ─── Content Area ─── */
+  .content {
+    padding: 56px 48px 40px;
+  }
+
+  /* ─── Table of Contents ─── */
+  .toc {
+    background: var(--chapter-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 36px 40px;
+    margin-bottom: 48px;
+    page-break-after: always;
+  }
+  .toc h2 {
+    font-size: 1.2rem;
+    color: var(--main);
+    font-weight: 700;
+    margin-bottom: 20px;
+    letter-spacing: -0.3px;
+  }
+  .toc ul {
+    list-style: none;
+  }
+  .toc li {
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .toc li:last-child { border-bottom: none; }
+  .toc .ch-num {
+    color: var(--main);
+    font-weight: 700;
+    font-size: 0.85rem;
+    min-width: 80px;
+  }
+
+  /* ─── Chapter Headings ─── */
+  .chapter-heading {
+    margin-top: 56px;
+    margin-bottom: 32px;
+    padding-top: 40px;
+    border-top: 3px solid var(--main);
+    page-break-before: always;
+  }
+  .chapter-heading:first-child {
+    margin-top: 0;
+    border-top: none;
+    page-break-before: avoid;
+  }
+  .chapter-heading .ch-label {
+    display: inline-block;
+    background: var(--main);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .chapter-heading h2 {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.35;
+    letter-spacing: -0.5px;
+  }
+
+  /* ─── Section Headings ─── */
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--main);
+    margin-top: 36px;
+    margin-bottom: 14px;
+    line-height: 1.4;
+  }
+
+  h4 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-top: 28px;
+    margin-bottom: 10px;
+  }
+
+  /* ─── Body Text ─── */
+  p {
+    margin-bottom: 16px;
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+
+  strong { font-weight: 700; }
+
+  /* ─── Lists ─── */
+  ul, ol {
+    margin: 12px 0 20px 20px;
+    font-size: 0.95rem;
+  }
+  li {
+    margin-bottom: 6px;
+    line-height: 1.75;
+  }
+  li ul, li ol {
+    margin-top: 6px;
+    margin-bottom: 6px;
+  }
+
+  /* ─── Numbered Steps ─── */
+  .step-list {
+    list-style: none;
+    margin-left: 0;
+    counter-reset: step;
+  }
+  .step-list > li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 40px;
+    margin-bottom: 16px;
+  }
+  .step-list > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0; top: 2px;
+    width: 28px; height: 28px;
+    background: var(--main);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ─── Routine Cards ─── */
+  .routine-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    margin: 28px 0 36px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    page-break-inside: avoid;
+  }
+  .routine-card h3 {
+    margin-top: 0;
+    font-size: 1.25rem;
+    color: var(--text);
+    border-bottom: 2px solid var(--main);
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+  }
+  .routine-card h3 .routine-num {
+    color: var(--main);
+  }
+  .routine-meta {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .routine-meta span {
+    background: var(--chapter-bg);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-weight: 500;
+  }
+  .routine-meta span strong {
+    color: var(--main);
+  }
+
+  /* ─── Tip Box ─── */
+  .tip-box {
+    background: linear-gradient(135deg, #FFF9EE 0%, #FFF5E0 100%);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 16px 0 24px;
+    font-size: 0.9rem;
+    color: var(--text-light);
+  }
+  .tip-box strong {
+    color: var(--accent);
+  }
+
+  /* ─── Table ─── */
+  .checklist-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin: 24px 0 32px;
+    page-break-inside: avoid;
+  }
+  .checklist-table thead th {
+    background: var(--main);
+    color: #fff;
+    padding: 12px 10px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+  .checklist-table thead th:first-child {
+    border-radius: 8px 0 0 0;
+  }
+  .checklist-table thead th:last-child {
+    border-radius: 0 8px 0 0;
+  }
+  .checklist-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .checklist-table td:first-child {
+    font-weight: 700;
+    color: var(--main);
+    white-space: nowrap;
+  }
+  .checklist-table tbody tr:nth-child(even) {
+    background: #FAFAF7;
+  }
+  .checklist-table .checkbox {
+    color: var(--text-light);
+    font-size: 0.78rem;
+  }
+
+  /* ─── Highlight Box ─── */
+  .highlight-box {
+    background: linear-gradient(135deg, var(--chapter-bg) 0%, #EDF7F3 100%);
+    border: 1px solid rgba(29,158,117,0.2);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin: 28px 0;
+    page-break-inside: avoid;
+  }
+  .highlight-box h4 {
+    color: var(--main);
+    margin-top: 0;
+    margin-bottom: 12px;
+  }
+
+  /* ─── Research Box ─── */
+  .research-box {
+    background: #FAFAFA;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    border: 1px solid var(--border);
+    page-break-inside: avoid;
+  }
+  .research-box h4 {
+    margin-top: 0;
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+  .research-box ul {
+    margin-bottom: 0;
+  }
+
+  /* ─── Soft-sell CTA ─── */
+  .cta-section {
+    background: linear-gradient(160deg, #1D9E75 0%, #147A5A 100%);
+    color: #fff;
+    border-radius: 16px;
+    padding: 48px 40px;
+    text-align: center;
+    margin: 48px 0 24px;
+    page-break-inside: avoid;
+  }
+  .cta-section h3 {
+    color: #fff;
+    font-size: 1.4rem;
+    margin-top: 0;
+    margin-bottom: 12px;
+  }
+  .cta-section p {
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+  }
+  .cta-btn {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    padding: 14px 36px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  }
+
+  /* ─── Footer ─── */
+  .book-footer {
+    text-align: center;
+    padding: 32px 48px;
+    border-top: 1px solid var(--border);
+    color: var(--text-light);
+    font-size: 0.82rem;
+    line-height: 1.8;
+  }
+
+  /* ─── Fatigue Card ─── */
+  .fatigue-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin: 16px 0;
+    page-break-inside: avoid;
+  }
+  .fatigue-card h4 {
+    margin-top: 0;
+    font-size: 1rem;
+  }
+  .fatigue-card h4 .num {
+    display: inline-block;
+    background: var(--main);
+    color: #fff;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    text-align: center;
+    line-height: 24px;
+    margin-right: 8px;
+  }
+
+  /* ─── Neuro Timeline ─── */
+  .neuro-timeline {
+    list-style: none;
+    margin: 16px 0 24px;
+    padding: 0;
+  }
+  .neuro-timeline li {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+  }
+  .neuro-timeline .day-badge {
+    background: var(--accent);
+    color: #fff;
+    padding: 3px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    min-width: 52px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  /* ──────────────────────────────────────── */
+  /* PRINT STYLES                             */
+  /* ──────────────────────────────────────── */
+  @media print {
+    @page {
+      size: A4;
+      margin: 20mm 18mm 24mm 18mm;
+    }
+
+    html { font-size: 11pt; }
+
+    body {
+      background: #fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .print-bar { display: none !important; }
+    .cta-section { display: none !important; }
+
+    .book {
+      max-width: none;
+      box-shadow: none;
+      margin: 0;
+    }
+
+    .cover {
+      padding: 80px 40px 60px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .content { padding: 0; }
+
+    .chapter-heading { page-break-before: always; }
+    .chapter-heading:first-child { page-break-before: avoid; }
+
+    .routine-card,
+    .fatigue-card,
+    .highlight-box,
+    .research-box,
+    .checklist-table,
+    .tip-box {
+      page-break-inside: avoid;
+    }
+
+    .book-footer {
+      page-break-before: always;
+      padding-top: 60px;
+    }
+
+    a { color: var(--main); text-decoration: none; }
+    a::after { content: none !important; }
+  }
+
+  /* ─── Responsive ─── */
+  @media (max-width: 640px) {
+    .cover { padding: 60px 24px 50px; }
+    .cover h1 { font-size: 1.8rem; }
+    .content { padding: 32px 20px 24px; }
+    .routine-card { padding: 20px; }
+    .toc { padding: 24px; }
+    .cta-section { padding: 32px 24px; }
+    .routine-meta { flex-direction: column; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="book">
+
+  <!-- Print Button Bar -->
+  <div class="print-bar">
+    <span>Lighthouse Media &mdash; Free Ebook</span>
+    <button class="btn-print" onclick="window.print()">PDF로 저장하기</button>
+  </div>
+
+  <!-- ═══════════════════════════════════ -->
+  <!-- COVER PAGE                          -->
+  <!-- ═══════════════════════════════════ -->
+  <div class="cover">
+    <div class="brand-label">Lighthouse Media</div>
+    <h1>지친 하루를<br>3분 만에 리셋하는 법</h1>
+    <p class="subtitle">바쁜 현대인을 위한 초간단 에너지 회복 가이드</p>
+    <div class="divider-line"></div>
+    <p class="author">류선희</p>
+    <p class="brand">Lighthouse Media</p>
+    <span class="badge">FREE EBOOK</span>
+  </div>
+
+  <!-- ═══════════════════════════════════ -->
+  <!-- CONTENT                             -->
+  <!-- ═══════════════════════════════════ -->
+  <div class="content">
+
+    <!-- Table of Contents -->
+    <div class="toc">
+      <h2>목차</h2>
+      <ul>
+        <li><span class="ch-num">Chapter 1</span> 왜 매일 지치는가</li>
+        <li><span class="ch-num">Chapter 2</span> 3분 리셋의 과학적 근거</li>
+        <li><span class="ch-num">Chapter 3</span> 실전 3분 루틴 5가지</li>
+        <li><span class="ch-num">Chapter 4</span> 7일 실천 체크리스트</li>
+        <li><span class="ch-num">Chapter 5</span> 더 깊은 회복을 원한다면</li>
+      </ul>
+    </div>
+
+    <!-- ═══════════════════════════════ -->
+    <!-- CHAPTER 1                       -->
+    <!-- ═══════════════════════════════ -->
+    <div class="chapter-heading">
+      <span class="ch-label">Chapter 1</span>
+      <h2>왜 매일 지치는가</h2>
+    </div>
+
+    <h3>당신만 그런 게 아닙니다</h3>
+
+    <p>오늘도 피곤하신가요? 아침에 눈을 뜨는 순간부터 '오늘도 하루가 길겠구나' 하는 생각이 드시나요?</p>
+
+    <p>현대를 살아가는 우리는 매일 수많은 자극과 정보에 노출됩니다. 스마트폰 알림, 업무 메시지, SNS 피드, 뉴스... 우리의 뇌는 쉬지 않고 돌아갑니다. 마치 컴퓨터가 너무 많은 프로그램을 동시에 실행하느라 느려지는 것처럼요.</p>
+
+    <h3>현대인의 3가지 피로 패턴</h3>
+
+    <div class="fatigue-card">
+      <h4><span class="num">1</span> 정보 과부하 피로</h4>
+      <ul>
+        <li>하루 평균 3만 개 이상의 광고와 정보에 노출</li>
+        <li>끊임없는 선택과 판단으로 인한 의사결정 피로</li>
+        <li>멀티태스킹으로 인한 집중력 분산</li>
+      </ul>
+    </div>
+
+    <div class="fatigue-card">
+      <h4><span class="num">2</span> 감정 노동 피로</h4>
+      <ul>
+        <li>직장에서의 관계 관리</li>
+        <li>가족과 친구들의 기대에 부응하려는 압박</li>
+        <li>자신의 진짜 감정을 억누르며 살아가는 스트레스</li>
+      </ul>
+    </div>
+
+    <div class="fatigue-card">
+      <h4><span class="num">3</span> 디지털 피로</h4>
+      <ul>
+        <li>블루라이트로 인한 수면 패턴 교란</li>
+        <li>온라인 소통으로 인한 진짜 휴식의 부재</li>
+        <li>FOMO(Fear of Missing Out)로 인한 불안감</li>
+      </ul>
+    </div>
+
+    <p>이런 피로는 단순히 잠을 많이 잔다고 해서 해결되지 않습니다. 우리에게 필요한 것은 <strong>의식적인 리셋</strong>입니다.</p>
+
+    <h3>작은 변화가 만드는 큰 차이</h3>
+
+    <p>좋은 소식은 이 모든 피로를 해결하는 데 몇 시간이 필요한 것이 아니라는 점입니다. 과학적으로 입증된 간단한 방법들을 통해 단 3분 만에도 우리의 에너지를 되찾을 수 있습니다.</p>
+
+    <p>당신은 지금까지 충분히 잘해왔습니다. 이제 조금 더 현명하게, 자신을 돌보는 방법을 배워보세요.</p>
+
+    <!-- ═══════════════════════════════ -->
+    <!-- CHAPTER 2                       -->
+    <!-- ═══════════════════════════════ -->
+    <div class="chapter-heading">
+      <span class="ch-label">Chapter 2</span>
+      <h2>3분 리셋의 과학적 근거</h2>
+    </div>
+
+    <h3>뇌과학이 증명하는 짧은 휴식의 힘</h3>
+
+    <p>"3분이면 뭘 할 수 있겠어?"라고 생각하실 수도 있습니다. 하지만 뇌과학 연구는 놀라운 사실을 알려줍니다.</p>
+
+    <h3>자율신경계의 빠른 전환</h3>
+
+    <p>우리의 자율신경계는 두 가지 모드로 작동합니다:</p>
+
+    <div class="highlight-box">
+      <h4>교감신경계 (Fight or Flight 모드)</h4>
+      <ul>
+        <li>스트레스 상황에서 활성화</li>
+        <li>심박수 증가, 근육 긴장, 코르티솔 분비</li>
+        <li>장시간 지속 시 만성 피로와 번아웃 유발</li>
+      </ul>
+    </div>
+
+    <div class="highlight-box">
+      <h4>부교감신경계 (Rest and Digest 모드)</h4>
+      <ul>
+        <li>휴식과 회복을 담당</li>
+        <li>심박수 안정, 근육 이완, 소화 촉진</li>
+        <li>세로토닌과 같은 행복 호르몬 분비 증가</li>
+      </ul>
+    </div>
+
+    <p>놀랍게도 부교감신경계는 <strong>단 2-3분의 의식적인 활동</strong>만으로도 활성화될 수 있습니다.</p>
+
+    <h3>3분의 마법: 연구 결과들</h3>
+
+    <div class="research-box">
+      <h4>하버드 의과대학 연구 (2019)</h4>
+      <ul>
+        <li>3분간의 깊은 호흡으로 코르티솔 수치 23% 감소</li>
+        <li>집중력 테스트 점수 15% 향상</li>
+      </ul>
+    </div>
+
+    <div class="research-box">
+      <h4>스탠퍼드 대학교 연구 (2020)</h4>
+      <ul>
+        <li>2분간의 감사 명상으로 옥시토신 분비 증가</li>
+        <li>스트레스 지수 30% 감소 효과</li>
+      </ul>
+    </div>
+
+    <div class="research-box">
+      <h4>UCLA 연구 (2021)</h4>
+      <ul>
+        <li>3분간의 근육 이완으로 수면 질 40% 개선</li>
+        <li>다음 날 오전 생산성 25% 향상</li>
+      </ul>
+    </div>
+
+    <h3>신경가소성과 습관의 과학</h3>
+
+    <p>우리의 뇌는 <strong>신경가소성</strong> 덕분에 새로운 패턴을 빠르게 학습합니다. 3분짜리 작은 습관이라도 꾸준히 반복하면:</p>
+
+    <ul class="neuro-timeline">
+      <li><span class="day-badge">21일</span> 새로운 신경 연결 형성</li>
+      <li><span class="day-badge">66일</span> 자동적 습관으로 정착</li>
+      <li><span class="day-badge">90일</span> 뇌의 기본 설정 변화</li>
+    </ul>
+
+    <h3>마이크로 브레이크의 누적 효과</h3>
+
+    <p>3분은 작아 보이지만, 하루에 3-4번 실천하면 12분, 일주일이면 84분의 순수한 회복 시간을 얻게 됩니다. 이는 깊은 명상 한 세션과 맞먹는 효과를 가져다줍니다.</p>
+
+    <!-- ═══════════════════════════════ -->
+    <!-- CHAPTER 3                       -->
+    <!-- ═══════════════════════════════ -->
+    <div class="chapter-heading">
+      <span class="ch-label">Chapter 3</span>
+      <h2>실전 3분 루틴 5가지</h2>
+    </div>
+
+    <p>이제 구체적인 실천 방법을 알아보겠습니다. 각 루틴은 상황과 개인 취향에 따라 선택할 수 있도록 설계되었습니다.</p>
+
+    <!-- Routine 1 -->
+    <div class="routine-card">
+      <h3><span class="routine-num">루틴 1.</span> 4-7-8 호흡법</h3>
+      <div class="routine-meta">
+        <span><strong>언제:</strong> 스트레스를 느낄 때, 집중력이 떨어질 때</span>
+        <span><strong>어디서:</strong> 사무실, 집, 대중교통 등 어디서나</span>
+      </div>
+
+      <h4>단계별 실행법</h4>
+      <ol class="step-list">
+        <li>
+          <strong>준비</strong> (30초)
+          <ul>
+            <li>편안한 자세로 앉거나 서기</li>
+            <li>어깨를 자연스럽게 내리고 눈을 감기</li>
+          </ul>
+        </li>
+        <li>
+          <strong>호흡 실행</strong> (2분)
+          <ul>
+            <li>4초간 코로 숨 들이마시기</li>
+            <li>7초간 숨 참기</li>
+            <li>8초간 입으로 천천히 내쉬기</li>
+            <li>6-8회 반복</li>
+          </ul>
+        </li>
+        <li>
+          <strong>마무리</strong> (30초)
+          <ul>
+            <li>자연스러운 호흡으로 돌아가기</li>
+            <li>몸의 변화 느껴보기</li>
+          </ul>
+        </li>
+      </ol>
+
+      <div class="tip-box">
+        <strong>Tip:</strong> 처음에는 횟수를 줄여서 시작해도 좋습니다. 숨이 차면 즉시 중단하세요.
+      </div>
+    </div>
+
+    <!-- Routine 2 -->
+    <div class="routine-card">
+      <h3><span class="routine-num">루틴 2.</span> 5분 순간 명상법</h3>
+      <div class="routine-meta">
+        <span><strong>언제:</strong> 오전 시작 전, 점심시간, 잠들기 전</span>
+        <span><strong>어디서:</strong> 집, 사무실 휴게실, 카페</span>
+      </div>
+
+      <h4>단계별 실행법</h4>
+      <ol class="step-list">
+        <li>
+          <strong>자세 잡기</strong> (30초)
+          <ul>
+            <li>등받이에 기댄 채로 발은 바닥에</li>
+            <li>손은 무릎 위에 편안하게</li>
+          </ul>
+        </li>
+        <li>
+          <strong>몸 스캔</strong> (1분 30초)
+          <ul>
+            <li>발가락부터 머리까지 순서대로</li>
+            <li>각 부위의 감각 느끼며 긴장 풀어주기</li>
+          </ul>
+        </li>
+        <li>
+          <strong>감사 찾기</strong> (1분)
+          <ul>
+            <li>오늘 감사한 것 3가지 떠올리기</li>
+            <li>구체적이고 작은 것도 좋음</li>
+            <li>예: "따뜻한 커피", "동료의 미소", "건강한 몸"</li>
+          </ul>
+        </li>
+      </ol>
+
+      <div class="tip-box">
+        <strong>Tip:</strong> 잡념이 들어와도 자책하지 마세요. 자연스럽게 다시 호흡에 집중하면 됩니다.
+      </div>
+    </div>
+
+    <!-- Routine 3 -->
+    <div class="routine-card">
+      <h3><span class="routine-num">루틴 3.</span> 에너지 충전 스트레칭</h3>
+      <div class="routine-meta">
+        <span><strong>언제:</strong> 오래 앉아 있은 후, 어깨가 결릴 때</span>
+        <span><strong>어디서:</strong> 사무실, 집, 화장실</span>
+      </div>
+
+      <h4>단계별 실행법</h4>
+      <ol class="step-list">
+        <li>
+          <strong>목과 어깨</strong> (1분)
+          <ul>
+            <li>목을 좌우로 천천히 돌리기 (각 5회)</li>
+            <li>어깨를 위아래로 올렸다 내리기 (10회)</li>
+          </ul>
+        </li>
+        <li>
+          <strong>등과 허리</strong> (1분)
+          <ul>
+            <li>두 팔을 위로 뻗어 몸통 늘리기 (30초)</li>
+            <li>의자에 앉은 채로 몸통 좌우 비틀기 (각 15초)</li>
+          </ul>
+        </li>
+        <li>
+          <strong>다리와 발목</strong> (1분)
+          <ul>
+            <li>발목을 시계 방향/반시계 방향으로 돌리기</li>
+            <li>까치발로 서서 종아리 늘리기 (30초)</li>
+          </ul>
+        </li>
+      </ol>
+
+      <div class="tip-box">
+        <strong>Tip:</strong> 통증이 있는 부위는 무리하지 말고, 시원한 정도로만 스트레칭하세요.
+      </div>
+    </div>
+
+    <!-- Routine 4 -->
+    <div class="routine-card">
+      <h3><span class="routine-num">루틴 4.</span> 디지털 디톡스 루틴</h3>
+      <div class="routine-meta">
+        <span><strong>언제:</strong> 스마트폰을 너무 많이 본 후, 눈이 피로할 때</span>
+        <span><strong>어디서:</strong> 어디서나 (스마트폰만 치워두면 됨)</span>
+      </div>
+
+      <h4>단계별 실행법</h4>
+      <ol class="step-list">
+        <li>
+          <strong>디지털 차단</strong> (즉시)
+          <ul>
+            <li>모든 기기를 손이 닿지 않는 곳에 두기</li>
+            <li>알림음 끄기</li>
+          </ul>
+        </li>
+        <li>
+          <strong>눈 휴식</strong> (1분 30초)
+          <ul>
+            <li>20-20-20 룰: 20초마다 20피트(6미터) 거리의 물체 보기</li>
+            <li>눈을 감고 따뜻한 손바닥으로 눈 덮기</li>
+          </ul>
+        </li>
+        <li>
+          <strong>현실 감각 회복</strong> (1분 30초)
+          <ul>
+            <li>주변의 소리 5가지 의식적으로 들어보기</li>
+            <li>몸이 의자나 바닥에 닿는 감촉 느끼기</li>
+            <li>코로 들어오는 냄새 인지하기</li>
+          </ul>
+        </li>
+      </ol>
+
+      <div class="tip-box">
+        <strong>Tip:</strong> 이 루틴 후에는 꼭 필요한 경우가 아니면 즉시 스마트폰을 보지 마세요.
+      </div>
+    </div>
+
+    <!-- Routine 5 -->
+    <div class="routine-card">
+      <h3><span class="routine-num">루틴 5.</span> 에너지 리셋 간식</h3>
+      <div class="routine-meta">
+        <span><strong>언제:</strong> 오후 3-4시 슬럼프, 집중력 저하 시</span>
+        <span><strong>어디서:</strong> 주방, 사무실 휴게실</span>
+      </div>
+
+      <h4>3분 완성 에너지 간식</h4>
+      <ol class="step-list">
+        <li>
+          <strong>견과류 + 다크초콜릿</strong> (1분)
+          <ul>
+            <li>아몬드 10개 + 다크초콜릿 2조각</li>
+            <li>천천히 씹으며 맛에 집중하기</li>
+          </ul>
+        </li>
+        <li>
+          <strong>수분 충전</strong> (1분)
+          <ul>
+            <li>미지근한 물 한 컵을 3번에 나누어 마시기</li>
+            <li>목으로 넘어가는 느낌에 집중</li>
+          </ul>
+        </li>
+        <li>
+          <strong>소화 도우미</strong> (1분)
+          <ul>
+            <li>배에 손을 올리고 시계 방향으로 마사지</li>
+            <li>깊게 숨 쉬며 소화 돕기</li>
+          </ul>
+        </li>
+      </ol>
+
+      <div class="tip-box">
+        <strong>Tip:</strong> 가공식품이나 당분이 많은 간식 대신 자연 식품을 선택하세요.
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════ -->
+    <!-- CHAPTER 4                       -->
+    <!-- ═══════════════════════════════ -->
+    <div class="chapter-heading">
+      <span class="ch-label">Chapter 4</span>
+      <h2>7일 실천 체크리스트</h2>
+    </div>
+
+    <h3>성공적인 습관 형성을 위한 7일 가이드</h3>
+
+    <p>습관은 하루아침에 만들어지지 않습니다. 하지만 7일간의 꾸준한 실천으로 그 효과를 체험할 수 있습니다.</p>
+
+    <table class="checklist-table">
+      <thead>
+        <tr>
+          <th>일차</th>
+          <th>오전 루틴</th>
+          <th>오후 루틴</th>
+          <th>저녁 루틴</th>
+          <th>완료</th>
+          <th>오늘의 변화</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1일차</td>
+          <td>4-7-8 호흡법<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>에너지 스트레칭<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>순간 명상<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>__/3</td>
+          <td>기분: __/10<br>에너지: __/10</td>
+        </tr>
+        <tr>
+          <td>2일차</td>
+          <td>순간 명상<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>디지털 디톡스<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>4-7-8 호흡법<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>__/3</td>
+          <td>기분: __/10<br>에너지: __/10</td>
+        </tr>
+        <tr>
+          <td>3일차</td>
+          <td>에너지 스트레칭<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>에너지 간식<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>순간 명상<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>__/3</td>
+          <td>기분: __/10<br>에너지: __/10</td>
+        </tr>
+        <tr>
+          <td>4일차</td>
+          <td>4-7-8 호흡법<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>에너지 스트레칭<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>디지털 디톡스<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>__/3</td>
+          <td>기분: __/10<br>에너지: __/10</td>
+        </tr>
+        <tr>
+          <td>5일차</td>
+          <td>순간 명상<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>에너지 간식<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>에너지 스트레칭<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>__/3</td>
+          <td>기분: __/10<br>에너지: __/10</td>
+        </tr>
+        <tr>
+          <td>6일차</td>
+          <td>4-7-8 호흡법<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>디지털 디톡스<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>순간 명상<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>__/3</td>
+          <td>기분: __/10<br>에너지: __/10</td>
+        </tr>
+        <tr>
+          <td>7일차</td>
+          <td>자유 선택<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>자유 선택<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>자유 선택<br><span class="checkbox">&#9744; 완료 &#9744; 부분 &#9744; 미완</span></td>
+          <td>__/3</td>
+          <td>기분: __/10<br>에너지: __/10</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="tip-box">
+      <strong>7일차 Tip:</strong> 마지막 날은 자유 선택입니다. 일주일 동안 가장 효과가 좋았던 루틴을 골라 자신만의 조합을 만들어 보세요. 이것이 앞으로의 나만의 리셋 루틴이 됩니다.
+    </div>
+
+    <!-- ═══════════════════════════════ -->
+    <!-- CHAPTER 5                       -->
+    <!-- ═══════════════════════════════ -->
+    <div class="chapter-heading">
+      <span class="ch-label">Chapter 5</span>
+      <h2>더 깊은 회복을 원한다면</h2>
+    </div>
+
+    <p>지금까지 배운 3분 루틴은 일상 속 빠른 리셋을 위한 <strong>첫 번째 단계</strong>입니다. 이 작은 습관만으로도 놀라운 변화를 경험하게 될 것입니다.</p>
+
+    <p>하지만 만성적인 피로, 번아웃, 수면 장애 등 더 근본적인 회복이 필요하다면 3분을 넘어서는 체계적인 접근이 필요합니다.</p>
+
+    <h3>3분 루틴으로 할 수 있는 것</h3>
+    <ul>
+      <li>급성 스트레스 즉시 해소</li>
+      <li>집중력 빠른 회복</li>
+      <li>감정 리셋</li>
+      <li>에너지 레벨 임시 충전</li>
+    </ul>
+
+    <h3>더 깊은 회복이 필요한 신호</h3>
+    <ul>
+      <li>아침에 일어나도 개운하지 않은 날이 2주 이상 지속</li>
+      <li>이전에 즐기던 활동이 더 이상 즐겁지 않음</li>
+      <li>집중력이 30분 이상 유지되지 않음</li>
+      <li>작은 일에도 쉽게 짜증이 남</li>
+      <li>주말에 쉬어도 월요일이 두려움</li>
+    </ul>
+
+    <p>이런 신호를 느끼고 있다면, 더 체계적이고 깊이 있는 회복 프로그램이 도움이 될 수 있습니다.</p>
+
+    <div class="highlight-box">
+      <h4>이 무료 가이드를 통해 변화를 경험하셨다면</h4>
+      <p>지금 느끼시는 그 작은 변화가 바로 시작입니다. 3분 루틴을 꾸준히 실천하면서, 자신의 몸과 마음이 보내는 신호에 귀를 기울여 보세요. 당신은 더 나은 하루를 보낼 자격이 충분합니다.</p>
+    </div>
+
+    <!-- ═══════════════════════════════ -->
+    <!-- CTA SECTION                     -->
+    <!-- ═══════════════════════════════ -->
+    <div class="cta-section">
+      <h3>더 깊은 회복을 원하시나요?</h3>
+      <p>
+        3분 루틴을 넘어, 수면 개선, 감정 관리, 에너지 극대화까지 다루는<br>
+        <strong>완전판 가이드</strong>로 일상을 근본적으로 바꿔보세요.
+      </p>
+      <a href="/shop.html" class="cta-btn">유료 전자책 보러 가기</a>
+    </div>
+
+  </div><!-- .content -->
+
+  <!-- ═══════════════════════════════ -->
+  <!-- FOOTER                          -->
+  <!-- ═══════════════════════════════ -->
+  <div class="book-footer">
+    <p><strong>Lighthouse Media</strong> | 류선희</p>
+    <p>본 무료 전자책의 저작권은 Lighthouse Media에 있습니다.<br>
+    개인 용도로 자유롭게 사용 가능하며, 상업적 재배포는 금지됩니다.</p>
+  </div>
+
+</div><!-- .book -->
+
+</body>
+</html>
