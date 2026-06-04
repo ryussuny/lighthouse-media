@@ -1,0 +1,481 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>에너지 뱅크 채우는 법 - Lighthouse Media</title>
+<style>@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard',sans-serif;background:#FAF8F3;color:#2a2a2a;line-height:1.8;max-width:700px;margin:0 auto;padding:40px 24px}
+.cover{background:linear-gradient(135deg,#1a1a2e,#0f3460);color:#fff;padding:60px 40px;border-radius:16px;text-align:center;margin-bottom:40px}
+.cover h1{font-size:28px;margin-bottom:12px}.cover p{color:#BA7517;font-size:16px}
+.badge{display:inline-block;background:#BA7517;color:#fff;padding:4px 12px;border-radius:8px;font-size:12px;font-weight:700;margin-bottom:16px}
+h2{color:#BA7517;margin:32px 0 16px;font-size:22px;border-left:4px solid #BA7517;padding-left:12px}
+h3{margin:20px 0 10px;font-size:18px}p{margin-bottom:14px}ul,ol{margin:10px 0 14px 20px}li{margin-bottom:6px}
+.btn{position:fixed;top:16px;right:16px;background:#BA7517;color:#fff;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;font-weight:700;z-index:100}
+body{max-width:100%}}
+  /* ══════════════════════════════════════
+     소책자 스타일 PDF 인쇄 설정
+     ══════════════════════════════════════ */
+  @media print {
+    @page {
+      size: A4;
+      margin: 20mm 18mm 25mm 18mm;
+    }
+
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+    body {
+      background: #fff !important;
+      color: #222 !important;
+      font-size: 11pt !important;
+      line-height: 1.8 !important;
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* 표지: 전체 페이지 */
+    .cover, section.cover {
+      page-break-after: always !important;
+      min-height: 100vh !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      background: linear-gradient(135deg, #1a1a2e, #16213e) !important;
+      color: #fff !important;
+      padding: 60px 40px !important;
+    }
+
+    /* 본문 영역 */
+    .content, .body-content, main {
+      padding: 0 !important;
+      max-width: 100% !important;
+    }
+
+    /* 챕터 제목: 새 페이지 시작 */
+    h2 {
+      page-break-before: always !important;
+      page-break-after: avoid !important;
+      font-size: 18pt !important;
+      color: #1D9E75 !important;
+      margin-top: 0 !important;
+      padding-top: 20px !important;
+      padding-bottom: 12px !important;
+      border-left: 4px solid #1D9E75 !important;
+      padding-left: 14px !important;
+    }
+
+    /* 첫 번째 h2는 새 페이지 안함 (표지 바로 다음) */
+    .content h2:first-of-type, .body-content h2:first-of-type {
+      page-break-before: avoid !important;
+    }
+
+    h3 {
+      page-break-after: avoid !important;
+      font-size: 14pt !important;
+      color: #333 !important;
+      margin-top: 24px !important;
+      margin-bottom: 8px !important;
+    }
+
+    p {
+      font-size: 11pt !important;
+      line-height: 1.9 !important;
+      margin-bottom: 12px !important;
+      color: #333 !important;
+      orphans: 3 !important;
+      widows: 3 !important;
+      text-align: justify !important;
+      word-break: keep-all !important;
+    }
+
+    /* 리스트 */
+    ul, ol {
+      margin: 8px 0 14px 20px !important;
+      page-break-inside: avoid !important;
+    }
+    li {
+      font-size: 11pt !important;
+      line-height: 1.8 !important;
+      margin-bottom: 6px !important;
+    }
+
+    /* 인용문 */
+    blockquote {
+      border-left: 3px solid #1D9E75 !important;
+      background: #f5f5f0 !important;
+      padding: 12px 16px !important;
+      margin: 14px 0 !important;
+      font-size: 10.5pt !important;
+      page-break-inside: avoid !important;
+      border-radius: 0 !important;
+    }
+
+    /* 강조 */
+    strong { color: #1D9E75 !important; }
+    em { color: #BA7517 !important; font-style: normal !important; }
+
+    /* 코드/체크리스트 블록 */
+    pre, code {
+      background: #f0f0ea !important;
+      font-size: 10pt !important;
+      page-break-inside: avoid !important;
+    }
+
+    /* 테이블 */
+    table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      page-break-inside: avoid !important;
+      font-size: 10pt !important;
+      margin: 12px 0 !important;
+    }
+    th {
+      background: #1D9E75 !important;
+      color: #fff !important;
+      padding: 8px 10px !important;
+      font-weight: 600 !important;
+      text-align: left !important;
+    }
+    td {
+      padding: 8px 10px !important;
+      border-bottom: 1px solid #ddd !important;
+    }
+
+    /* 페이지 하단 푸터 */
+    .content::after, .body-content::after {
+      content: "Lighthouse Media | 류선희 | 실제로 삶이 나아지는 콘텐츠";
+      display: block;
+      text-align: center;
+      font-size: 8pt;
+      color: #999;
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid #ddd;
+    }
+
+    /* 숨길 요소들 */
+    .actions, .cta, .cta-box, .btn-print, .toolbar, button,
+    nav, .header-nav, .nav, .footer-cta, .follow-banner,
+    .sidebar-cta, .print-bar, .no-print {
+      display: none !important;
+    }
+
+    /* 이미지 */
+    img {
+      max-width: 100% !important;
+      page-break-inside: avoid !important;
+    }
+
+    /* 링크 URL 표시 안함 */
+    a { color: #1D9E75 !important; text-decoration: none !important; }
+    a::after { content: none !important; }
+
+    /* 카드/박스 스타일 */
+    .tip-box, .highlight-box, .note-box, .checklist-box {
+      background: #f9f9f5 !important;
+      border: 1px solid #e0e0d8 !important;
+      padding: 14px !important;
+      margin: 12px 0 !important;
+      page-break-inside: avoid !important;
+      border-radius: 6px !important;
+    }
+
+    /* 구분선 */
+    hr {
+      border: none !important;
+      border-top: 1px solid #ddd !important;
+      margin: 20px 0 !important;
+    }
+  }
+
+  /* 프린트 버튼 스타일 개선 */
+  .print-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(250,248,243,0.97);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+  }
+  .print-bar .brand-text { font-size: 13px; color: #999; font-weight: 600; }
+  .print-bar .btn-save {
+    background: #1D9E75;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    font-family: 'Pretendard', sans-serif;
+  }
+  .print-bar .btn-save:hover { background: #178a65; }
+  .print-bar .btn-home {
+    color: #999;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 8px 14px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+  }
+  .print-bar .btn-home:hover { color: #1D9E75; border-color: #1D9E75; }
+
+</style></head>
+<body>
+<div class="cover"><span class="badge">7,900won</span><h1>에너지 뱅크<br>채우는 법</h1><p>소진된 나를 다시 세우는 | 30일 에너지 충전 프로그램</p><div style="color:#888;margin-top:20px;font-size:14px">ryusunhee | Lighthouse Media</div></div>
+# 에너지 뱅크 채우는 법
+## 소진된 나를 다시 세우는 30일 에너지 충전 프로그램
+
+**저자**: 류선희  
+**가격**: 7,900원  
+**페이지**: 30페이지  
+
+---
+
+## 목차
+
+**프롤로그**
+**1장: 에너지 뱅크란 무엇인가**
+**2장: 내 에너지 레벨 진단하기**
+**3장: 신체 에너지 충전 전략**
+**4장: 정신적 에너지 회복법**
+**5장: 감정 에너지 관리하기**
+**6장: 사회적 에너지 균형 맞추기**
+**7장: 영적 에너지 채우기**
+**8장: 30일 종합 실천 프로그램**
+**워크시트**
+
+---
+
+## 프롤로그
+
+현대인의 가장 큰 고민 중 하나는 '만성 피로'입니다. 아침에 일어나기 힘들고, 하루 종일 무기력하며, 저녁이 되면 완전히 소진된 느낌을 받는 분들이 점점 늘어나고 있습니다.
+
+이 책은 단순히 휴식을 취하라고 말하지 않습니다. 체계적이고 과학적인 방법으로 당신의 '에너지 뱅크'를 다시 채우는 구체적인 방법을 제시합니다. 30일간의 실천 프로그램을 통해 소진된 당신을 다시 세워보세요.
+
+---
+
+## 1장: 에너지 뱅크란 무엇인가
+
+### 에너지 뱅크의 개념
+
+에너지 뱅크는 우리 몸과 마음이 가진 에너지의 저장소입니다. 은행 계좌처럼 에너지를 저축하고, 필요할 때 인출하며, 때로는 과도하게 사용하여 적자 상태가 되기도 합니다.
+
+하버드 의과대학의 연구에 따르면, 만성 피로를 경험하는 성인의 76%가 에너지 관리 시스템의 불균형을 보인다고 합니다¹. 이는 단순히 잠이 부족해서가 아니라, 에너지를 소모하는 양과 충전하는 양의 균형이 깨졌기 때문입니다.
+
+### 4가지 에너지 영역
+
+에너지 뱅크는 네 가지 주요 영역으로 구성됩니다:
+
+1. **신체적 에너지**: 육체적 활력과 체력
+2. **정신적 에너지**: 집중력, 창의력, 인지 능력
+3. **감정적 에너지**: 정서적 안정감과 회복력
+4. **영적 에너지**: 목적의식, 가치관, 의미감
+
+### 에너지 소모의 주요 원인
+
+현대인의 에너지 소모 패턴을 분석하면 다음과 같은 요인들이 주요 원인으로 나타납니다:
+
+- 과도한 업무량과 스트레스 (32%)
+- 불규칙한 수면 패턴 (28%)
+- 영양 불균형 (24%)
+- 인간관계 갈등 (16%)²
+
+---
+
+## 2장: 내 에너지 레벨 진단하기
+
+### 에너지 진단 체크리스트
+
+자신의 현재 에너지 상태를 정확히 파악하는 것이 회복의 첫걸음입니다. 다음 항목들을 체크해보세요.
+
+**신체적 에너지 체크**
+- [ ] 아침에 일어나기 어렵다
+- [ ] 계단을 오르면 숨이 찬다
+- [ ] 오후 3시경 극심한 피로감을 느낀다
+- [ ] 근육통이나 관절통이 자주 있다
+- [ ] 감기에 자주 걸린다
+
+**정신적 에너지 체크**
+- [ ] 집중력이 30분 이상 지속되지 않는다
+- [ ] 기억력이 예전만 못하다
+- [ ] 새로운 것을 배우기 어렵다
+- [ ] 결정 내리기가 힘들다
+- [ ] 창의적인 아이디어가 떠오르지 않는다
+
+### 에너지 패턴 분석
+
+일주일간 시간대별로 에너지 레벨을 1-10점으로 기록해보세요. 대부분의 사람들은 다음과 같은 패턴을 보입니다:
+
+- **아침형 인간**: 오전 6-10시 최고점
+- **저녁형 인간**: 오후 6-10시 최고점
+- **오후형 인간**: 오후 2-6시 최고점
+
+자신의 자연스러운 에너지 리듬을 파악하면 더 효율적인 에너지 관리가 가능합니다³.
+
+---
+
+## 3장: 신체 에너지 충전 전략
+
+### 수면의 질 향상하기
+
+질 좋은 수면은 신체 에너지 회복의 핵심입니다. 스탠ford 대학의 수면 연구소에서는 다음과 같은 수면 최적화 방법을 제시합니다⁴:
+
+**수면 환경 조성**
+- 실내 온도: 18-20도 유지
+- 완전한 암막: 빛 차단율 99% 이상
+- 소음 차단: 35dB 이하
+- 침실 전용화: 잠자기 외 활동 금지
+
+**수면 리듬 조절**
+- 매일 같은 시간에 잠자리에 들기
+- 기상 후 30분 내 자연광 노출
+- 오후 2시 이후 카페인 섭취 금지
+- 잠들기 2시간 전 전자기기 사용 중단
+
+### 에너지 부스팅 운동법
+
+격렬한 운동이 아닌, 에너지를 충전하는 운동 방법이 있습니다. 요가와 태극권 같은 저강도 운동이 오히려 에너지 레벨을 높인다는 조지아 대학교의 연구 결과가 있습니다⁵.
+
+**아침 에너지 운동 (10분)**
+1. 목과 어깨 돌리기 (2분)
+2. 팔다리 스트레칭 (3분)
+3. 심호흡과 함께하는 가벼운 스쿼트 (3분)
+4. 명상적 걷기 (2분)
+
+**저녁 회복 운동 (15분)**
+1. 요가 아사나 - 아이 포즈, 비둘기 포즈 (7분)
+2. 복식호흡 (5분)
+3. 점진적 근육 이완법 (3분)
+
+### 영양을 통한 에너지 관리
+
+혈당 스파이크를 피하고 지속적인 에너지를 공급하는 식단이 중요합니다.
+
+**에너지 충전 식품**
+- 복합 탄수화물: 현미, 귀리, 퀴노아
+- 양질의 단백질: 생선, 닭가슴살, 콩류
+- 건강한 지방: 아보카도, 견과류, 올리브오일
+- 항산화 식품: 베리류, 녹색 채소, 다크 초콜릿
+
+---
+
+## 4장: 정신적 에너지 회복법
+
+### 집중력 향상 기법
+
+**포모도로 기법 응용**
+25분 집중 + 5분 휴식의 전통적인 포모도로 기법을 개인의 집중력 패턴에 맞게 조정합니다. 연구에 따르면, 개인별 최적 집중 시간은 15-45분으로 다양합니다⁶.
+
+1. 1주차: 15분 집중 + 5분 휴식
+2. 2주차: 20분 집중 + 5분 휴식
+3. 3주차: 25분 집중 + 5분 휴식
+4. 4주차: 개인 최적 시간 찾기
+
+### 인지 부하 줄이기
+
+정신적 에너지 소모를 줄이는 핵심은 불필요한 의사결정을 최소화하는 것입니다.
+
+**결정 피로 방지법**
+- 매일 입을 옷 미리 정해두기
+- 식단 패턴화하기
+- 루틴 업무 자동화하기
+- 우선순위 매트릭스 활용하기
+
+### 창의적 회복 활동
+
+창의적 활동은 정신적 에너지를 소모하는 것이 아니라 오히려 충전하는 효과가 있습니다⁷.
+
+**추천 활동**
+- 자유로운 글쓰기 (15분)
+- 명상적 그림 그리기
+- 악기 연주하기
+- 정원 가꾸기
+
+---
+
+## 5장: 감정 에너지 관리하기
+
+### 감정 인식과 수용
+
+감정적 에너지 고갈의 주요 원인은 감정을 억압하거나 무시하는 것입니다. UCLA의 매튜 리버만 교授의 연구에 따르면, 감정을 언어로 표현하는 것만으로도 감정의 강도가 50% 감소한다고 합니다⁸.
+
+**감정 일기 작성법**
+1. 오늘 느꼈던 감정 3가지 적기
+2. 각 감정의 강도 1-10점으로 평가
+3. 그 감정을 느낀 상황과 원인 분석
+4. 감정에 대한 판단 없이 수용하는 문장 쓰기
+
+### 경계 설정하기
+
+타인의 감정에 과도하게 휩쓸리지 않도록 건강한 경계를 설정하는 것이 중요합니다.
+
+**감정적 경계 설정 단계**
+1. 내 감정과 타인 감정 구분하기
+2. "No"라고 말할 권리 인정하기
+3. 감정적 요구에 즉시 반응하지 않기
+4. 자기 돌봄을 우선순위에 두기
+
+### 긍정적 감정 늘리기
+
+바바라 프레드릭슨의 '확장-구축 이론'에 따르면, 긍정적 감정은 우리의 사고와 행동 레퍼토리를 확장시켜 심리적 자원을 구축합니다⁹.
+
+**일일 긍정 감정 실천**
+- 감사 3가지 찾기
+- 작은 성취 인정하기
+- 타인에게 친절 베풀기
+- 자연과 접촉하기
+
+---
+
+## 6장: 사회적 에너지 균형 맞추기
+
+### 에너지 주는 관계 vs 빼앗는 관계
+
+모든 인간관계가 동일한 에너지 교환을 하는 것은 아닙니다. 관계를 다음과 같이 분류해보세요:
+
+**에너지 충전 관계**
+- 격려와 지지를 주고받는 관계
+- 진정성 있는 대화가 가능한 관계
+- 함께 있으면 자연스럽고 편안한 관계
+
+**에너지 소모 관계**
+- 일방적으로 에너지를 요구하는 관계
+- 부정적 감정을 지속적으로 전달하는 관계
+- 비판과 판단이 많은 관계
+
+### 사회적 에너지 관리 전략
+
+**80/20 원칙 적용**
+- 에너지 충전 관계 80%
+- 에너지 소모 관계 20% (불가피한 경우)
+
+**관계별 에너지 투자 조절**
+- 핵심 관계: 고품질 시간과 에너지 투자
+- 일반 관계: 적절한 수준의 상호작용
+- 소모적 관계: 최소한의 에너지 투자
+
+### 혼자만의 시간 확보
+
+내향적 성향의 사람들뿐만 아니라 외향적인 사람들도 혼자만의 시간이 필요합니다. 이는 사회적 에너지를 재충전하는 필수적인 시간입니다.
+
+**효과적인 혼자 시간 활용법**
+- 완전한 침묵 시간 갖기
+- 좋아하는 취미활동 하기
+- 자연 속에서 산책하기
+- 독서나 명상하기
+
+---
+
+## 7장: 영적 에너지 채우기
+
+### 목적의식 찾기
+
+영적 에너지는 종교적인 것만을 의미하지 않습니다. 삶의 의미와 목적의식에서 나오는 근본적인 동력을 말합니다.
+
+빅터 프랭클의 '의미 치료법'에서 제시하는 바와 같이, 삶의 의미를 찾는 것은 가장 강력</body></html>

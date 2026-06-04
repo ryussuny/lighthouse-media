@@ -1,0 +1,37 @@
+{
+  "date": "2026-04-22",
+  "books": [
+    {
+      "type": "free",
+      "title": "새벽 5시의\n작은 기적",
+      "subtitle": "하루를 바꾸는\n모닝루틴 7가지",
+      "slug": "morning-miracle-routine",
+      "price": 0,
+      "url": "/ebooks/2026-04-22/free-morning-miracle-routine.html"
+    },
+    {
+      "type": "free",
+      "title": "감정의 온도를\n조절하는 법",
+      "subtitle": "화나고 지친 마음을\n다스리는 심리기술",
+      "slug": "emotion-temperature-control",
+      "price": 0,
+      "url": "/ebooks/2026-04-22/free-emotion-temperature-control.html"
+    },
+    {
+      "type": "free",
+      "title": "퇴근 후\n나를 찾는 시간",
+      "subtitle": "지친 하루를 회복하는\n저녁 셀프케어 가이드",
+      "slug": "evening-self-care-guide",
+      "price": 0,
+      "url": "/ebooks/2026-04-22/free-evening-self-care-guide.html"
+    },
+    {
+      "type": "paid",
+      "title": "번아웃에서\n벗어나는 힘",
+      "subtitle": "30대 직장인을 위한\n에너지 회복 로드맵",
+      "slug": "burnout-recovery-roadmap",
+      "price": 7900,
+      "url": "/ebooks/2026-04-22/paid-burnout-recovery-roadmap.html"
+    }
+  ]
+}

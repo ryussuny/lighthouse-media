@@ -1,0 +1,37 @@
+{
+  "date": "2026-05-09",
+  "books": [
+    {
+      "type": "free",
+      "title": "5분 아침루틴\n하루를 바꾸다",
+      "subtitle": "번아웃 직장인을 위한\n새벽 에너지 충전법",
+      "slug": "5-minute-morning-routine-change-day",
+      "price": 0,
+      "url": "/ebooks/2026-05-09/free-5-minute-morning-routine-change-day.html"
+    },
+    {
+      "type": "free",
+      "title": "감정의 온도계\n내 마음 읽기",
+      "subtitle": "직장 스트레스 속에서\n나를 지키는 감정 관리법",
+      "slug": "emotional-thermometer-mind-reading",
+      "price": 0,
+      "url": "/ebooks/2026-05-09/free-emotional-thermometer-mind-reading.html"
+    },
+    {
+      "type": "free",
+      "title": "퇴근 후 30분\n나를 회복하기",
+      "subtitle": "지친 하루 끝에서\n다시 충전하는 저녁 의식",
+      "slug": "30-minutes-after-work-recovery",
+      "price": 0,
+      "url": "/ebooks/2026-05-09/free-30-minutes-after-work-recovery.html"
+    },
+    {
+      "type": "paid",
+      "title": "에너지 뱅킹\n생산성 충전소",
+      "subtitle": "번아웃 직장인을 위한\n지속가능한 에너지 관리 시스템",
+      "slug": "energy-banking-productivity-charging-station",
+      "price": 7900,
+      "url": "/ebooks/2026-05-09/paid-energy-banking-productivity-charging-station.html"
+    }
+  ]
+}

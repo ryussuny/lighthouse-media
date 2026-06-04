@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>감정의 주인이 되는 법 - Lighthouse Media</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: #FAF8F3;
+  color: #333;
+  line-height: 2.0;
+  font-size: 16px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 28px 80px;
+  word-break: keep-all;
+}
+
+/* 커버 */
+.cover {
+  background: linear-gradient(135deg,#1a1a2e,#16213e);
+  color: #fff;
+  padding: 70px 40px;
+  border-radius: 20px;
+  text-align: center;
+  margin-bottom: 50px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+.cover h1 { font-size: 30px; line-height: 1.4; margin-bottom: 14px; font-weight: 800; }
+.cover .sub { color: #1D9E75; font-size: 17px; line-height: 1.6; }
+.cover .author { color: #888; margin-top: 24px; font-size: 14px; }
+.badge {
+  display: inline-block;
+  background: #1D9E75;
+  color: #fff;
+  padding: 5px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* 본문 타이포그래피 */
+h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 48px 0 20px;
+  line-height: 1.4;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1D9E75;
+  margin: 44px 0 18px;
+  padding: 14px 0 14px 16px;
+  border-left: 4px solid #1D9E75;
+  background: rgba(29,158,117,0.03);
+  border-radius: 0 8px 8px 0;
+  line-height: 1.4;
+}
+h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2a2a2a;
+  margin: 32px 0 14px;
+  line-height: 1.5;
+}
+p {
+  margin-bottom: 18px;
+  font-size: 16px;
+  line-height: 2.0;
+  color: #444;
+  letter-spacing: -0.2px;
+}
+strong { color: #1a1a2e; font-weight: 700; }
+em { color: #1D9E75; font-style: normal; font-weight: 600; }
+
+/* 리스트 */
+ul, ol {
+  margin: 14px 0 20px 24px;
+  line-height: 2.0;
+}
+li {
+  margin-bottom: 10px;
+  padding-left: 4px;
+  color: #444;
+}
+li strong { color: #2a2a2a; }
+
+/* 구분선 */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ddd, transparent);
+  margin: 36px 0;
+}
+
+/* 인용 */
+blockquote {
+  border-left: 3px solid #1D9E75;
+  background: rgba(29,158,117,0.04);
+  padding: 16px 20px;
+  margin: 20px 0;
+  border-radius: 0 10px 10px 0;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.9;
+}
+
+/* 테이블 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+}
+th {
+  background: #1D9E75;
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+}
+tr:nth-child(even) td { background: #f9f9f6; }
+
+/* 코드 블록 (체크리스트 등) */
+code {
+  background: #f0ede6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #1D9E75;
+}
+pre {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 20px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 20px 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* PDF 저장 버튼 */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(250,248,243,0.95);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.toolbar .brand { font-size: 13px; color: #999; font-weight: 600; }
+.toolbar .btn {
+  background: #1D9E75;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+.toolbar .btn:hover { opacity: 0.9; }
+
+/* CTA (무료 전자책 하단) */
+.cta-box {
+  background: linear-gradient(135deg, rgba(29,158,117,0.08), rgba(186,117,23,0.06));
+  border: 1px solid rgba(29,158,117,0.2);
+  border-radius: 14px;
+  padding: 30px;
+  margin-top: 40px;
+  text-align: center;
+}
+.cta-box h3 { color: #1a1a2e; margin-bottom: 8px; }
+.cta-box p { font-size: 14px; color: #888; margin-bottom: 16px; }
+.cta-box a {
+  display: inline-block;
+  background: #1D9E75;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* 푸터 */
+.footer {
+  text-align: center;
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.8;
+}
+
+/* 인쇄 */
+@media print {
+  .toolbar, .cta-box { display: none; }
+  body { max-width: 100%; padding: 20px; font-size: 14px; }
+  h2 { page-break-before: always; }
+  p, li { orphans: 3; widows: 3; }
+}
+
+/* 모바일 */
+@media (max-width: 600px) {
+  body { padding: 20px 16px 60px; font-size: 15px; }
+  .cover { padding: 50px 24px; }
+  .cover h1 { font-size: 24px; }
+  h2 { font-size: 19px; }
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="brand">Lighthouse Media</span>
+  <button class="btn" onclick="window.print()">PDF로 저장</button>
+</div>
+
+<div style="height:50px"></div>
+
+<div class="cover">
+  <span class="badge">FREE EBOOK</span>
+  <h1>감정의 주인이<br>되는 법</h1>
+  <p class="sub">직장에서 휘둘리지 않고 | 마음을 지키는 기술</p>
+  <div class="author">류선희 | Lighthouse Media</div>
+</div>
+
+<h1 id="_1">감정의 주인이 되는 법</h1>
+<h2 id="_2">직장에서 휘둘리지 않고 마음을 지키는 기술</h2>
+<p><strong>저자: 류선희 (Lighthouse Media)</strong></p>
+<hr />
+<h2 id="_3">들어가며</h2>
+<p>매일 아침 출근길, 당신의 마음은 어떤 상태인가요? </p>
+<p>오늘도 까다로운 상사와 마주해야 하고, 끝없는 업무에 치이고, 동료들과의 미묘한 신경전을 견뎌내야 합니다. 퇴근 후에는 온종일 쌓인 스트레스와 짜증이 가족이나 친구들에게 고스란히 전해지죠.</p>
+<p>이 책은 거창한 변화를 약속하지 않습니다. 대신 작지만 확실한 변화를 제안합니다. 직장에서 감정에 휘둘리지 않고, 내 마음을 지킬 수 있는 현실적이고 구체적인 방법들을 담았습니다.</p>
+<p>7페이지라는 짧은 분량이지만, 당장 오늘부터 실천할 수 있는 기술들로 구성했습니다. 바쁜 일상 속에서도 3분이면 읽을 수 있고, 바로 적용해볼 수 있습니다.</p>
+<hr />
+<h2 id="chapter-1-">Chapter 1. 감정의 신호등 - 나의 감정 상태 파악하기</h2>
+<p>감정을 관리하기 위한 첫 번째 단계는 지금 내가 어떤 상태인지 정확히 아는 것입니다. 대부분의 사람들은 감정이 폭발한 후에야 "아, 내가 화가 났구나"를 깨닫습니다.</p>
+<p>감정에도 신호등이 있습니다. 초록불은 평온한 상태, 노란불은 주의가 필요한 상태, 빨간불은 즉시 멈춰야 하는 상태입니다.</p>
+<p><strong>초록불 신호</strong>: 어깨가 자연스럽게 내려와 있고, 호흡이 고르며, 목소리 톤이 평소와 같습니다.</p>
+<p><strong>노란불 신호</strong>: 어깨에 힘이 들어가기 시작하고, 호흡이 약간 빨라지며, 목소리가 평소보다 높아집니다. 눈살을 찌푸리거나 입술을 꽉 다물게 됩니다.</p>
+<p><strong>빨간불 신호</strong>: 가슴이 답답하고, 주먹을 쥐거나 다리를 떨게 됩니다. 목소리가 떨리거나 말이 빨라집니다.</p>
+<h3 id="3">실천법: 하루 3번 감정 체크</h3>
+<ul>
+<li>오전 10시, 오후 3시, 오후 6시에 알람을 설정하세요</li>
+<li>알람이 울리면 지금 어떤 신호등 상태인지 확인합니다</li>
+<li>노란불이나 빨간불이라면 깊게 숨을 3번 쉬어보세요</li>
+</ul>
+<hr />
+<h2 id="chapter-2-">Chapter 2. 방어막 세우기 - 타인의 감정으로부터 나를 보호하는 법</h2>
+<p>직장에서 가장 힘든 순간 중 하나는 상사나 동료의 나쁜 감정에 휩쓸리는 때입니다. 상사가 화를 내면 나도 모르게 위축되고, 동료가 짜증을 내면 나까지 불쾌해집니다.</p>
+<p>하지만 타인의 감정은 그들의 것이지, 내가 받아들일 의무는 없습니다. 감정적 방어막을 세우는 것은 냉정함이 아니라 생존 기술입니다.</p>
+<p><strong>물리적 거리 두기</strong>: 화난 사람과는 최소 1미터 이상 거리를 유지하세요. 책상이 있다면 책상 뒤에 서거나 앉으세요.</p>
+<p><strong>정신적 방어막</strong>: 상대방의 화난 말을 들을 때 "이것은 이 사람의 문제이지, 나의 문제가 아니다"라고 속으로 되뇌세요.</p>
+<p><strong>호흡 조절</strong>: 상대방이 감정적으로 말할 때, 나는 의도적으로 천천히 호흡합니다. 상대방의 빠른 리듬에 동조하지 마세요.</p>
+<h3 id="_4">실천법: 투명한 벽 시각화</h3>
+<ul>
+<li>감정적인 상황에서 나와 상대방 사이에 투명한 유리벽이 있다고 상상하세요</li>
+<li>상대방의 말은 들리지만, 감정은 이 벽을 통과하지 못합니다</li>
+<li>"이 감정은 저 벽 너머에 있어서 나에게 닿지 않는다"고 마음속으로 말하세요</li>
+</ul>
+<hr />
+<h2 id="chapter-3-">Chapter 3. 화의 온도 조절 - 분노를 현명하게 다루는 기술</h2>
+<p>분노는 나쁜 감정이 아닙니다. 내 경계선이 침해당했을 때 나타나는 자연스러운 반응입니다. 문제는 이 화를 어떻게 표현하느냐입니다.</p>
+<p>직장에서 화를 폭발시키면 관계가 악화되고, 억누르기만 하면 스트레스가 쌓입니다. 화의 온도를 조절하는 기술이 필요합니다.</p>
+<p><strong>즉시 반응 금지</strong>: 화가 날 때는 바로 대답하지 마세요. "잠시만 생각해보겠습니다"라고 말하고 시간을 벌어보세요.</p>
+<p><strong>물리적 방법</strong>: 화장실에 가서 찬물로 손목을 씻거나, 복도를 한 바퀴 걸어보세요. 몸의 온도를 낮추면 마음의 온도도 함께 내려갑니다.</p>
+<p><strong>언어의 온도 조절</strong>: "너 때문에 화가 난다" 대신 "이런 상황에서 저는 당황스럽습니다"라고 표현하세요. 'You' 메시지보다 'I' 메시지가 온도가 낮습니다.</p>
+<h3 id="6">실천법: 6초 법칙</h3>
+<ul>
+<li>화가 날 때 마음속으로 6까지 천천히 세어보세요</li>
+<li>분노 호르몬은 6초 후부터 줄어들기 시작합니다</li>
+<li>세는 동안 "지금 내가 하려는 말이 정말 필요한가?"를 생각해보세요</li>
+</ul>
+<hr />
+<h2 id="chapter-4-">Chapter 4. 스트레스 배출구 만들기 - 쌓인 감정의 건강한 해소법</h2>
+<p>아무리 잘 관리해도 감정은 쌓입니다. 중요한 것은 이 감정들을 건강하게 배출하는 통로를 만드는 것입니다. 술이나 폭식, 과도한 쇼핑으로 해소하려 하면 일시적일 뿐입니다.</p>
+<p><strong>움직임을 통한 배출</strong>: 스트레스 호르몬은 움직임을 통해 자연스럽게 분해됩니다. 엘리베이터 대신 계단을 이용하고, 점심시간에 10분이라도 산책하세요.</p>
+<p><strong>글쓰기 배출법</strong>: 감정을 글로 써보세요. 일기가 아니어도 됩니다. 스마트폰 메모장에 "지금 짜증나는 이유 3가지"를 써보는 것만으로도 효과가 있습니다.</p>
+<p><strong>대화를 통한 배출</strong>: 믿을 만한 사람과 감정을 나누세요. 단, 단순히 불평하는 것이 아니라 "이럴 때 어떻게 하면 좋을까?"라는 질문을 함께 던져보세요.</p>
+<h3 id="5">실천법: 5분 감정 정리법</h3>
+<ul>
+<li>퇴근 후 집에 도착하면 5분간 오늘의 감정을 정리합니다</li>
+<li>종이에 "오늘 힘들었던 감정 3가지"를 써보세요</li>
+<li>다 쓴 후에는 종이를 찢어서 버리거나 태워버리세요</li>
+</ul>
+<hr />
+<h2 id="chapter-5-">Chapter 5. 감정의 경계선 - 일과 나를 분리하는 심리적 기술</h2>
+<p>가장 중요한 것은 일에서의 감정과 나 자신을 분리하는 것입니다. 직장에서 받은 스트레스가 집까지 따라와서는 안 됩니다.</p>
+<p><strong>옷 갈아입기 의식</strong>: 집에 도착하면 즉시 옷을 갈아입으세요. 옷을 벗으면서 "오늘의 스트레스도 함께 벗어낸다"고 생각하세요.</p>
+<p><strong>시공간 분리</strong>: 집에서는 업무 관련 메신저나 이메일을 확인하지 마세요. 물리적 분리가 정신적 분리로 이어집니다.</p>
+<p><strong>역할 전환</strong>: 직장에서의 나와 집에서의 나는 다른 사람입니다. 집에서는 회사의 김대리가 아니라 가족의 아빠, 엄마, 자녀가 되어보세요.</p>
+<p><strong>긍정적 마무리</strong>: 잠들기 전에 "오늘도 수고했다"고 스스로에게 말해주세요. 완벽하지 않아도 괜찮습니다. 오늘 하루를 버텨낸 것만으로도 충분합니다.</p>
+<h3 id="_5">실천법: 출퇴근 전환 의식</h3>
+<ul>
+<li>출근할 때: "오늘도 내 마음을 잘 지켜보자"라고 다짐합니다</li>
+<li>퇴근할 때: 회사 문을 나서면서 "오늘의 업무는 여기까지"라고 선언합니다</li>
+<li>이 작은 의식이 일과 개인 시간의 경계를 만들어줍니다</li>
+</ul>
+<hr />
+<h2 id="7">7일 실천 체크리스트</h2>
+<h3 id="1">1일차: 감정 신호등 익히기</h3>
+<ul>
+<li>[ ] 하루 3번 감정 상태 체크 (오전 10시, 오후 3시, 오후 6시)</li>
+<li>[ ] 노란불/빨간불일 때 깊은 호흡 3번하기</li>
+<li>[ ] 오늘 가장 힘들었던 감정 상황 1가지 기록하기</li>
+</ul>
+<h3 id="2">2일차: 방어막 세우기</h3>
+<ul>
+<li>[ ] 감정적인 상대방과 물리적 거리 1미터 이상 유지하기</li>
+<li>[ ] "이것은 상대방의 문제"라고 속으로 3번 말하기</li>
+<li>[ ] 투명한 벽 시각화 기법 1번 이상 사용해보기</li>
+</ul>
+<h3 id="3_1">3일차: 화 온도 조절하기</h3>
+<ul>
+<li>[ ] 화날 때 즉시 반응하지 않고 "생각해보겠습니다" 말하기</li>
+<li>[ ] 6초 세기 법칙 실천해보기</li>
+<li>[ ] 찬물로 손목 씻기 또는 복도 걷기 실행하기</li>
+</ul>
+<h3 id="4">4일차: 스트레스 배출하기</h3>
+<ul>
+<li>[</li>
+</ul>
+
+<div class='cta-box'><h3>더 깊은 내용이 궁금하다면</h3><p>유료 전자책에서 실전 가이드를 만나보세요</p><a href="/lighthouse-media/shop.html">전자책 보러가기</a></div>
+
+<div class="footer">
+  <strong>Lighthouse Media</strong><br>
+  류선희 | 실제로 삶이 나아지는 콘텐츠<br>
+  <a href="/lighthouse-media/free.html" style="color:#1D9E75;text-decoration:none;">무료 PDF 더 받기</a>
+</div>
+
+</body>
+</html>

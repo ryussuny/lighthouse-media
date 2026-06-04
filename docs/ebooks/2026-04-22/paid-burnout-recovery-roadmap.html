@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>번아웃에서 벗어나는 힘 - Lighthouse Media</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: #FAF8F3;
+  color: #333;
+  line-height: 2.0;
+  font-size: 16px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 28px 80px;
+  word-break: keep-all;
+}
+
+/* 커버 */
+.cover {
+  background: linear-gradient(135deg,#1a1a2e,#0f3460);
+  color: #fff;
+  padding: 70px 40px;
+  border-radius: 20px;
+  text-align: center;
+  margin-bottom: 50px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+.cover h1 { font-size: 30px; line-height: 1.4; margin-bottom: 14px; font-weight: 800; }
+.cover .sub { color: #BA7517; font-size: 17px; line-height: 1.6; }
+.cover .author { color: #888; margin-top: 24px; font-size: 14px; }
+.badge {
+  display: inline-block;
+  background: #BA7517;
+  color: #fff;
+  padding: 5px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* 본문 타이포그래피 */
+h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 48px 0 20px;
+  line-height: 1.4;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #BA7517;
+  margin: 44px 0 18px;
+  padding: 14px 0 14px 16px;
+  border-left: 4px solid #BA7517;
+  background: rgba(29,158,117,0.03);
+  border-radius: 0 8px 8px 0;
+  line-height: 1.4;
+}
+h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2a2a2a;
+  margin: 32px 0 14px;
+  line-height: 1.5;
+}
+p {
+  margin-bottom: 18px;
+  font-size: 16px;
+  line-height: 2.0;
+  color: #444;
+  letter-spacing: -0.2px;
+}
+strong { color: #1a1a2e; font-weight: 700; }
+em { color: #BA7517; font-style: normal; font-weight: 600; }
+
+/* 리스트 */
+ul, ol {
+  margin: 14px 0 20px 24px;
+  line-height: 2.0;
+}
+li {
+  margin-bottom: 10px;
+  padding-left: 4px;
+  color: #444;
+}
+li strong { color: #2a2a2a; }
+
+/* 구분선 */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ddd, transparent);
+  margin: 36px 0;
+}
+
+/* 인용 */
+blockquote {
+  border-left: 3px solid #BA7517;
+  background: rgba(29,158,117,0.04);
+  padding: 16px 20px;
+  margin: 20px 0;
+  border-radius: 0 10px 10px 0;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.9;
+}
+
+/* 테이블 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+}
+th {
+  background: #BA7517;
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+}
+tr:nth-child(even) td { background: #f9f9f6; }
+
+/* 코드 블록 (체크리스트 등) */
+code {
+  background: #f0ede6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #BA7517;
+}
+pre {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 20px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 20px 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* PDF 저장 버튼 */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(250,248,243,0.95);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.toolbar .brand { font-size: 13px; color: #999; font-weight: 600; }
+.toolbar .btn {
+  background: #BA7517;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+.toolbar .btn:hover { opacity: 0.9; }
+
+/* CTA (무료 전자책 하단) */
+.cta-box {
+  background: linear-gradient(135deg, rgba(29,158,117,0.08), rgba(186,117,23,0.06));
+  border: 1px solid rgba(29,158,117,0.2);
+  border-radius: 14px;
+  padding: 30px;
+  margin-top: 40px;
+  text-align: center;
+}
+.cta-box h3 { color: #1a1a2e; margin-bottom: 8px; }
+.cta-box p { font-size: 14px; color: #888; margin-bottom: 16px; }
+.cta-box a {
+  display: inline-block;
+  background: #BA7517;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* 푸터 */
+.footer {
+  text-align: center;
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.8;
+}
+
+/* 인쇄 */
+
+  body { max-width: 100%; padding: 20px; font-size: 14px; }
+  h2 { page-break-before: always; }
+  p, li { orphans: 3; widows: 3; }
+}
+
+/* 모바일 */
+@media (max-width: 600px) {
+  body { padding: 20px 16px 60px; font-size: 15px; }
+  .cover { padding: 50px 24px; }
+  .cover h1 { font-size: 24px; }
+  h2 { font-size: 19px; }
+}
+
+  /* ══════════════════════════════════════
+     소책자 스타일 PDF 인쇄 설정
+     ══════════════════════════════════════ */
+  @media print {
+    @page {
+      size: A4;
+      margin: 20mm 18mm 25mm 18mm;
+    }
+
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+    body {
+      background: #fff !important;
+      color: #222 !important;
+      font-size: 11pt !important;
+      line-height: 1.8 !important;
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* 표지: 전체 페이지 */
+    .cover, section.cover {
+      page-break-after: always !important;
+      min-height: 100vh !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      background: linear-gradient(135deg, #1a1a2e, #16213e) !important;
+      color: #fff !important;
+      padding: 60px 40px !important;
+    }
+
+    /* 본문 영역 */
+    .content, .body-content, main {
+      padding: 0 !important;
+      max-width: 100% !important;
+    }
+
+    /* 챕터 제목: 새 페이지 시작 */
+    h2 {
+      page-break-before: always !important;
+      page-break-after: avoid !important;
+      font-size: 18pt !important;
+      color: #1D9E75 !important;
+      margin-top: 0 !important;
+      padding-top: 20px !important;
+      padding-bottom: 12px !important;
+      border-left: 4px solid #1D9E75 !important;
+      padding-left: 14px !important;
+    }
+
+    /* 첫 번째 h2는 새 페이지 안함 (표지 바로 다음) */
+    .content h2:first-of-type, .body-content h2:first-of-type {
+      page-break-before: avoid !important;
+    }
+
+    h3 {
+      page-break-after: avoid !important;
+      font-size: 14pt !important;
+      color: #333 !important;
+      margin-top: 24px !important;
+      margin-bottom: 8px !important;
+    }
+
+    p {
+      font-size: 11pt !important;
+      line-height: 1.9 !important;
+      margin-bottom: 12px !important;
+      color: #333 !important;
+      orphans: 3 !important;
+      widows: 3 !important;
+      text-align: justify !important;
+      word-break: keep-all !important;
+    }
+
+    /* 리스트 */
+    ul, ol {
+      margin: 8px 0 14px 20px !important;
+      page-break-inside: avoid !important;
+    }
+    li {
+      font-size: 11pt !important;
+      line-height: 1.8 !important;
+      margin-bottom: 6px !important;
+    }
+
+    /* 인용문 */
+    blockquote {
+      border-left: 3px solid #1D9E75 !important;
+      background: #f5f5f0 !important;
+      padding: 12px 16px !important;
+      margin: 14px 0 !important;
+      font-size: 10.5pt !important;
+      page-break-inside: avoid !important;
+      border-radius: 0 !important;
+    }
+
+    /* 강조 */
+    strong { color: #1D9E75 !important; }
+    em { color: #BA7517 !important; font-style: normal !important; }
+
+    /* 코드/체크리스트 블록 */
+    pre, code {
+      background: #f0f0ea !important;
+      font-size: 10pt !important;
+      page-break-inside: avoid !important;
+    }
+
+    /* 테이블 */
+    table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      page-break-inside: avoid !important;
+      font-size: 10pt !important;
+      margin: 12px 0 !important;
+    }
+    th {
+      background: #1D9E75 !important;
+      color: #fff !important;
+      padding: 8px 10px !important;
+      font-weight: 600 !important;
+      text-align: left !important;
+    }
+    td {
+      padding: 8px 10px !important;
+      border-bottom: 1px solid #ddd !important;
+    }
+
+    /* 페이지 하단 푸터 */
+    .content::after, .body-content::after {
+      content: "Lighthouse Media | 류선희 | 실제로 삶이 나아지는 콘텐츠";
+      display: block;
+      text-align: center;
+      font-size: 8pt;
+      color: #999;
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid #ddd;
+    }
+
+    /* 숨길 요소들 */
+    .actions, .cta, .cta-box, .btn-print, .toolbar, button,
+    nav, .header-nav, .nav, .footer-cta, .follow-banner,
+    .sidebar-cta, .print-bar, .no-print {
+      display: none !important;
+    }
+
+    /* 이미지 */
+    img {
+      max-width: 100% !important;
+      page-break-inside: avoid !important;
+    }
+
+    /* 링크 URL 표시 안함 */
+    a { color: #1D9E75 !important; text-decoration: none !important; }
+    a::after { content: none !important; }
+
+    /* 카드/박스 스타일 */
+    .tip-box, .highlight-box, .note-box, .checklist-box {
+      background: #f9f9f5 !important;
+      border: 1px solid #e0e0d8 !important;
+      padding: 14px !important;
+      margin: 12px 0 !important;
+      page-break-inside: avoid !important;
+      border-radius: 6px !important;
+    }
+
+    /* 구분선 */
+    hr {
+      border: none !important;
+      border-top: 1px solid #ddd !important;
+      margin: 20px 0 !important;
+    }
+  }
+
+  /* 프린트 버튼 스타일 개선 */
+  .print-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(250,248,243,0.97);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+  }
+  .print-bar .brand-text { font-size: 13px; color: #999; font-weight: 600; }
+  .print-bar .btn-save {
+    background: #1D9E75;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    font-family: 'Pretendard', sans-serif;
+  }
+  .print-bar .btn-save:hover { background: #178a65; }
+  .print-bar .btn-home {
+    color: #999;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 8px 14px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+  }
+  .print-bar .btn-home:hover { color: #1D9E75; border-color: #1D9E75; }
+
+</style>
+</head>
+<body>
+
+
+
+<div class="cover">
+  <span class="badge">7,900원</span>
+  <h1>번아웃에서<br>벗어나는 힘</h1>
+  <p class="sub">30대 직장인을 위한 | 에너지 회복 로드맵</p>
+  <div class="author">류선희 | Lighthouse Media</div>
+</div>
+
+<h1 id="_1">번아웃에서 벗어나는 힘</h1>
+<h2 id="30">30대 직장인을 위한 에너지 회복 로드맵</h2>
+<p><strong>저자:</strong> 류선희 (Lighthouse Media)<br />
+<strong>가격:</strong> 7,900원<br />
+<strong>분량:</strong> 30페이지 (약 15,000자)</p>
+<hr />
+<h2 id="_2">목차</h2>
+<ol>
+<li><a href="#chapter1">번아웃의 정체를 파악하라</a></li>
+<li><a href="#chapter2">에너지 누수 지점을 찾아라</a></li>
+<li><a href="#chapter3">몸의 신호를 읽는 법</a></li>
+<li><a href="#chapter4">마음의 경계선 설정하기</a></li>
+<li><a href="#chapter5">일의 의미를 재정의하기</a></li>
+<li><a href="#chapter6">관계에서 에너지 충전하기</a></li>
+<li><a href="#chapter7">지속 가능한 루틴 만들기</a></li>
+<li><a href="#chapter8">30일 에너지 회복 실천 워크시트</a></li>
+</ol>
+<hr />
+<h2 id="chapter-1-chapter1">Chapter 1. 번아웃의 정체를 파악하라 {#chapter1}</h2>
+<p>"또 월요일이구나." 알람 소리와 함께 떠오르는 이 생각이 얼마나 익숙한지 모릅니다. 커피를 마셔도 졸리고, 주말에 쉬어도 피로가 풀리지 않는 상태가 지속되고 있다면, 당신은 번아웃의 경계선에 서 있을 가능성이 높습니다.</p>
+<h3 id="_3">번아웃이란 무엇인가</h3>
+<p>세계보건기구(WHO)는 2019년 번아웃을 '직업적 현상'으로 정의했습니다. 단순한 스트레스나 피로가 아닌, 업무와 관련된 만성적 스트레스가 성공적으로 관리되지 못해 발생하는 상태라는 것입니다.</p>
+<p>번아웃의 3가지 핵심 증상은 다음과 같습니다:</p>
+<ol>
+<li><strong>정서적 고갈</strong>: 에너지가 바닥나고 감정적으로 메말라가는 느낌</li>
+<li><strong>비인격화</strong>: 업무나 동료에 대해 냉소적이고 거리감 있는 태도</li>
+<li><strong>성취감 저하</strong>: 자신의 업무 성과와 능력에 대한 회의감</li>
+</ol>
+<h3 id="_4">한국 직장인의 번아웃 현실</h3>
+<p>한국경영자총협회의 2023년 조사에 따르면, 국내 직장인의 64.2%가 번아웃을 경험한 적이 있다고 응답했습니다. 특히 30대의 경우 71.8%로 가장 높은 비율을 보였습니다.</p>
+<p>이는 30대가 마주하는 특수한 상황 때문입니다:
+- 커리어 성장에 대한 압박
+- 결혼, 육아 등 생활 변화
+- 부모 세대와 다른 가치관의 충돌
+- 경제적 부담의 증가</p>
+<h3 id="_5">번아웃과 단순 피로의 차이점</h3>
+<p>많은 사람들이 번아웃을 단순한 피로로 오해합니다. 하지만 둘 사이에는 명확한 차이가 있습니다.</p>
+<p><strong>단순 피로</strong>는 충분한 휴식으로 회복이 가능합니다. 반면 <strong>번아웃</strong>은 휴식을 취해도 근본적인 회복이 어렵고, 업무에 대한 태도와 인생관까지 영향을 미칩니다.</p>
+<p>하버드 의과대학의 크리스티나 마슬라흐 교수는 "번아웃은 개인의 문제가 아닌 시스템의 문제"라고 강조했습니다. 즉, 개인의 의지력 부족이 아닌 환경과 구조적 문제에서 비롯되는 것입니다.</p>
+<h3 id="_6">번아웃 자가진단</h3>
+<p>다음 문항 중 5개 이상에 해당한다면 번아웃 상태일 가능성이 높습니다:</p>
+<ul>
+<li>아침에 일어나기가 힘들다</li>
+<li>업무에 집중하기 어렵다</li>
+<li>작은 일에도 짜증이 난다</li>
+<li>동료들과의 대화가 귀찮다</li>
+<li>취미 활동에 흥미를 잃었다</li>
+<li>잠들기 어렵거나 자주 깬다</li>
+<li>두통이나 소화불량이 잦다</li>
+<li>"이게 무슨 의미가 있나" 싶은 생각이 든다</li>
+</ul>
+<h3 id="_7">번아웃에서 벗어나는 첫 번째 단계</h3>
+<p>번아웃에서 벗어나는 첫 번째 단계는 현재 상황을 정확히 인식하는 것입니다. "나는 지금 번아웃 상태야"라고 스스로 인정하는 것부터 시작해야 합니다.</p>
+<p>이는 자책이 아닌 현실 인식입니다. 감기에 걸렸을 때 "내가 감기에 걸렸구나"라고 인정하고 치료하는 것처럼, 번아웃 역시 마찬가지입니다.</p>
+<p>다음 장에서는 당신의 에너지가 어디서 새어나가고 있는지 구체적으로 파악하는 방법을 알아보겠습니다. 번아웃 극복의 여정이 시작되었습니다.</p>
+<hr />
+<h2 id="chapter-2-chapter2">Chapter 2. 에너지 누수 지점을 찾아라 {#chapter2}</h2>
+<p>스마트폰 배터리가 빨리 닳는 이유를 찾기 위해 어떤 앱이 전력을 많이 소모하는지 확인하듯, 우리 삶에서도 에너지 누수 지점을 찾아야 합니다. 에너지는 유한한 자원입니다. 어디서 새어나가는지 알아야 효과적으로 관리할 수 있습니다.</p>
+<h3 id="4">에너지 누수의 4가지 유형</h3>
+<p>심리학자 짐 로어(Jim Loehr)의 연구에 따르면, 인간의 에너지는 4가지 차원에서 소모됩니다.</p>
+<p><strong>1. 신체적 에너지 누수</strong>
+- 불규칙한 수면 패턴
+- 영양 불균형
+- 운동 부족 또는 과다
+- 만성적 통증이나 질환</p>
+<p><strong>2. 정서적 에너지 누수</strong>
+- 부정적 감정의 축적
+- 갈등 상황의 지속
+- 감정 억압
+- 과도한 걱정과 불안</p>
+<p><strong>3. 정신적 에너지 누수</strong>
+- 멀티태스킹의 남용
+- 집중력 분산
+- 정보 과부하
+- 의사결정 피로</p>
+<p><strong>4. 영적 에너지 누수</strong>
+- 목적의식 부재
+- 가치관과 행동의 불일치
+- 의미 있는 관계의 부족
+- 성장 동기의 상실</p>
+<h3 id="_8">에너지 누수 추적법</h3>
+<p>구글의 내부 연구팀이 개발한 'Energy Audit' 방법을 직장인 버전으로 적용해보겠습니다.</p>
+<p><strong>1주일간 에너지 일기 쓰기</strong></p>
+<p>매일 오전 9시, 오후 2시, 오후 6시, 오후 10시에 자신의 에너지 수준을 10점 만점으로 기록하세요. 동시에 그 시간에 무엇을 하고 있었는지, 어떤 감정을 느꼈는지도 함께 적으세요.</p>
+<p>예시:</p>
+<pre><code>월요일 오후 2시: 에너지 3점
+- 활동: 회의 3개 연속 참석
+- 감정: 답답함, 피로감
+- 특이사항: 점심을 제대로 못 먹음
+</code></pre>
+<h3 id="_9">숨겨진 에너지 누수 지점들</h3>
+<p><strong>디지털 피로</strong>
+MIT 슬론 경영대학원의 연구에 따르면, 평균적으로 직장인은 하루에 74번 이메일을 확인하고, 6분마다 한 번씩 업무를 중단합니다. 이런 잦은 전환은 뇌에 상당한 부담을 줍니다.</p>
+<p><strong>의사결정 피로</strong>
+페이스북 창립자 마크 저커버그가 매일 같은 옷을 입는 이유를 아시나요? 사소한 의사결정들이 누적되어 정신적 피로를 유발하기 때문입니다. 하루에 내리는 크고 작은 의사결정의 개수는 평균 35,000개에 달합니다.</p>
+<p><strong>완벽주의의 함정</strong>
+브리튼 브라운 박사의 연구에 따르면, 완벽주의는 생산성을 높이는 것이 아니라 오히려 에너지를 고갈시키는 주요 요인입니다. "완벽하게 해야 한다"는 압박감은 지속적인 스트레스를 만들어냅니다.</p>
+<h3 id="_10">관계에서의 에너지 누수</h3>
+<p><strong>에너지 뱀파이어 식별하기</strong>
+심리학자 주디스 올로프(Judith Orloff)는 특정 유형의 사람들을 '에너지 뱀파이어'라고 명명했습니다:</p>
+<ul>
+<li>항상 불평하는 사람</li>
+<li>모든 관심을 자신에게 돌리려는 사람  </li>
+<li>경계를 존중하지 않는 사람</li>
+<li>부정적 에너지를 지속적으로 퍼뜨리는 사람</li>
+</ul>
+<p><strong>긍정적 관계 vs 소모적 관계</strong>
+한 대화를 마친 후 자신의 기분을 체크해보세요. 에너지가 충전되는 느낌인가요, 아니면 소모되는 느낌인가요? 이 간단한 체크만으로도 어떤 관계가 당신에게 도움이 되는지 파악할 수 있습니다.</p>
+<h3 id="_11">업무 환경의 에너지 누수</h3>
+<p><strong>물리적 환경</strong>
+- 조명: 너무 밝거나 어두운 조명
+- 소음: 지속적인 소음이나 갑작스러운 소리
+- 온도: 적정 온도(20-24도)를 벗어난 환경
+- 정리정돈: 어수선한 작업 공간</p>
+<p><strong>업무 프로세스</strong>
+- 불필요한 회의나 보고서
+- 명확하지 않은 업무 지시
+- 권한 없는 책임
+- 비효율적인 시스템</p>
+<h3 id="_12">에너지 누수 차단 실전 전략</h3>
+<p><strong>1. 디지털 디톡스</strong>
+- 이메일 확인 시간을 하루 3번으로 제한
+- 스마트폰 알림 기능 최소화
+- 업무 시간 외 메신저 끄기</p>
+<p><strong>2. 의사결정 단순화</strong><br />
+- 중요하지 않은 선택은 미리 정해두기
+- "아니오"라고 말하는 기준 명확히 하기
+- 우선순위 매트릭스 활용하기</p>
+<p><strong>3. 에너지 충전 활동 늘리기</strong>
+- 자연 속 산책 (하루 15분)
+- 깊은 호흡 연습 (하루 5분씩 3회)
+- 감사 일기 쓰기 (잠들기 전 3가지)</p>
+<p>다음 장에서는 몸이 보내는 신호를 정확히 읽고 대응하는 방법을 알아보겠습니다.</p>
+<hr />
+<h2 id="chapter-3-chapter3">Chapter 3. 몸의 신호를 읽는 법 {#chapter3}</h2>
+<p>"몸이 천 냥이면 건강이 구백 냥"이라는 속담이 있습니다. 하지만 현대 직장인들은 몸의 신호를 무시하고 살아가는 경우가 많습니다. 두통이 와도 진통제로 버티고, 어깨가 뭉쳐도 파스를 붙이며 일을 계속합니다. </p>
+<p>하버드 의과대학의 허버트 벤슨 박사는 "몸과 마음은 분리될 수 없으며, 몸의 신호를 무시하는 것은 조기경보시스템을 끄는 것과 같다"고 말했습니다.</p>
+<h3 id="_13">스트레스의 신체적 증상들</h3>
+<p><strong>초기 단계 신호</strong>
+- 목과 어깨의 긴장
+- 소화불량이나 속 쓰림
+- 두통 빈도 증가
+- 잠들기 어려움
+- 감정 기복이 심해짐</p>
+<p><strong>중간 단계 신호</strong><br />
+- 만성 피로감
+- 면역력 저하 (감기 자주 걸림)
+- 집중력 저하
+- 기억력 감퇴
+- 근육 경직</p>
+<p><strong>심각 단계 신호</strong>
+- 불면증
+- 우울감이나 불안감 지속
+- 혈압 상승
+- 소화계 질환
+- 심장 두근거림</p>
+<h3 id="_14">자율신경계와 번아웃의 관계</h3>
+<p>우리 몸의 자율신경계는 교감신경과 부교감신경으로 나</p>
+
+
+
+<div class="footer">
+  <strong>Lighthouse Media</strong><br>
+  류선희 | 실제로 삶이 나아지는 콘텐츠<br>
+  <a href="/lighthouse-media/free.html" style="color:#BA7517;text-decoration:none;">무료 PDF 더 받기</a>
+</div>
+
+</body>
+</html>

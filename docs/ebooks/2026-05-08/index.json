@@ -1,0 +1,37 @@
+{
+  "date": "2026-05-08",
+  "books": [
+    {
+      "type": "free",
+      "title": "아침 5분으로\n인생이 달라진다",
+      "subtitle": "번아웃 직장인을 위한\n에너지 충전 모닝루틴",
+      "slug": "morning-energy-routine",
+      "price": 0,
+      "url": "/ebooks/2026-05-08/free-morning-energy-routine.html"
+    },
+    {
+      "type": "free",
+      "title": "감정의 주인이\n되는 법",
+      "subtitle": "직장에서 휘둘리지 않고\n마음을 지키는 기술",
+      "slug": "emotional-mastery-workplace",
+      "price": 0,
+      "url": "/ebooks/2026-05-08/free-emotional-mastery-workplace.html"
+    },
+    {
+      "type": "free",
+      "title": "퇴근 후\n나를 회복시키기",
+      "subtitle": "지친 마음을 달래는\n저녁 셀프케어 가이드",
+      "slug": "evening-recovery-selfcare",
+      "price": 0,
+      "url": "/ebooks/2026-05-08/free-evening-recovery-selfcare.html"
+    },
+    {
+      "type": "paid",
+      "title": "에너지 뱅크\n시스템",
+      "subtitle": "번아웃 없이 성과내는\n지속가능한 생산성 관리법",
+      "slug": "energy-bank-productivity-system",
+      "price": 7900,
+      "url": "/ebooks/2026-05-08/paid-energy-bank-productivity-system.html"
+    }
+  ]
+}

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>감정의 온도계 내 마음 읽기 - Lighthouse Media</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: #FAF8F3;
+  color: #333;
+  line-height: 2.0;
+  font-size: 16px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 28px 80px;
+  word-break: keep-all;
+}
+
+/* 커버 */
+.cover {
+  background: linear-gradient(135deg,#1a1a2e,#16213e);
+  color: #fff;
+  padding: 70px 40px;
+  border-radius: 20px;
+  text-align: center;
+  margin-bottom: 50px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+.cover h1 { font-size: 30px; line-height: 1.4; margin-bottom: 14px; font-weight: 800; }
+.cover .sub { color: #1D9E75; font-size: 17px; line-height: 1.6; }
+.cover .author { color: #888; margin-top: 24px; font-size: 14px; }
+.badge {
+  display: inline-block;
+  background: #1D9E75;
+  color: #fff;
+  padding: 5px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* 본문 타이포그래피 */
+h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 48px 0 20px;
+  line-height: 1.4;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1D9E75;
+  margin: 44px 0 18px;
+  padding: 14px 0 14px 16px;
+  border-left: 4px solid #1D9E75;
+  background: rgba(29,158,117,0.03);
+  border-radius: 0 8px 8px 0;
+  line-height: 1.4;
+}
+h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2a2a2a;
+  margin: 32px 0 14px;
+  line-height: 1.5;
+}
+p {
+  margin-bottom: 18px;
+  font-size: 16px;
+  line-height: 2.0;
+  color: #444;
+  letter-spacing: -0.2px;
+}
+strong { color: #1a1a2e; font-weight: 700; }
+em { color: #1D9E75; font-style: normal; font-weight: 600; }
+
+/* 리스트 */
+ul, ol {
+  margin: 14px 0 20px 24px;
+  line-height: 2.0;
+}
+li {
+  margin-bottom: 10px;
+  padding-left: 4px;
+  color: #444;
+}
+li strong { color: #2a2a2a; }
+
+/* 구분선 */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ddd, transparent);
+  margin: 36px 0;
+}
+
+/* 인용 */
+blockquote {
+  border-left: 3px solid #1D9E75;
+  background: rgba(29,158,117,0.04);
+  padding: 16px 20px;
+  margin: 20px 0;
+  border-radius: 0 10px 10px 0;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.9;
+}
+
+/* 테이블 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+}
+th {
+  background: #1D9E75;
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+}
+tr:nth-child(even) td { background: #f9f9f6; }
+
+/* 코드 블록 (체크리스트 등) */
+code {
+  background: #f0ede6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #1D9E75;
+}
+pre {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 20px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 20px 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* PDF 저장 버튼 */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(250,248,243,0.95);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.toolbar .brand { font-size: 13px; color: #999; font-weight: 600; }
+.toolbar .btn {
+  background: #1D9E75;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+.toolbar .btn:hover { opacity: 0.9; }
+
+/* CTA (무료 전자책 하단) */
+.cta-box {
+  background: linear-gradient(135deg, rgba(29,158,117,0.08), rgba(186,117,23,0.06));
+  border: 1px solid rgba(29,158,117,0.2);
+  border-radius: 14px;
+  padding: 30px;
+  margin-top: 40px;
+  text-align: center;
+}
+.cta-box h3 { color: #1a1a2e; margin-bottom: 8px; }
+.cta-box p { font-size: 14px; color: #888; margin-bottom: 16px; }
+.cta-box a {
+  display: inline-block;
+  background: #1D9E75;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* 푸터 */
+.footer {
+  text-align: center;
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.8;
+}
+
+/* 인쇄 */
+@media print {
+  .toolbar, .cta-box { display: none; }
+  body { max-width: 100%; padding: 20px; font-size: 14px; }
+  h2 { page-break-before: always; }
+  p, li { orphans: 3; widows: 3; }
+}
+
+/* 모바일 */
+@media (max-width: 600px) {
+  body { padding: 20px 16px 60px; font-size: 15px; }
+  .cover { padding: 50px 24px; }
+  .cover h1 { font-size: 24px; }
+  h2 { font-size: 19px; }
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="brand">Lighthouse Media</span>
+  <button class="btn" onclick="window.print()">PDF로 저장</button>
+</div>
+
+<div style="height:50px"></div>
+
+<div class="cover">
+  <span class="badge">FREE EBOOK</span>
+  <h1>감정의 온도계<br>내 마음 읽기</h1>
+  <p class="sub">직장 스트레스 속에서 | 나를 지키는 감정 관리법</p>
+  <div class="author">류선희 | Lighthouse Media</div>
+</div>
+
+<h1 id="_1">감정의 온도계: 내 마음 읽기</h1>
+<p><strong>직장 스트레스 속에서 나를 지키는 감정 관리법</strong></p>
+<p><em>저자: 류선희 (Lighthouse Media)</em></p>
+<hr />
+<h2 id="_2">서문</h2>
+<p>매일 아침 알람 소리와 함께 시작되는 하루. 출근길에서 느끼는 묵직한 피로감, 회의실에서 올라오는 답답함, 퇴근 후에도 계속되는 업무 생각들. 이런 일상이 낯설지 않다면, 당신은 이미 감정의 신호를 놓치고 있을지도 모릅니다.</p>
+<p>감정은 우리 몸의 온도계와 같습니다. 체온이 몸의 상태를 알려주듯, 감정도 마음의 상태를 정확히 보여줍니다. 하지만 바쁜 일상 속에서 우리는 종종 이 온도계를 확인하는 것을 잊어버립니다.</p>
+<p>이 책은 복잡한 이론보다는 당장 오늘부터 실천할 수 있는 구체적인 방법들을 담았습니다. 7일간의 작은 변화가 당신의 일상에 어떤 차이를 만들어낼지 함께 확인해보세요.</p>
+<hr />
+<h2 id="chapter-1">Chapter 1: 내 감정의 패턴 찾기</h2>
+<p>우리는 하루에도 수십 가지 감정을 경험합니다. 하지만 정작 "지금 내가 어떤 기분인가?"라고 물어보면 명확히 답하기 어려울 때가 많습니다. 감정을 관리하기 위한 첫 번째 단계는 내 감정의 패턴을 아는 것입니다.</p>
+<p>직장에서 스트레스를 받는 상황을 떠올려보세요. 상사의 갑작스러운 업무 지시, 동료와의 의견 충돌, 예상보다 오래 걸리는 프로젝트. 이런 순간들에서 당신은 어떤 감정을 느끼나요? 짜증, 불안, 좌절, 분노 중 어떤 것이 가장 먼저 올라오나요?</p>
+<p>감정에는 1차 감정과 2차 감정이 있습니다. 1차 감정은 상황에 대한 즉각적인 반응이고, 2차 감정은 그 1차 감정에 대한 판단이나 해석에서 나오는 감정입니다. 예를 들어, 실수를 했을 때 느끼는 당황(1차)과 "나는 왜 이렇게 부족할까"라는 자책감(2차)이 있습니다.</p>
+<p>많은 직장인들이 2차 감정에 매몰되어 자신을 더욱 힘들게 만듭니다. 하지만 1차 감정을 정확히 파악하면 상황을 더 명확히 볼 수 있고, 적절한 대응도 가능해집니다.</p>
+<p><strong>실천법: 감정 체크인</strong>
+하루 세 번(아침, 점심, 저녁) 스마트폰에 알림을 설정하세요. 알림이 울리면 잠시 멈춰서 "지금 내 기분은 어떤가?"라고 물어보고, 한 단어로 답해보세요. 복잡한 분석은 필요 없습니다. 그저 인식하는 것만으로도 충분합니다.</p>
+<hr />
+<h2 id="chapter-2">Chapter 2: 스트레스 신호 읽기</h2>
+<p>우리 몸과 마음은 스트레스를 받으면 다양한 신호를 보냅니다. 하지만 업무에 집중하다 보면 이런 신호들을 놓치기 쉽습니다. 신호를 일찍 알아차릴수록 더 효과적으로 대처할 수 있습니다.</p>
+<p>신체적 신호부터 살펴보겠습니다. 어깨와 목의 긴장, 두통, 소화불량, 잦은 한숨, 얕은 호흡 등이 대표적입니다. 정신적 신호로는 집중력 저하, 건망증, 과도한 걱정, 부정적 사고의 반복이 있습니다. 행동적 신호는 평소보다 말이 많아지거나 적어지기, 식습관의 변화, 수면 패턴의 변화 등으로 나타납니다.</p>
+<p>특히 직장에서는 "참아야 한다", "프로답게 행동해야 한다"는 생각에 스트레스 신호를 억누르는 경우가 많습니다. 하지만 신호를 무시한다고 스트레스가 사라지는 것은 아닙니다. 오히려 누적되어 더 큰 문제로 이어질 수 있습니다.</p>
+<p>중요한 것은 이런 신호들을 나쁜 것으로 판단하지 않는 것입니다. 스트레스 신호는 "지금 나에게 관심을 가져달라", "잠시 쉬어달라"는 몸과 마음의 메시지입니다. 이 메시지를 알아차리고 적절히 반응하는 것이 자기 돌봄의 시작입니다.</p>
+<p><strong>실천법: 신호등 시스템</strong>
+자신만의 스트레스 신호등을 만드세요. 초록불(괜찮음), 노란불(주의), 빨간불(휴식 필요)로 나누고, 각 단계별로 나타나는 신호들을 적어보세요. 노란불이 켜지면 5분 호흡, 빨간불이면 잠시 자리를 비우는 등의 대응 방법도 미리 정해두세요.</p>
+<hr />
+<h2 id="chapter-3-">Chapter 3: 순간 대처법 - 감정의 파도 타기</h2>
+<p>감정은 파도와 같습니다. 밀려왔다가 빠져나가는 특성이 있습니다. 화가 나거나 불안할 때 "이 감정이 영원히 계속될 것 같다"는 생각이 들지만, 실제로는 5-10분 내에 강도가 줄어들기 시작합니다.</p>
+<p>문제는 우리가 감정의 파도에 휩쓸려 즉각적으로 반응할 때 생깁니다. 화가 나서 이메일을 거칠게 보내거나, 불안해서 일을 미루거나, 좌절해서 포기하는 행동들이 그 예입니다. 이런 반응들은 순간의 감정을 해소시켜주는 것 같지만, 장기적으로는 더 큰 스트레스를 만들어냅니다.</p>
+<p>감정의 파도를 타는 법을 배우면 달라집니다. 파도를 막으려 하거나 피하려 하지 않고, 그 위에 올라타는 것입니다. 이를 위해서는 먼저 감정과 나 사이에 적당한 거리를 만드는 것이 중요합니다.</p>
+<p>감정을 관찰하는 '관찰자의 시선'을 기르는 것이 핵심입니다. "나는 지금 화가 난다"가 아니라 "화라는 감정이 일어나고 있다"고 표현해보세요. 작은 차이 같지만 이런 언어의 변화가 감정과의 거리를 만들어줍니다.</p>
+<p>또한 감정에는 중요한 정보가 담겨있다는 것을 기억하세요. 화는 경계를 침범당했다는 신호이고, 불안은 준비가 필요하다는 신호입니다. 감정을 적으로 대하지 말고 메신저로 받아들이세요.</p>
+<p><strong>실천법: 90초 룰</strong>
+강한 감정이 일어났을 때, 즉시 반응하지 말고 90초만 기다려보세요. 이 시간 동안 심호흡을 하며 "지금 내 안에서 무슨 일이 일어나고 있지?"라고 스스로에게 물어보세요. 90초 후 여전히 같은 강도의 감정이 있다면 그때 행동을 취하세요.</p>
+<hr />
+<h2 id="chapter-4">Chapter 4: 회복 루틴 만들기</h2>
+<p>지속 가능한 감정 관리를 위해서는 일시적인 대처법을 넘어 꾸준한 회복 루틴이 필요합니다. 마치 스마트폰을 매일 충전하듯, 우리의 감정 에너지도 정기적인 충전이 필요합니다.</p>
+<p>회복 루틴은 크게 세 가지 차원에서 접근할 수 있습니다. 첫째는 신체적 회복입니다. 충분한 수면, 규칙적인 운동, 균형 잡힌 식사가 기본입니다. 특히 직장인들에게는 점심시간 산책이나 계단 오르기 같은 작은 움직임도 효과적입니다.</p>
+<p>둘째는 정신적 회복입니다. 명상, 독서, 취미 활동 등을 통해 일상의 스트레스에서 벗어나는 시간을 만드는 것입니다. 중요한 것은 완전한 집중이 가능한 활동을 선택하는 것입니다. SNS 스크롤링은 휴식 같아 보이지만 실제로는 뇌를 더 피곤하게 만들 수 있습니다.</p>
+<p>셋째는 사회적 회복입니다. 신뢰할 수 있는 사람들과의 대화, 공감과 지지를 주고받는 관계 등이 여기에 해당합니다. 직장 내에서도 믿을 만한 동료와의 짧은 대화가 큰 도움이 될 수 있습니다.</p>
+<p>회복 루틴을 만들 때는 "해야 한다"는 부담감보다는 "하고 싶다"는 동기에 집중하세요. 작은 것부터 시작해서 점차 확장하는 것이 좋습니다. 완벽을 추구하기보다는 일관성을 목표로 하세요.</p>
+<p><strong>실천법: 나만의 충전 메뉴</strong>
+자신만의 감정 충전 메뉴를 만드세요. 5분짜리(심호흡, 스트레칭), 30분짜리(산책, 음악 감상), 2시간짜리(운동, 취미) 활동을 각각 3-5개씩 정해두세요. 피곤한 정도에 따라 적절한 메뉴를 선택할 수 있도록 준비해두세요.</p>
+<hr />
+<h2 id="chapter-5">Chapter 5: 지속 가능한 변화 만들기</h2>
+<p>감정 관리의 진정한 목표는 스트레스가 없는 삶이 아니라, 스트레스와 건강하게 공존하는 삶입니다. 완전한 평온을 추구하기보다는 감정의 파도를 능숙하게 타는 서퍼가 되는 </p>
+
+<div class='cta-box'><h3>더 깊은 내용이 궁금하다면</h3><p>유료 전자책에서 실전 가이드를 만나보세요</p><a href="/lighthouse-media/shop.html">전자책 보러가기</a></div>
+
+<div class="footer">
+  <strong>Lighthouse Media</strong><br>
+  류선희 | 실제로 삶이 나아지는 콘텐츠<br>
+  <a href="/lighthouse-media/free.html" style="color:#1D9E75;text-decoration:none;">무료 PDF 더 받기</a>
+</div>
+
+</body>
+</html>

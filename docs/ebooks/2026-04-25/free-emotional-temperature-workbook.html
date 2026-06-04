@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>감정의 온도 마음 들여다보기 - Lighthouse Media</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: #FAF8F3;
+  color: #333;
+  line-height: 2.0;
+  font-size: 16px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 28px 80px;
+  word-break: keep-all;
+}
+
+/* 커버 */
+.cover {
+  background: linear-gradient(135deg,#1a1a2e,#16213e);
+  color: #fff;
+  padding: 70px 40px;
+  border-radius: 20px;
+  text-align: center;
+  margin-bottom: 50px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+.cover h1 { font-size: 30px; line-height: 1.4; margin-bottom: 14px; font-weight: 800; }
+.cover .sub { color: #1D9E75; font-size: 17px; line-height: 1.6; }
+.cover .author { color: #888; margin-top: 24px; font-size: 14px; }
+.badge {
+  display: inline-block;
+  background: #1D9E75;
+  color: #fff;
+  padding: 5px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* 본문 타이포그래피 */
+h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 48px 0 20px;
+  line-height: 1.4;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1D9E75;
+  margin: 44px 0 18px;
+  padding: 14px 0 14px 16px;
+  border-left: 4px solid #1D9E75;
+  background: rgba(29,158,117,0.03);
+  border-radius: 0 8px 8px 0;
+  line-height: 1.4;
+}
+h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2a2a2a;
+  margin: 32px 0 14px;
+  line-height: 1.5;
+}
+p {
+  margin-bottom: 18px;
+  font-size: 16px;
+  line-height: 2.0;
+  color: #444;
+  letter-spacing: -0.2px;
+}
+strong { color: #1a1a2e; font-weight: 700; }
+em { color: #1D9E75; font-style: normal; font-weight: 600; }
+
+/* 리스트 */
+ul, ol {
+  margin: 14px 0 20px 24px;
+  line-height: 2.0;
+}
+li {
+  margin-bottom: 10px;
+  padding-left: 4px;
+  color: #444;
+}
+li strong { color: #2a2a2a; }
+
+/* 구분선 */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ddd, transparent);
+  margin: 36px 0;
+}
+
+/* 인용 */
+blockquote {
+  border-left: 3px solid #1D9E75;
+  background: rgba(29,158,117,0.04);
+  padding: 16px 20px;
+  margin: 20px 0;
+  border-radius: 0 10px 10px 0;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.9;
+}
+
+/* 테이블 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+}
+th {
+  background: #1D9E75;
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+}
+tr:nth-child(even) td { background: #f9f9f6; }
+
+/* 코드 블록 (체크리스트 등) */
+code {
+  background: #f0ede6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #1D9E75;
+}
+pre {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 20px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 20px 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* PDF 저장 버튼 */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(250,248,243,0.95);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.toolbar .brand { font-size: 13px; color: #999; font-weight: 600; }
+.toolbar .btn {
+  background: #1D9E75;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+.toolbar .btn:hover { opacity: 0.9; }
+
+/* CTA (무료 전자책 하단) */
+.cta-box {
+  background: linear-gradient(135deg, rgba(29,158,117,0.08), rgba(186,117,23,0.06));
+  border: 1px solid rgba(29,158,117,0.2);
+  border-radius: 14px;
+  padding: 30px;
+  margin-top: 40px;
+  text-align: center;
+}
+.cta-box h3 { color: #1a1a2e; margin-bottom: 8px; }
+.cta-box p { font-size: 14px; color: #888; margin-bottom: 16px; }
+.cta-box a {
+  display: inline-block;
+  background: #1D9E75;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* 푸터 */
+.footer {
+  text-align: center;
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.8;
+}
+
+/* 인쇄 */
+@media print {
+  .toolbar, .cta-box { display: none; }
+  body { max-width: 100%; padding: 20px; font-size: 14px; }
+  h2 { page-break-before: always; }
+  p, li { orphans: 3; widows: 3; }
+}
+
+/* 모바일 */
+@media (max-width: 600px) {
+  body { padding: 20px 16px 60px; font-size: 15px; }
+  .cover { padding: 50px 24px; }
+  .cover h1 { font-size: 24px; }
+  h2 { font-size: 19px; }
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="brand">Lighthouse Media</span>
+  <button class="btn" onclick="window.print()">PDF로 저장</button>
+</div>
+
+<div style="height:50px"></div>
+
+<div class="cover">
+  <span class="badge">FREE EBOOK</span>
+  <h1>감정의 온도<br>마음 들여다보기</h1>
+  <p class="sub">직장인을 위한 | 감정 정리 워크북</p>
+  <div class="author">류선희 | Lighthouse Media</div>
+</div>
+
+<h1 id="_1">감정의 온도</h1>
+<h2 id="_2">마음 들여다보기</h2>
+<h3 id="_3">직장인을 위한 감정 정리 워크북</h3>
+<p><strong>저자:</strong> 류선희 (Lighthouse Media)</p>
+<hr />
+<h2 id="_4">들어가며</h2>
+<p>오늘도 출근길 지하철에서 한숨을 쉬셨나요? 회의실에서 억지로 미소를 지으며 속으로는 다른 생각을 하고 계셨나요? </p>
+<p>우리는 매일 수많은 감정을 경험하지만, 정작 그 감정들을 제대로 들여다볼 시간은 없습니다. 마치 온도계 없이 날씨를 가늠하듯, 내 마음의 온도를 정확히 알지 못한 채 하루하루를 버텨내고 있는 것은 아닐까요?</p>
+<p>이 워크북은 바쁜 일상 속에서도 짧은 시간을 내어 자신의 감정을 정리하고, 더 건강한 마음으로 하루를 마무리할 수 있도록 돕기 위해 만들어졌습니다. 복잡한 이론보다는 오늘 당장 실천할 수 있는 구체적인 방법들을 담았습니다.</p>
+<hr />
+<h2 id="chapter-1">Chapter 1. 감정의 이름 붙이기</h2>
+<h3 id="_5">모호한 기분에 정확한 단어 찾기</h3>
+<p>"기분이 별로야", "짜증나", "우울해" - 우리는 복잡한 감정을 단순한 단어로 뭉뚱그려 표현하곤 합니다. 하지만 감정을 정확히 인식하는 것이 감정 정리의 첫 걸음입니다.</p>
+<p>상사에게 지적받았을 때 느끼는 감정이 단순한 '짜증'일까요? 조금 더 자세히 들여다보면 '당황스러움', '억울함', '부끄러움', '걱정' 등 여러 감정이 섞여 있을 것입니다.</p>
+<h3 id="_6">감정 어휘 늘리기</h3>
+<p>감정을 표현하는 어휘가 풍부할수록 자신의 마음 상태를 정확히 파악할 수 있습니다. 다음은 일상에서 자주 경험하는 감정들을 세분화한 목록입니다:</p>
+<p><strong>화가 날 때:</strong> 분노, 짜증, 억울함, 좌절감, 실망감
+<strong>슬플 때:</strong> 우울함, 허무함, 공허함, 그리움, 아쉬움
+<strong>불안할 때:</strong> 걱정, 초조함, 두려움, 긴장감, 답답함</p>
+<h3 id="3"><strong>실천법: 3분 감정 체크</strong></h3>
+<p>하루 세 번(오전, 점심, 저녁) 3분씩 시간을 내어 현재 감정을 구체적으로 명명해보세요.
+- "지금 나는 <strong><em>한 기분이다"
+- "이 감정의 강도는 10점 중 </em></strong>점이다"
+- "이 감정이 생긴 구체적인 이유는 ___이다"</p>
+<hr />
+<h2 id="chapter-2">Chapter 2. 감정의 신호 읽기</h2>
+<h3 id="_7">몸이 먼저 알고 있다</h3>
+<p>감정은 마음만의 영역이 아닙니다. 우리 몸은 마음보다 먼저 감정의 변화를 감지하고 신호를 보냅니다. 스트레스받을 때 어깨가 딱딱해지고, 불안할 때 심장이 빨리 뛰며, 화날 때 주먹이 저절로 쥐어지는 경험이 있으실 것입니다.</p>
+<h3 id="_8">내 몸의 감정 지도 그리기</h3>
+<p>각자의 몸은 감정을 표현하는 고유한 방식이 있습니다. 어떤 사람은 스트레스를 받으면 목이 아프고, 어떤 사람은 소화가 안 됩니다. 자신만의 감정-신체 반응 패턴을 파악하면 감정 변화를 조기에 발견할 수 있습니다.</p>
+<p><strong>일반적인 감정별 신체 반응:</strong>
+- <strong>스트레스:</strong> 어깨 결림, 두통, 목 뻣뻣함
+- <strong>불안:</strong> 심장 두근거림, 손바닥 땀, 소화불량
+- <strong>화:</strong> 얼굴 화끈거림, 주먹 쥐기, 호흡 가빠짐
+- <strong>우울:</strong> 몸의 무거움, 식욕 변화, 수면 패턴 변화</p>
+<h3 id="_9"><strong>실천법: 바디 스캔 명상</strong></h3>
+<p>매일 잠들기 전 5분간 누워서 발끝부터 머리까지 몸을 천천히 훑어보세요.
+1. 편안한 자세로 눕습니다
+2. 발가락부터 시작해 각 부위의 감각을 확인합니다
+3. 긴장된 부위를 발견하면 의식적으로 힘을 빼줍니다
+4. 어떤 감정이 몸 어디에 머물러 있는지 관찰합니다</p>
+<hr />
+<h2 id="chapter-3">Chapter 3. 감정의 흐름 이해하기</h2>
+<h3 id="_10">감정도 계절이 있다</h3>
+<p>날씨가 변하듯 감정도 자연스럽게 변합니다. 좋은 감정만 계속 느낄 수도, 나쁜 감정만 영원히 지속될 수도 없습니다. 이를 인정하고 받아들이는 것이 감정과 건강하게 지내는 방법입니다.</p>
+<p>월요일 아침의 우울함, 프로젝트 마감 전의 스트레스, 금요일 오후의 들뜸 - 이 모든 감정들은 자연스러운 것입니다. 문제는 감정 자체가 아니라 감정에 압도당하거나 감정을 억압하려고 할 때 생깁니다.</p>
+<h3 id="_11">감정의 파도 타기</h3>
+<p>서핑을 할 때 파도와 맞서 싸우면 넘어지지만, 파도의 흐름을 따라가면 멋진 라이딩을 할 수 있습니다. 감정도 마찬가지입니다. 감정을 없애려 하기보다는 그 흐름을 이해하고 함께 움직이는 것이 현명합니다.</p>
+<p><strong>감정의 자연스러운 주기:</strong>
+- <strong>인식:</strong> 감정이 일어남을 알아차림
+- <strong>상승:</strong> 감정의 강도가 높아짐
+- <strong>정점:</strong> 감정이 가장 강할 때
+- <strong>하강:</strong> 감정의 강도가 약해짐
+- <strong>소멸:</strong> 감정이 자연스럽게 사라짐</p>
+<h3 id="_12"><strong>실천법: 감정 일기 쓰기</strong></h3>
+<p>매일 밤 10분간 오늘의 감정 변화를 간단히 기록해보세요.
+- 오늘 가장 강했던 감정은?
+- 그 감정이 언제, 왜 생겼나?
+- 그 감정은 어떻게 변화했나?
+- 내가 그 감정에 어떻게 반응했나?</p>
+<p>일주일 후 패턴을 찾아보세요.</p>
+<hr />
+<h2 id="chapter-4">Chapter 4. 감정과 대화하기</h2>
+<h3 id="_13">감정을 친구처럼 대하기</h3>
+<p>감정을 적이라고 생각하지 마세요. 화, 슬픔, 불안 같은 소위 '부정적' 감정들도 우리에게 중요한 정보를 전달해주는 역할을 합니다. 화는 경계가 침범당했다는 신호이고, 슬픔은 상실을 처리하는 과정이며, 불안은 위험을 준비하라는 경고입니다.</p>
+<h3 id="_14">감정과의 건전한 대화법</h3>
+<p>감정이 찾아올 때 "왜 또 이런 기분이야?"라며 자책하는 대신, "무슨 일로 찾아왔니?"라고 물어보세요. 마치 오랜 친구의 고민을 들어주듯 자신의 감정에 귀 기울여 보세요.</p>
+<p><strong>감정과의 대화 예시:</strong>
+- 불안: "내일 발표가 걱정되는구나. 충분히 준비했으니 괜찮을 거야."
+- 화: "부당하다고 느끼는구나. 어떻게 해결할 수 있을까?"
+- 슬픔: "많이 아프구나. 천천히 시간을 가져도 돼."</p>
+<h3 id="_15"><strong>실천법: 감정 편지 쓰기</strong></h3>
+<p>힘든 감정이 들 때 그 감정에게 편지를 써보세요.
+1. "안녕, ___한 기분아"로 시작합니다
+2. 지금 상황을 솔직하게 설명합니다
+3. 그 감정이 전하고자 하는 메시지를 추측해봅니다
+4. 감정을 이해한다는 말로 마무리합니다</p>
+<p>예: "안녕, 외로움아. 요즘 혼자 있는 시간이 많아서 네가 자주 찾아오는구나..."</p>
+<hr />
+<h2 id="chapter-5">Chapter 5. 감정 정리와 재충전</h2>
+<h3 id="_16">감정의 정리정돈</h3>
+<p>방을 정리하듯 감정도 주기적으로 정리가 필요합니다. 쌓인 스트레스, 해결되지 않은 감정들을 그대로 두면 마음의 공간이 어수선해집니다.</p>
+<p>감정 정리는 감정을 없애는 것이 아닙니다. 필요한 감정은 적절한 자리에 두고, 이미 역할을 다한 감정은 고마움과 함께 보내주는 것입니다.</p>
+<h3 id="_17">마음의 재충전 방법</h3>
+<p>스마트폰 배터리를 충전하듯 마음도 정기적인 충전이 필요합니다. 각자에게 맞는 재충전 방법을 찾아 꾸준히 실천하는 것이 감정 건강의 핵심입니다.</p>
+<p><strong>마음 재충전 방법들:</strong>
+- <strong>자연과의 만남:</strong> 공원 산책, 하늘 바라보기
+- <strong>창작 활동:</strong> 글쓰기, 그림 그리기, 음악 듣기
+- <strong>신체 활동:</strong> 운동, 요가, 스트레칭
+- <strong>사회적 연결:</strong> 가족, 친구와의 진솔한 대화
+- <strong>고요한 시간:</strong> 명상, 독서, 차 마시기</p>
+<h3 id="_18"><strong>실천법: 주말 감정 정리 시간</strong></h3>
+<p>매주 주말 30분을 '감정 정리 시간'으로 정해두세요.
+1. <strong>복기:</strong> 이번 주 감정 일기를 읽어봅니다
+2. <strong>분석:</strong> 반복되는 패턴이나 트리거를 찾습니다
+3. <strong>해결:</strong> 미해결 감정이 있다면 어떻게 처리할지 계획합니다
+4. <strong>충전:</strong> 다음 주를 위한 재충전 활동을 선택합니다
+5. <strong>다짐:</strong> 다음 주 감정 관리 목표를 한 가지 정합니다</p>
+<hr />
+
+<div class='cta-box'><h3>더 깊은 내용이 궁금하다면</h3><p>유료 전자책에서 실전 가이드를 만나보세요</p><a href="/lighthouse-media/shop.html">전자책 보러가기</a></div>
+
+<div class="footer">
+  <strong>Lighthouse Media</strong><br>
+  류선희 | 실제로 삶이 나아지는 콘텐츠<br>
+  <a href="/lighthouse-media/free.html" style="color:#1D9E75;text-decoration:none;">무료 PDF 더 받기</a>
+</div>
+
+</body>
+</html>

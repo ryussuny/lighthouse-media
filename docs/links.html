@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lighthouse Media — Links</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', -apple-system, sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1333 0%, #2d1b4e 50%, #1a2744 100%);
+    color: #fff;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 40px 20px;
+  }
+  .profile { text-align: center; margin-bottom: 30px; }
+  .profile .avatar {
+    width: 90px; height: 90px; border-radius: 50%;
+    background: linear-gradient(135deg, #c8a84e, #e8d08a);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 15px; font-size: 36px;
+  }
+  .profile h1 { font-size: 22px; font-weight: 700; margin-bottom: 5px; }
+  .profile p { font-size: 14px; color: #b0b0c0; line-height: 1.6; }
+  .links { width: 100%; max-width: 400px; }
+  .link-btn {
+    display: block; width: 100%; padding: 16px 20px;
+    margin-bottom: 12px; border-radius: 12px;
+    text-decoration: none; color: #fff;
+    font-size: 16px; font-weight: 600;
+    text-align: center; transition: all 0.3s;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+  .link-free { background: linear-gradient(135deg, #c8a84e, #a08030); }
+  .link-free:hover { background: linear-gradient(135deg, #d8b85e, #b09040); }
+  .link-shop { background: rgba(255,255,255,0.08); }
+  .link-shop:hover { background: rgba(255,255,255,0.15); }
+  .link-yt { background: rgba(255,0,0,0.15); border-color: rgba(255,0,0,0.3); }
+  .link-yt:hover { background: rgba(255,0,0,0.25); }
+  .link-fb { background: rgba(66,103,178,0.15); border-color: rgba(66,103,178,0.3); }
+  .link-fb:hover { background: rgba(66,103,178,0.25); }
+  .link-newsletter { background: rgba(30,180,130,0.15); border-color: rgba(30,180,130,0.3); }
+  .link-newsletter:hover { background: rgba(30,180,130,0.25); }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
+  .badge-free { background: #c8a84e; color: #1a1333; }
+  .badge-new { background: #e74c3c; }
+  .section-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 2px;
+    color: #888; margin: 20px 0 10px; text-align: center;
+  }
+  .stats { display: flex; gap: 30px; margin-top: 25px; }
+  .stat { text-align: center; }
+  .stat .num { font-size: 24px; font-weight: 700; color: #c8a84e; }
+  .stat .label { font-size: 11px; color: #888; margin-top: 2px; }
+  footer { margin-top: 30px; font-size: 12px; color: #666; }
+</style>
+</head>
+<body>
+
+<div class="profile">
+  <div class="avatar">✦</div>
+  <h1>Lighthouse Media</h1>
+  <p>Daily wisdom for a better life<br>매일 한 줄의 지혜가 삶을 바꿉니다</p>
+</div>
+
+<div class="links">
+  <div class="section-label">Free Resources</div>
+
+  <a href="free.html" class="link-btn link-free">
+    📖 무료 전자책 다운로드 <span class="badge badge-free">FREE</span>
+    <br><small style="font-weight:400;font-size:13px">지친 하루를 3분 만에 리셋하는 법</small>
+  </a>
+
+  <div class="section-label">Shop</div>
+
+  <a href="shop.html" class="link-btn link-shop">
+    📚 전자책 스토어 <span class="badge badge-new">NEW</span>
+    <br><small style="font-weight:400;font-size:13px">월요일이 기다려지는 사람들의 비밀 — ₩14,900</small>
+  </a>
+
+  <a href="ebook-library.html" class="link-btn link-shop">
+    📑 무료 전자책 라이브러리
+    <br><small style="font-weight:400;font-size:13px">15+ free ebooks on self-care & growth</small>
+  </a>
+
+  <div class="section-label">Follow Us</div>
+
+  <a href="https://youtube.com/@LighthouseMedia" class="link-btn link-yt" target="_blank">
+    ▶ YouTube — Daily Motivation Shorts
+  </a>
+
+  <a href="https://facebook.com/LighthouseMedia" class="link-btn link-fb" target="_blank">
+    📘 Facebook — Community & Updates
+  </a>
+
+  <div class="section-label">Connect</div>
+
+  <a href="mailto:ryussun@naver.com" class="link-btn link-newsletter">
+    ✉ Contact / 문의하기
+  </a>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="num">130+</div><div class="label">Instagram Posts</div></div>
+  <div class="stat"><div class="num">27+</div><div class="label">YouTube Shorts</div></div>
+  <div class="stat"><div class="num">15+</div><div class="label">Free E-books</div></div>
+</div>
+
+<footer>© 2026 Lighthouse Media. All rights reserved.</footer>
+
+</body>
+</html>

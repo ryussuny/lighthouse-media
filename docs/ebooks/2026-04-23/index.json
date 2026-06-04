@@ -1,0 +1,37 @@
+{
+  "date": "2026-04-23",
+  "books": [
+    {
+      "type": "free",
+      "title": "아침 5분이\n하루를 바꾼다",
+      "subtitle": "번아웃 직장인을 위한\n새벽 에너지 충전법",
+      "slug": "morning-five-minutes-change",
+      "price": 0,
+      "url": "/ebooks/2026-04-23/free-morning-five-minutes-change.html"
+    },
+    {
+      "type": "free",
+      "title": "마음의 짐을\n가볍게 하는 법",
+      "subtitle": "감정 정리가 필요한\n직장인을 위한 심리 처방전",
+      "slug": "lighten-emotional-burden",
+      "price": 0,
+      "url": "/ebooks/2026-04-23/free-lighten-emotional-burden.html"
+    },
+    {
+      "type": "free",
+      "title": "지친 하루를\n다독이는 시간",
+      "subtitle": "퇴근 후 나를 위한\n힐링 루틴 만들기",
+      "slug": "evening-healing-routine",
+      "price": 0,
+      "url": "/ebooks/2026-04-23/free-evening-healing-routine.html"
+    },
+    {
+      "type": "paid",
+      "title": "에너지 뱅킹\n시스템",
+      "subtitle": "번아웃 없이 지속가능한\n생산성을 만드는 전략",
+      "slug": "energy-banking-system",
+      "price": 7900,
+      "url": "/ebooks/2026-04-23/paid-energy-banking-system.html"
+    }
+  ]
+}

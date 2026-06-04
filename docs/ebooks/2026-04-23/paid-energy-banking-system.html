@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>에너지 뱅킹 시스템 - Lighthouse Media</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: #FAF8F3;
+  color: #333;
+  line-height: 2.0;
+  font-size: 16px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 28px 80px;
+  word-break: keep-all;
+}
+
+/* 커버 */
+.cover {
+  background: linear-gradient(135deg,#1a1a2e,#0f3460);
+  color: #fff;
+  padding: 70px 40px;
+  border-radius: 20px;
+  text-align: center;
+  margin-bottom: 50px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+.cover h1 { font-size: 30px; line-height: 1.4; margin-bottom: 14px; font-weight: 800; }
+.cover .sub { color: #BA7517; font-size: 17px; line-height: 1.6; }
+.cover .author { color: #888; margin-top: 24px; font-size: 14px; }
+.badge {
+  display: inline-block;
+  background: #BA7517;
+  color: #fff;
+  padding: 5px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* 본문 타이포그래피 */
+h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 48px 0 20px;
+  line-height: 1.4;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #BA7517;
+  margin: 44px 0 18px;
+  padding: 14px 0 14px 16px;
+  border-left: 4px solid #BA7517;
+  background: rgba(29,158,117,0.03);
+  border-radius: 0 8px 8px 0;
+  line-height: 1.4;
+}
+h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2a2a2a;
+  margin: 32px 0 14px;
+  line-height: 1.5;
+}
+p {
+  margin-bottom: 18px;
+  font-size: 16px;
+  line-height: 2.0;
+  color: #444;
+  letter-spacing: -0.2px;
+}
+strong { color: #1a1a2e; font-weight: 700; }
+em { color: #BA7517; font-style: normal; font-weight: 600; }
+
+/* 리스트 */
+ul, ol {
+  margin: 14px 0 20px 24px;
+  line-height: 2.0;
+}
+li {
+  margin-bottom: 10px;
+  padding-left: 4px;
+  color: #444;
+}
+li strong { color: #2a2a2a; }
+
+/* 구분선 */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ddd, transparent);
+  margin: 36px 0;
+}
+
+/* 인용 */
+blockquote {
+  border-left: 3px solid #BA7517;
+  background: rgba(29,158,117,0.04);
+  padding: 16px 20px;
+  margin: 20px 0;
+  border-radius: 0 10px 10px 0;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.9;
+}
+
+/* 테이블 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+}
+th {
+  background: #BA7517;
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+}
+tr:nth-child(even) td { background: #f9f9f6; }
+
+/* 코드 블록 (체크리스트 등) */
+code {
+  background: #f0ede6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #BA7517;
+}
+pre {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 20px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 20px 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* PDF 저장 버튼 */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(250,248,243,0.95);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.toolbar .brand { font-size: 13px; color: #999; font-weight: 600; }
+.toolbar .btn {
+  background: #BA7517;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+.toolbar .btn:hover { opacity: 0.9; }
+
+/* CTA (무료 전자책 하단) */
+.cta-box {
+  background: linear-gradient(135deg, rgba(29,158,117,0.08), rgba(186,117,23,0.06));
+  border: 1px solid rgba(29,158,117,0.2);
+  border-radius: 14px;
+  padding: 30px;
+  margin-top: 40px;
+  text-align: center;
+}
+.cta-box h3 { color: #1a1a2e; margin-bottom: 8px; }
+.cta-box p { font-size: 14px; color: #888; margin-bottom: 16px; }
+.cta-box a {
+  display: inline-block;
+  background: #BA7517;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* 푸터 */
+.footer {
+  text-align: center;
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.8;
+}
+
+/* 인쇄 */
+
+  body { max-width: 100%; padding: 20px; font-size: 14px; }
+  h2 { page-break-before: always; }
+  p, li { orphans: 3; widows: 3; }
+}
+
+/* 모바일 */
+@media (max-width: 600px) {
+  body { padding: 20px 16px 60px; font-size: 15px; }
+  .cover { padding: 50px 24px; }
+  .cover h1 { font-size: 24px; }
+  h2 { font-size: 19px; }
+}
+
+  /* ══════════════════════════════════════
+     소책자 스타일 PDF 인쇄 설정
+     ══════════════════════════════════════ */
+  @media print {
+    @page {
+      size: A4;
+      margin: 20mm 18mm 25mm 18mm;
+    }
+
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+    body {
+      background: #fff !important;
+      color: #222 !important;
+      font-size: 11pt !important;
+      line-height: 1.8 !important;
+      max-width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+
+    /* 표지: 전체 페이지 */
+    .cover, section.cover {
+      page-break-after: always !important;
+      min-height: 100vh !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      background: linear-gradient(135deg, #1a1a2e, #16213e) !important;
+      color: #fff !important;
+      padding: 60px 40px !important;
+    }
+
+    /* 본문 영역 */
+    .content, .body-content, main {
+      padding: 0 !important;
+      max-width: 100% !important;
+    }
+
+    /* 챕터 제목: 새 페이지 시작 */
+    h2 {
+      page-break-before: always !important;
+      page-break-after: avoid !important;
+      font-size: 18pt !important;
+      color: #1D9E75 !important;
+      margin-top: 0 !important;
+      padding-top: 20px !important;
+      padding-bottom: 12px !important;
+      border-left: 4px solid #1D9E75 !important;
+      padding-left: 14px !important;
+    }
+
+    /* 첫 번째 h2는 새 페이지 안함 (표지 바로 다음) */
+    .content h2:first-of-type, .body-content h2:first-of-type {
+      page-break-before: avoid !important;
+    }
+
+    h3 {
+      page-break-after: avoid !important;
+      font-size: 14pt !important;
+      color: #333 !important;
+      margin-top: 24px !important;
+      margin-bottom: 8px !important;
+    }
+
+    p {
+      font-size: 11pt !important;
+      line-height: 1.9 !important;
+      margin-bottom: 12px !important;
+      color: #333 !important;
+      orphans: 3 !important;
+      widows: 3 !important;
+      text-align: justify !important;
+      word-break: keep-all !important;
+    }
+
+    /* 리스트 */
+    ul, ol {
+      margin: 8px 0 14px 20px !important;
+      page-break-inside: avoid !important;
+    }
+    li {
+      font-size: 11pt !important;
+      line-height: 1.8 !important;
+      margin-bottom: 6px !important;
+    }
+
+    /* 인용문 */
+    blockquote {
+      border-left: 3px solid #1D9E75 !important;
+      background: #f5f5f0 !important;
+      padding: 12px 16px !important;
+      margin: 14px 0 !important;
+      font-size: 10.5pt !important;
+      page-break-inside: avoid !important;
+      border-radius: 0 !important;
+    }
+
+    /* 강조 */
+    strong { color: #1D9E75 !important; }
+    em { color: #BA7517 !important; font-style: normal !important; }
+
+    /* 코드/체크리스트 블록 */
+    pre, code {
+      background: #f0f0ea !important;
+      font-size: 10pt !important;
+      page-break-inside: avoid !important;
+    }
+
+    /* 테이블 */
+    table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      page-break-inside: avoid !important;
+      font-size: 10pt !important;
+      margin: 12px 0 !important;
+    }
+    th {
+      background: #1D9E75 !important;
+      color: #fff !important;
+      padding: 8px 10px !important;
+      font-weight: 600 !important;
+      text-align: left !important;
+    }
+    td {
+      padding: 8px 10px !important;
+      border-bottom: 1px solid #ddd !important;
+    }
+
+    /* 페이지 하단 푸터 */
+    .content::after, .body-content::after {
+      content: "Lighthouse Media | 류선희 | 실제로 삶이 나아지는 콘텐츠";
+      display: block;
+      text-align: center;
+      font-size: 8pt;
+      color: #999;
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid #ddd;
+    }
+
+    /* 숨길 요소들 */
+    .actions, .cta, .cta-box, .btn-print, .toolbar, button,
+    nav, .header-nav, .nav, .footer-cta, .follow-banner,
+    .sidebar-cta, .print-bar, .no-print {
+      display: none !important;
+    }
+
+    /* 이미지 */
+    img {
+      max-width: 100% !important;
+      page-break-inside: avoid !important;
+    }
+
+    /* 링크 URL 표시 안함 */
+    a { color: #1D9E75 !important; text-decoration: none !important; }
+    a::after { content: none !important; }
+
+    /* 카드/박스 스타일 */
+    .tip-box, .highlight-box, .note-box, .checklist-box {
+      background: #f9f9f5 !important;
+      border: 1px solid #e0e0d8 !important;
+      padding: 14px !important;
+      margin: 12px 0 !important;
+      page-break-inside: avoid !important;
+      border-radius: 6px !important;
+    }
+
+    /* 구분선 */
+    hr {
+      border: none !important;
+      border-top: 1px solid #ddd !important;
+      margin: 20px 0 !important;
+    }
+  }
+
+  /* 프린트 버튼 스타일 개선 */
+  .print-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(250,248,243,0.97);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+  }
+  .print-bar .brand-text { font-size: 13px; color: #999; font-weight: 600; }
+  .print-bar .btn-save {
+    background: #1D9E75;
+    color: #fff;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    font-family: 'Pretendard', sans-serif;
+  }
+  .print-bar .btn-save:hover { background: #178a65; }
+  .print-bar .btn-home {
+    color: #999;
+    text-decoration: none;
+    font-size: 13px;
+    padding: 8px 14px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+  }
+  .print-bar .btn-home:hover { color: #1D9E75; border-color: #1D9E75; }
+
+</style>
+</head>
+<body>
+
+
+
+<div class="cover">
+  <span class="badge">7,900원</span>
+  <h1>에너지 뱅킹<br>시스템</h1>
+  <p class="sub">번아웃 없이 지속가능한 | 생산성을 만드는 전략</p>
+  <div class="author">류선희 | Lighthouse Media</div>
+</div>
+
+<h1 id="_1">에너지 뱅킹 시스템</h1>
+<h2 id="_2">번아웃 없이 지속가능한 생산성을 만드는 전략</h2>
+<p><strong>저자: 류선희 (Lighthouse Media)</strong><br />
+<strong>가격: 7,900원</strong></p>
+<hr />
+<h2 id="_3">서문</h2>
+<p>매일 아침 알람이 울릴 때마다 이미 지쳐있다고 느끼시나요? 오후만 되면 에너지가 바닥나서 중요한 일들을 미루게 되시나요? </p>
+<p>현대 직장인들이 마주하는 가장 큰 문제는 생산성이 아닙니다. 바로 <strong>지속가능한 에너지 관리</strong>입니다. 우리는 스마트폰 배터리는 아껴 쓰면서, 정작 자신의 에너지는 무분별하게 소모하고 있습니다.</p>
+<p>이 책은 에너지를 은행 계좌처럼 관리하는 혁신적인 시스템을 제안합니다. 단순히 더 많이 일하는 것이 아니라, 더 스마트하게 에너지를 투자하고 회복하는 방법을 알려드립니다.</p>
+<p>지난 5년간 500명 이상의 직장인들과 함께 검증한 실전 전략들을 통해, 여러분도 번아웃 없는 지속가능한 성과를 만들어낼 수 있을 것입니다.</p>
+<hr />
+<h2 id="chapter-1">Chapter 1: 에너지 파산에서 벗어나기</h2>
+<h3 id="_4">왜 우리는 매일 지칠까?</h3>
+<p>김영수 씨(35세, 마케팅 팀장)는 매일 오전 7시에 출근해서 밤 10시에 퇴근합니다. 집에 돌아가면 아이와 놀아줄 에너지도, 책을 읽을 여력도 없습니다. 주말이면 침대에서 하루 종일 보내며 "월요일이 오지 않았으면" 하고 생각합니다.</p>
+<p>이런 상황이 익숙하다면, 여러분은 <strong>에너지 파산</strong> 상태에 있을 가능성이 높습니다.</p>
+<h3 id="4">에너지의 4가지 차원</h3>
+<p>하버드 비즈니스 리뷰에 발표된 토니 슈와츠(Tony Schwartz)의 연구에 따르면, 인간의 에너지는 4가지 차원으로 구성됩니다:</p>
+<p><strong>1. 신체적 에너지 (Physical Energy)</strong>
+- 수면, 영양, 운동을 통해 충전되는 기본 에너지
+- 모든 활동의 기초가 되는 연료</p>
+<p><strong>2. 정서적 에너지 (Emotional Energy)</strong>
+- 긍정적 감정과 관계를 통해 생성되는 에너지
+- 스트레스와 갈등으로 가장 빨리 소모됨</p>
+<p><strong>3. 정신적 에너지 (Mental Energy)</strong>
+- 집중력과 창의적 사고를 가능하게 하는 에너지
+- 멀티태스킹과 결정 피로로 인해 급속히 고갈됨</p>
+<p><strong>4. 영적 에너지 (Spiritual Energy)</strong>
+- 목적의식과 의미에서 나오는 지속적인 동력
+- 가장 높은 차원의 에너지원</p>
+<h3 id="_5">에너지 뱅킹의 핵심 원칙</h3>
+<p>전통적인 시간 관리는 24시간이라는 고정된 자원을 효율적으로 배분하는 데 초점을 맞춥니다. 하지만 에너지는 다릅니다. 에너지는 소모할 수도, 충전할 수도, 심지어 증폭시킬 수도 있는 가변적 자원입니다.</p>
+<p><strong>에너지 뱅킹 시스템의 3대 원칙:</strong></p>
+<ol>
+<li><strong>에너지 예산 수립</strong>: 하루 에너지를 미리 배분하기</li>
+<li><strong>전략적 투자</strong>: 고수익 활동에 최고의 에너지 투자하기  </li>
+<li><strong>지속적 충전</strong>: 에너지가 고갈되기 전에 미리 보충하기</li>
+</ol>
+<h3 id="_6">실천 전략: 에너지 현황 파악하기</h3>
+<p>다음 7일간 에너지 일기를 작성해보세요:</p>
+<p><strong>오전 (9-12시)</strong>: 에너지 레벨 1-10점 / 주요 활동 / 기분
+<strong>오후 (1-6시)</strong>: 에너지 레벨 1-10점 / 주요 활동 / 기분<br />
+<strong>저녁 (7-10시)</strong>: 에너지 레벨 1-10점 / 주요 활동 / 기분</p>
+<p>이 데이터를 통해 여러분만의 에너지 패턴을 발견할 수 있습니다. 언제 에너지가 가장 높은지, 어떤 활동이 에너지를 빼앗는지, 무엇이 에너지를 충전시켜주는지 명확해질 것입니다.</p>
+<p><strong>기억하세요</strong>: 에너지 관리는 자원 관리입니다. 무한정 써도 되는 것이 아니라, 현명하게 투자해야 하는 귀중한 자산입니다.</p>
+<hr />
+<h2 id="chapter-2">Chapter 2: 개인별 에너지 패턴 분석</h2>
+<h3 id="_7">크로노타입: 당신의 생체 리듬을 아시나요?</h3>
+<p>독일 뮌헨대학교의 틸 뢰네베르크(Till Roenneberg) 박사의 20년 연구에 따르면, 개인의 생체 리듬(크로노타입)은 유전적으로 결정됩니다. 이는 단순히 "아침형 인간" 또는 "저녁형 인간"을 넘어서, 개인별로 고유한 에너지 곡선을 가지고 있다는 의미입니다.</p>
+<h3 id="4_1">4가지 크로노타입 분류</h3>
+<p><strong>1. 라이언 (Lion) - 아침형 (25%)</strong>
+- 오전 6-7시 자연 기상
+- 오전 중 최고 집중력과 의사결정 능력
+- 오후 2-4시경 에너지 급감
+- 오후 9시 이전 취침 선호</p>
+<p><strong>2. 베어 (Bear) - 일반형 (55%)</strong><br />
+- 오전 7-8시 기상
+- 오전 10시-오후 2시 집중력 피크
+- 오후 2-4시 소폭 하락 후 회복
+- 오후 10-11시 취침</p>
+<p><strong>3. 울프 (Wolf) - 저녁형 (15-20%)</strong>
+- 오전 9시 이후 기상 선호
+- 오후-저녁 시간대 최고 성과
+- 밤 12시 이후에도 높은 집중력
+- 새벽 1-2시 취침</p>
+<p><strong>4. 돌핀 (Dolphin) - 불규칙형 (5%)</strong>
+- 얕은 잠으로 인한 불규칙한 에너지
+- 오전 10시-오후 2시 집중력 향상
+- 예민하고 완벽주义적 성향
+- 수면 패턴이 자주 변화</p>
+<h3 id="_8">개인별 에너지 맵핑 실습</h3>
+<p>이화여대 김정기 교수의 연구에서는 자신의 크로노타입을 정확히 파악한 직장인들이 업무 성과가 23% 향상되고, 스트레스 지수가 31% 감소했다고 보고했습니다.</p>
+<p><strong>에너지 맵핑 4단계:</strong></p>
+<p><strong>1단계: 자연적 패턴 관찰</strong>
+주말이나 휴가 기간 중 알람 없이 자연스럽게 잠들고 깨는 시간을 기록하세요. 최소 3일 이상 관찰이 필요합니다.</p>
+<p><strong>2단계: 인지능력 테스트</strong><br />
+하루 중 2시간마다 간단한 계산 문제(예: 17 x 24)를 풀고 소요 시간을 측정하세요. 가장 빠른 시간대가 여러분의 인지적 피크타임입니다.</p>
+<p><strong>3단계: 기분과 에너지 추적</strong>
+1시간마다 1-10점으로 다음을 평가하세요:
+- 신체적 에너지 수준
+- 정신적 명료함
+- 감정적 안정감
+- 창의적 사고력</p>
+<p><strong>4단계: 개인별 에너지 프로파일 작성</strong></p>
+<table>
+<thead>
+<tr>
+<th>시간대</th>
+<th>에너지 수준</th>
+<th>최적 활동</th>
+<th>피해야 할 활동</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>06-09시</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>09-12시</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>12-15시</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>15-18시</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>18-21시</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>21시 이후</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="_9">에너지 도둑 식별하기</h3>
+<p>MIT의 에너지 연구소에서 발표한 자료에 따르면, 직장인들의 에너지를 가장 많이 소모시키는 요인들은 다음과 같습니다:</p>
+<p><strong>1. 결정 피로 (Decision Fatigue) - 28%</strong>
+- 하루 평균 35,000개의 결정
+- 오후로 갈수록 의사결정의 질 저하
+- 중요하지 않은 결정에 에너지 낭비</p>
+<p><strong>2. 멀티태스킹 - 23%</strong><br />
+- 업무 전환 시마다 평균 23분의 집중력 회복 시간
+- 동시에 처리하는 업무 개수와 스트레스 지수 정비례</p>
+<p><strong>3. 회의 피로 - 19%</strong>
+- 비효율적 회의로 인한 정신적 에너지 소모
+- 하루 3시간 이상 회의 시 창의성 67% 감소</p>
+<p><strong>4. 디지털 방해 요소 - 18%</strong>
+- 스마트폰 알림에 의한 집중력 분산
+- 소셜미디어로 인한 도파민 중독과 에너지 고갈</p>
+<p><strong>5. 인간관계 갈등 - 12%</strong>
+- 부정적 동료와의 상호작용
+- 감정 노동으로 인한 정서적 에너지 고갈</p>
+<h3 id="_10">실천 전략: 에너지 보호 시스템 구축</h3>
+<p><strong>개인별 에너지 보호막 만들기:</strong></p>
+<ol>
+<li><strong>결정 루틴화</strong>: 매일 반복되는 소소한 결정들(옷, 식사, 출근길 등)을 미리 정해두기</li>
+<li><strong>집중 시간 블록</strong>: 최고 에너지 시간대에는 방해 요소 완전 차단</li>
+<li><strong>에너지 회복 신호</strong>: 에너지 레벨이 7점 이하로 떨어지면 즉시 5분 충전 활동</li>
+<li><strong>관계 경계선</strong>: 에너지를 빼앗는 사람들과의 상호작용 최소화</li>
+</ol>
+<p>다음 장에서는 이렇게 분석한 개인별 패턴을 바탕으로 실제적인 에너지 투자 전략을 수립하는 방법을 알아보겠습니다.</p>
+<hr />
+<h2 id="chapter-3">Chapter 3: 전략적 에너지 투자법</h2>
+<h3 id="8020">80/20 에너지 법칙의 발견</h3>
+<p>파레토의 법칙은 에너지 관리에서도 적용됩니다. 맥킨지의 2023년 생산성 연구에 따르면, 고성과 직장인들은 자신의 에너지 중 80%를 단 20%의 핵심 활동에 투자합니다.</p>
+<p>일반적인 직장인과 고성과자의 에너지 배분을 비교해보면:</p>
+<p><strong>일반 직장인의 에너지 배분:</strong>
+- 이메일 확인 및 답변: 25%
+- 회의 참석: 20%<br />
+- 보고서 작성: 15%
+- 핵심 프로젝트: 15%
+- 기타 업무: 25%</p>
+<p><strong>고성과자의 에너지 배분:</strong>
+- 핵심 프로젝트: 40%
+- 전략적 사고: 20%
+- 관계 구축: 15%
+- 학습과 성장: 10%
+- 기타 업무: 15%</p>
+<h3 id="roi">에너지 ROI 계산법</h3>
+<p>투자에서 수익률을 계산하듯, 에너지 투자에도 명확한 기준이 필요합니다.</p>
+<p><strong>에너지 ROI = (얻은 가치 - 투입한 에너지) / 투입한 에너지 × 100</strong></p>
+<p><strong>예시 분석:</strong></p>
+<p><strong>활동 A: 새로운 마케팅 전략 수립</strong>
+- 투입 에너지: 9/10 (3시간 고강도 집중)
+- 얻은 가치: 팀 성과 20% 향상, 상사 인정, 성취감
+- 에너지 ROI: 높음</p>
+<p><strong>활동 B: 일상적인 데이터 입력</strong><br />
+- 투입 에너지: 4/10 (2시간 단순 작업)
+- 얻은 가치: 기본 업무 완료
+- 에너지 ROI: 낮음</p>
+<h3 id="_11">에너지 투자 매</h3>
+
+
+
+<div class="footer">
+  <strong>Lighthouse Media</strong><br>
+  류선희 | 실제로 삶이 나아지는 콘텐츠<br>
+  <a href="/lighthouse-media/free.html" style="color:#BA7517;text-decoration:none;">무료 PDF 더 받기</a>
+</div>
+
+</body>
+</html>

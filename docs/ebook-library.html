@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lighthouse Media — 전자책 라이브러리</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard',sans-serif;background:#FAF8F3;color:#2a2a2a;min-height:100vh}
+
+/* ── Header ── */
+.header{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:0;position:sticky;top:0;z-index:100;box-shadow:0 2px 16px rgba(0,0,0,0.15)}
+.header-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:20px;padding:14px 28px;flex-wrap:wrap}
+.logo{font-size:20px;font-weight:800;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.logo span{color:#1D9E75}
+.search-wrap{flex:1;min-width:200px;max-width:460px;position:relative}
+.search-wrap input{width:100%;padding:10px 16px 10px 40px;border:2px solid rgba(255,255,255,0.15);border-radius:10px;background:rgba(255,255,255,0.08);color:#fff;font-size:14px;font-family:inherit;outline:none;transition:border-color 0.2s}
+.search-wrap input::placeholder{color:rgba(255,255,255,0.45)}
+.search-wrap input:focus{border-color:#1D9E75;background:rgba(255,255,255,0.12)}
+.search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:rgba(255,255,255,0.45)}
+.header-nav{display:flex;gap:4px;flex-wrap:wrap}
+.header-nav a{color:rgba(255,255,255,0.7);text-decoration:none;font-size:14px;font-weight:600;padding:6px 14px;border-radius:8px;transition:all 0.2s;white-space:nowrap}
+.header-nav a:hover,.header-nav a.active{color:#fff;background:rgba(255,255,255,0.1)}
+.header-nav a.active{background:#1D9E75;color:#fff}
+
+/* ── Layout ── */
+.layout{display:flex;max-width:1400px;margin:0 auto;min-height:calc(100vh - 60px)}
+
+/* ── Sidebar ── */
+.sidebar{width:240px;flex-shrink:0;padding:24px 20px;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto;border-right:1px solid rgba(0,0,0,0.05)}
+.sidebar-section{margin-bottom:28px}
+.sidebar-title{font-size:11px;font-weight:700;text-transform:uppercase;color:#999;letter-spacing:0.5px;margin-bottom:12px}
+.cat-btn{display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 14px;border:none;background:transparent;font-size:14px;font-family:inherit;cursor:pointer;border-radius:10px;transition:all 0.2s;color:#555;text-align:left}
+.cat-btn:hover{background:rgba(29,158,117,0.06);color:#2a2a2a}
+.cat-btn.active{background:rgba(29,158,117,0.1);color:#1D9E75;font-weight:700}
+.cat-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;min-width:24px;text-align:center}
+.cat-badge.green{background:rgba(29,158,117,0.12);color:#1D9E75}
+.cat-badge.gold{background:rgba(186,117,23,0.12);color:#BA7517}
+.cat-badge.gray{background:rgba(0,0,0,0.06);color:#888}
+
+.tag-wrap{display:flex;flex-wrap:wrap;gap:6px}
+.tag-btn{padding:6px 12px;border:1.5px solid #e0ddd8;border-radius:20px;background:transparent;font-size:12px;font-family:inherit;cursor:pointer;transition:all 0.2s;color:#777;white-space:nowrap}
+.tag-btn:hover{border-color:#1D9E75;color:#1D9E75}
+.tag-btn.active{background:#1D9E75;border-color:#1D9E75;color:#fff}
+
+.sort-wrap{display:flex;gap:6px}
+.sort-btn{flex:1;padding:8px 12px;border:1.5px solid #e0ddd8;border-radius:8px;background:transparent;font-size:13px;font-family:inherit;cursor:pointer;transition:all 0.2s;color:#777;font-weight:600}
+.sort-btn:hover{border-color:#1D9E75;color:#1D9E75}
+.sort-btn.active{background:#1D9E75;border-color:#1D9E75;color:#fff}
+
+.sidebar-cta{background:linear-gradient(135deg,rgba(29,158,117,0.08),rgba(186,117,23,0.06));border:1px solid rgba(29,158,117,0.15);border-radius:12px;padding:16px;text-align:center;font-size:13px;color:#555;line-height:1.6}
+.sidebar-cta strong{color:#1D9E75;display:block;margin-bottom:4px}
+.sidebar-cta a{display:inline-block;margin-top:10px;background:#1D9E75;color:#fff;padding:8px 18px;border-radius:8px;text-decoration:none;font-weight:700;font-size:12px;transition:opacity 0.2s}
+.sidebar-cta a:hover{opacity:0.85}
+
+/* ── Main ── */
+.main{flex:1;padding:24px 28px 60px;min-width:0}
+
+/* Follow banner */
+.follow-banner{background:linear-gradient(135deg,rgba(29,158,117,0.07),rgba(186,117,23,0.05));border:1px solid rgba(29,158,117,0.15);border-radius:14px;padding:24px 28px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.follow-banner-text h3{font-size:17px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+.follow-banner-text p{font-size:13px;color:#888}
+.follow-banner .ig-btn{background:#1D9E75;color:#fff;padding:10px 24px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;white-space:nowrap;transition:all 0.2s;display:inline-flex;align-items:center;gap:6px}
+.follow-banner .ig-btn:hover{opacity:0.85;transform:translateY(-1px)}
+
+/* Count bar */
+.count-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px}
+.count-bar h2{font-size:18px;font-weight:700;color:#1a1a2e}
+.count-bar span{color:#1D9E75}
+.results-info{font-size:13px;color:#999}
+
+/* Book grid */
+.book-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.book-card{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.05);transition:all 0.3s;opacity:0;transform:translateY(16px);animation:cardIn 0.4s ease forwards}
+.book-card:hover{transform:translateY(-6px);box-shadow:0 12px 32px rgba(0,0,0,0.1)}
+@keyframes cardIn{to{opacity:1;transform:translateY(0)}}
+
+.book-cover{height:200px;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px;text-align:center;position:relative;overflow:hidden}
+.book-cover::before{content:'';position:absolute;top:-40%;right:-30%;width:200px;height:200px;background:radial-gradient(circle,rgba(29,158,117,0.15),transparent 70%);border-radius:50%}
+.book-cover.paid::before{background:radial-gradient(circle,rgba(186,117,23,0.15),transparent 70%)}
+.book-cover h3{color:#fff;font-size:16px;line-height:1.5;margin-bottom:6px;position:relative;z-index:1;word-break:keep-all}
+.book-cover p{color:#1D9E75;font-size:12px;position:relative;z-index:1;line-height:1.4}
+.book-cover.paid p{color:#BA7517}
+.type-badge{position:absolute;top:12px;right:12px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;z-index:2}
+.type-badge.free{background:#1D9E75;color:#fff}
+.type-badge.paid{background:#BA7517;color:#fff}
+
+.book-info{padding:16px}
+.book-info-title{font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:4px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.book-info-sub{font-size:12px;color:#999;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.book-info-price{font-size:14px;font-weight:700;margin-bottom:12px}
+.book-info-price.free{color:#1D9E75}
+.book-info-price.paid{color:#BA7517}
+
+.download-btn{display:block;width:100%;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;text-align:center;text-decoration:none;color:#fff}
+.download-btn.free{background:#1D9E75}
+.download-btn.paid{background:#BA7517}
+.download-btn:hover{opacity:0.85;transform:translateY(-1px)}
+
+/* Tags on card */
+.book-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.book-tag{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(29,158,117,0.08);color:#1D9E75}
+
+/* Empty / no results */
+.empty-state{grid-column:1/-1;text-align:center;padding:60px 20px}
+.empty-state svg{width:64px;height:64px;color:#ccc;margin-bottom:16px}
+.empty-state h3{font-size:18px;color:#999;margin-bottom:8px}
+.empty-state p{font-size:14px;color:#bbb}
+
+/* ── Modal ── */
+.modal-bg{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center;backdrop-filter:blur(4px)}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:18px;padding:36px;max-width:440px;width:92%;position:relative;animation:modalIn 0.25s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+.modal h3{font-size:20px;font-weight:700;margin-bottom:6px;line-height:1.4;padding-right:30px}
+.modal .modal-sub{font-size:13px;color:#999;margin-bottom:20px}
+.modal .close{position:absolute;top:14px;right:18px;background:none;border:none;font-size:24px;cursor:pointer;color:#bbb;transition:color 0.2s;line-height:1}
+.modal .close:hover{color:#666}
+.modal input[type="email"]{width:100%;padding:12px 16px;border:2px solid #eee;border-radius:10px;font-size:14px;margin-bottom:10px;font-family:inherit;outline:none;transition:border-color 0.2s}
+.modal input[type="email"]:focus{border-color:#1D9E75}
+.check-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:14px;color:#555}
+.check-row input[type=checkbox]{width:18px;height:18px;accent-color:#1D9E75;flex-shrink:0}
+.submit-btn{width:100%;background:#1D9E75;color:#fff;border:none;padding:14px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:14px;transition:all 0.2s}
+.submit-btn:hover{opacity:0.85;transform:translateY(-1px)}
+.submit-btn.paid-btn{background:#BA7517}
+
+/* ── Footer ── */
+.footer{background:#1a1a2e;color:rgba(255,255,255,0.5);text-align:center;padding:36px 20px;font-size:13px;line-height:2}
+.footer strong{color:rgba(255,255,255,0.8);font-size:15px}
+.footer a{color:#1D9E75;text-decoration:none;transition:opacity 0.2s}
+.footer a:hover{opacity:0.8}
+
+/* ── Mobile horizontal filter bar ── */
+.mobile-filter{display:none;overflow-x:auto;white-space:nowrap;padding:12px 16px;gap:8px;background:#fff;border-bottom:1px solid rgba(0,0,0,0.06);-webkit-overflow-scrolling:touch}
+.mobile-filter::-webkit-scrollbar{display:none}
+
+/* ── Responsive ── */
+@media(max-width:1024px){
+  .book-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:768px){
+  .header-inner{padding:10px 16px;gap:10px}
+  .logo{font-size:17px}
+  .search-wrap{max-width:100%;order:10;flex-basis:100%}
+  .header-nav a{font-size:13px;padding:5px 10px}
+  .sidebar{display:none}
+  .mobile-filter{display:flex}
+  .main{padding:16px}
+  .book-grid{grid-template-columns:1fr;gap:14px}
+  .follow-banner{flex-direction:column;text-align:center;padding:20px}
+  .count-bar h2{font-size:16px}
+  .layout{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo"><span>Lighthouse Media</span> 전자책</div>
+    <div class="search-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="전자책 검색..." oninput="applyFilters()">
+    </div>
+    <nav class="header-nav">
+      <a href="/lighthouse-media/links.html">홈</a>
+      <a href="#" class="active" data-nav="all" onclick="setNavFilter('all',this);return false">전체</a>
+      <a href="#" data-nav="free" onclick="setNavFilter('free',this);return false">무료</a>
+      <a href="#" data-nav="paid" onclick="setNavFilter('paid',this);return false">유료</a>
+      <a href="/lighthouse-media/links.html">대시보드</a>
+    </nav>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-title">카테고리</div>
+      <button class="cat-btn active" data-cat="all" onclick="setCatFilter('all',this)">
+        전체 <span class="cat-badge gray" id="countAll">0</span>
+      </button>
+      <button class="cat-btn" data-cat="free" onclick="setCatFilter('free',this)">
+        무료 전자책 <span class="cat-badge green" id="countFree">0</span>
+      </button>
+      <button class="cat-btn" data-cat="paid" onclick="setCatFilter('paid',this)">
+        유료 전자책 <span class="cat-badge gold" id="countPaid">0</span>
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">주제별</div>
+      <div class="tag-wrap" id="tagWrap">
+        <button class="tag-btn" data-tag="번아웃 회복" onclick="toggleTag(this)">번아웃 회복</button>
+        <button class="tag-btn" data-tag="감정 관리" onclick="toggleTag(this)">감정 관리</button>
+        <button class="tag-btn" data-tag="습관 설계" onclick="toggleTag(this)">습관 설계</button>
+        <button class="tag-btn" data-tag="아침 루틴" onclick="toggleTag(this)">아침 루틴</button>
+        <button class="tag-btn" data-tag="저녁 회복" onclick="toggleTag(this)">저녁 회복</button>
+        <button class="tag-btn" data-tag="에너지 관리" onclick="toggleTag(this)">에너지 관리</button>
+        <button class="tag-btn" data-tag="마음관리" onclick="toggleTag(this)">마음관리</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-title">정렬</div>
+      <div class="sort-wrap">
+        <button class="sort-btn active" data-sort="latest" onclick="setSort('latest',this)">최신순</button>
+        <button class="sort-btn" data-sort="popular" onclick="setSort('popular',this)">인기순</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-cta">
+        <strong>@lighthouse_media77</strong>
+        팔로우하고 무료 전자책을<br>모두 받아가세요
+        <a href="https://instagram.com/lighthouse_media77" target="_blank">Instagram 팔로우</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+    <!-- Mobile filter bar -->
+    <div class="mobile-filter" id="mobileFilter">
+      <button class="tag-btn active" data-mcat="all" onclick="setMobileCat('all',this)">전체</button>
+      <button class="tag-btn" data-mcat="free" onclick="setMobileCat('free',this)">무료</button>
+      <button class="tag-btn" data-mcat="paid" onclick="setMobileCat('paid',this)">유료</button>
+      <button class="tag-btn" data-mtag="번아웃 회복" onclick="toggleMobileTag(this)">번아웃 회복</button>
+      <button class="tag-btn" data-mtag="감정 관리" onclick="toggleMobileTag(this)">감정 관리</button>
+      <button class="tag-btn" data-mtag="습관 설계" onclick="toggleMobileTag(this)">습관 설계</button>
+      <button class="tag-btn" data-mtag="아침 루틴" onclick="toggleMobileTag(this)">아침 루틴</button>
+      <button class="tag-btn" data-mtag="저녁 회복" onclick="toggleMobileTag(this)">저녁 회복</button>
+      <button class="tag-btn" data-mtag="에너지 관리" onclick="toggleMobileTag(this)">에너지 관리</button>
+      <button class="tag-btn" data-mtag="마음관리" onclick="toggleMobileTag(this)">마음관리</button>
+    </div>
+
+    <!-- Follow Banner -->
+    <div class="follow-banner">
+      <div class="follow-banner-text">
+        <h3>팔로우하면 모든 무료 전자책을 받을 수 있습니다</h3>
+        <p>@lighthouse_media77 팔로우 후 무료 전자책을 자유롭게 다운로드하세요</p>
+      </div>
+      <a href="https://instagram.com/lighthouse_media77" target="_blank" class="ig-btn">
+        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+        Instagram 팔로우하기
+      </a>
+    </div>
+
+    <!-- Count bar -->
+    <div class="count-bar">
+      <h2>전체 <span id="displayCount">0</span>권</h2>
+      <div class="results-info" id="resultsInfo"></div>
+    </div>
+
+    <!-- Book Grid -->
+    <div class="book-grid" id="bookGrid">
+      <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        <h3>로딩 중...</h3>
+        <p>전자책 목록을 불러오고 있습니다</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <strong>Lighthouse Media</strong> | 류선희<br>
+  "실제로 삶이 나아지는 콘텐츠"<br>
+  <a href="/lighthouse-media/links.html">홈</a> &middot;
+  <a href="/lighthouse-media/shop.html">판매페이지</a> &middot;
+  <a href="/lighthouse-media/links.html">3D 대시보드</a> &middot;
+  <a href="/lighthouse-media/links.html">성과 대시보드</a>
+</footer>
+
+<!-- Download Modal -->
+<div class="modal-bg" id="dlModal">
+  <div class="modal">
+    <button class="close" onclick="closeModal()">&times;</button>
+    <h3 id="dlTitle">전자책 다운로드</h3>
+    <p class="modal-sub" id="dlSub"></p>
+
+    <div class="check-row">
+      <input type="checkbox" id="chkFollow">
+      <label for="chkFollow">@lighthouse_media77 팔로우 했습니다</label>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="chkLike">
+      <label for="chkLike">최신 게시물에 좋아요 눌렀습니다</label>
+    </div>
+
+    <div style="margin-top:14px">
+      <input type="email" id="dlEmail" placeholder="이메일 (선택사항 — 신규 전자책 알림)">
+    </div>
+
+    <button class="submit-btn" id="dlSubmitBtn" onclick="doDownload()">전자책 받기</button>
+  </div>
+</div>
+
+<script>
+// ── State ──
+let allBooks = [];
+let currentCat = 'all';   // 'all' | 'free' | 'paid'
+let currentTag = null;     // null or tag string
+let currentSort = 'latest';
+let currentUrl = '';
+let currentBookType = 'free';
+
+// ── Tag detection ──
+const TAG_RULES = [
+  { tag: '번아웃 회복', keywords: ['번아웃','지치','피로'] },
+  { tag: '감정 관리',   keywords: ['감정','화','불안'] },
+  { tag: '습관 설계',   keywords: ['습관','변화','성장'] },
+  { tag: '아침 루틴',   keywords: ['아침','새벽','모닝'] },
+  { tag: '저녁 회복',   keywords: ['퇴근','저녁','휴식'] },
+  { tag: '에너지 관리', keywords: ['에너지','충전','뱅크'] },
+];
+
+function detectTags(title, subtitle) {
+  const text = ((title || '') + ' ' + (subtitle || '')).toLowerCase();
+  const tags = [];
+  for (const rule of TAG_RULES) {
+    if (rule.keywords.some(k => text.includes(k))) {
+      tags.push(rule.tag);
+    }
+  }
+  if (tags.length === 0) tags.push('마음관리');
+  return tags;
+}
+
+// ── Inline ebook data (static for GitHub Pages) ──
+const EBOOK_DATA = [
+  {"type":"free","title":"5분 아침루틴\n하루를 바꾸다","subtitle":"번아웃 직장인을 위한\n새벽 에너지 충전법","slug":"5-minute-morning-routine-change-day","price":0,"url":"ebooks/2026-05-09/free-5-minute-morning-routine-change-day.html"},
+  {"type":"free","title":"감정의 온도계\n내 마음 읽기","subtitle":"직장 스트레스 속에서\n나를 지키는 감정 관리법","slug":"emotional-thermometer-mind-reading","price":0,"url":"ebooks/2026-05-09/free-emotional-thermometer-mind-reading.html"},
+  {"type":"free","title":"퇴근 후 30분\n나를 회복하기","subtitle":"지친 하루 끝에서\n다시 충전하는 저녁 의식","slug":"30-minutes-after-work-recovery","price":0,"url":"ebooks/2026-05-09/free-30-minutes-after-work-recovery.html"},
+  {"type":"paid","title":"에너지 뱅킹\n생산성 충전소","subtitle":"번아웃 직장인을 위한\n지속가능한 에너지 관리 시스템","slug":"energy-banking-productivity-charging-station","price":7900,"url":"ebooks/2026-05-09/paid-energy-banking-productivity-charging-station.html"},
+  {"type":"free","title":"아침 5분으로\n인생이 달라진다","subtitle":"번아웃 직장인을 위한\n에너지 충전 모닝루틴","slug":"morning-energy-routine","price":0,"url":"ebooks/2026-05-08/free-morning-energy-routine.html"},
+  {"type":"free","title":"감정의 주인이\n되는 법","subtitle":"직장에서 휘둘리지 않고\n마음을 지키는 기술","slug":"emotional-mastery-workplace","price":0,"url":"ebooks/2026-05-08/free-emotional-mastery-workplace.html"},
+  {"type":"free","title":"퇴근 후\n나를 회복시키기","subtitle":"지친 마음을 달래는\n저녁 셀프케어 가이드","slug":"evening-recovery-selfcare","price":0,"url":"ebooks/2026-05-08/free-evening-recovery-selfcare.html"},
+  {"type":"paid","title":"에너지 뱅크\n시스템","subtitle":"번아웃 없이 성과내는\n지속가능한 생산성 관리법","slug":"energy-bank-productivity-system","price":7900,"url":"ebooks/2026-05-08/paid-energy-bank-productivity-system.html"},
+  {"type":"free","title":"아침 7분\n새로운 시작","subtitle":"번아웃을 이기는\n모닝 루틴 가이드","slug":"morning-7min-fresh-start","price":0,"url":"ebooks/2026-04-25/free-morning-7min-fresh-start.html"},
+  {"type":"free","title":"감정의 온도\n마음 들여다보기","subtitle":"직장인을 위한\n감정 정리 워크북","slug":"emotional-temperature-workbook","price":0,"url":"ebooks/2026-04-25/free-emotional-temperature-workbook.html"},
+  {"type":"free","title":"저녁 충전\n나를 돌보기","subtitle":"하루 끝, 지친 마음을\n다시 채우는 방법","slug":"evening-recharge-selfcare","price":0,"url":"ebooks/2026-04-25/free-evening-recharge-selfcare.html"},
+  {"type":"paid","title":"에너지 리셋\n생산성 마스터","subtitle":"번아웃 직장인을 위한\n지속가능한 성장 전략","slug":"energy-reset-productivity-master","price":7900,"url":"ebooks/2026-04-25/paid-energy-reset-productivity-master.html"},
+  {"type":"free","title":"월요병을 이기는\n아침 루틴 7가지","subtitle":"하루 15분으로\n에너지 충전하기","slug":"monday-morning-routine","price":0,"url":"ebooks/2026-04-24/free-monday-morning-routine.html"},
+  {"type":"free","title":"화났을 때\n3분 마음 정리법","subtitle":"감정에 휘둘리지 않고\n현명하게 대처하기","slug":"anger-management-3minutes","price":0,"url":"ebooks/2026-04-24/free-anger-management-3minutes.html"},
+  {"type":"free","title":"퇴근 후 지친 몸과\n마음 회복하기","subtitle":"집에서 쉽게 하는\n셀프 힐링 가이드","slug":"after-work-recovery","price":0,"url":"ebooks/2026-04-24/free-after-work-recovery.html"},
+  {"type":"paid","title":"번아웃에서 벗어나는\n에너지 관리의 기술","subtitle":"지속가능한 성과를 위한\n30일 실전 가이드북","slug":"energy-management-guide","price":7900,"url":"ebooks/2026-04-24/paid-energy-management-guide.html"},
+  {"type":"free","title":"아침 5분이\n하루를 바꾼다","subtitle":"번아웃 직장인을 위한\n새벽 에너지 충전법","slug":"morning-five-minutes-change","price":0,"url":"ebooks/2026-04-23/free-morning-five-minutes-change.html"},
+  {"type":"free","title":"마음의 짐을\n가볍게 하는 법","subtitle":"감정 정리가 필요한\n직장인을 위한 심리 처방전","slug":"lighten-emotional-burden","price":0,"url":"ebooks/2026-04-23/free-lighten-emotional-burden.html"},
+  {"type":"free","title":"지친 하루를\n다독이는 시간","subtitle":"퇴근 후 나를 위한\n힐링 루틴 만들기","slug":"evening-healing-routine","price":0,"url":"ebooks/2026-04-23/free-evening-healing-routine.html"},
+  {"type":"paid","title":"에너지 뱅킹\n시스템","subtitle":"번아웃 없이 지속가능한\n생산성을 만드는 전략","slug":"energy-banking-system","price":7900,"url":"ebooks/2026-04-23/paid-energy-banking-system.html"},
+  {"type":"free","title":"새벽 5시의\n작은 기적","subtitle":"하루를 바꾸는\n모닝루틴 7가지","slug":"morning-miracle-routine","price":0,"url":"ebooks/2026-04-22/free-morning-miracle-routine.html"},
+  {"type":"free","title":"감정의 온도를\n조절하는 법","subtitle":"화나고 지친 마음을\n다스리는 심리기술","slug":"emotion-temperature-control","price":0,"url":"ebooks/2026-04-22/free-emotion-temperature-control.html"},
+  {"type":"free","title":"퇴근 후\n나를 찾는 시간","subtitle":"지친 하루를 회복하는\n저녁 셀프케어 가이드","slug":"evening-self-care-guide","price":0,"url":"ebooks/2026-04-22/free-evening-self-care-guide.html"},
+  {"type":"paid","title":"번아웃에서\n벗어나는 힘","subtitle":"30대 직장인을 위한\n에너지 회복 로드맵","slug":"burnout-recovery-roadmap","price":7900,"url":"ebooks/2026-04-22/paid-burnout-recovery-roadmap.html"}
+];
+
+// ── Load books ──
+async function loadBooks() {
+  allBooks = EBOOK_DATA;
+  allBooks.forEach((b, i) => {
+    b._tags = detectTags(b.title, b.subtitle);
+    b._index = i;
+  });
+  updateCounts();
+  applyFilters();
+}
+
+// ── Counts ──
+function updateCounts() {
+  const free = allBooks.filter(b => b.type === 'free').length;
+  const paid = allBooks.filter(b => b.type === 'paid').length;
+  document.getElementById('countAll').textContent = allBooks.length;
+  document.getElementById('countFree').textContent = free;
+  document.getElementById('countPaid').textContent = paid;
+}
+
+// ── Filters ──
+function applyFilters() {
+  const query = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+  let filtered = [...allBooks];
+
+  // Category filter
+  if (currentCat === 'free') filtered = filtered.filter(b => b.type === 'free');
+  if (currentCat === 'paid') filtered = filtered.filter(b => b.type === 'paid');
+
+  // Tag filter
+  if (currentTag) {
+    filtered = filtered.filter(b => b._tags.includes(currentTag));
+  }
+
+  // Search filter
+  if (query) {
+    filtered = filtered.filter(b => {
+      const t = (b.title || '').toLowerCase();
+      const s = (b.subtitle || '').toLowerCase();
+      return t.includes(query) || s.includes(query);
+    });
+  }
+
+  // Sort
+  if (currentSort === 'latest') {
+    filtered.sort((a, b) => b._index - a._index);
+  } else {
+    // "popular" — free first, then by index
+    filtered.sort((a, b) => {
+      if (a.type === 'free' && b.type !== 'free') return -1;
+      if (a.type !== 'free' && b.type === 'free') return 1;
+      return b._index - a._index;
+    });
+  }
+
+  renderBooks(filtered, query);
+}
+
+// ── Render ──
+function renderBooks(books, query) {
+  const grid = document.getElementById('bookGrid');
+  document.getElementById('displayCount').textContent = books.length;
+
+  // Results info
+  const info = document.getElementById('resultsInfo');
+  const parts = [];
+  if (currentCat !== 'all') parts.push(currentCat === 'free' ? '무료' : '유료');
+  if (currentTag) parts.push(currentTag);
+  if (query) parts.push('"' + query + '" 검색');
+  info.textContent = parts.length ? parts.join(' · ') : '';
+
+  if (books.length === 0) {
+    grid.innerHTML = '<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg><h3>검색 결과 없음</h3><p>다른 키워드로 검색하거나 필터를 변경해 보세요</p></div>';
+    return;
+  }
+
+  grid.innerHTML = books.map((b, i) => {
+    const isFree = b.type === 'free';
+    const title = escHtml(b.title || '');
+    const titleBr = (b.title || '').replace(/\n/g, '<br>');
+    const subtitle = escHtml((b.subtitle || '').replace(/\n/g, ' '));
+    const priceText = isFree ? '무료' : ((b.price || 7900).toLocaleString() + '원');
+    const btnText = isFree ? '무료 다운로드' : (priceText + ' 구매');
+    const delay = Math.min(i * 0.06, 0.6);
+    const tags = b._tags.map(t => '<span class="book-tag">' + escHtml(t) + '</span>').join('');
+
+    return '<div class="book-card" style="animation-delay:' + delay + 's">'
+      + '<div class="book-cover' + (isFree ? '' : ' paid') + '">'
+      + '<span class="type-badge ' + (isFree ? 'free' : 'paid') + '">' + (isFree ? 'FREE' : priceText) + '</span>'
+      + '<h3>' + titleBr + '</h3>'
+      + '<p>' + subtitle + '</p>'
+      + '</div>'
+      + '<div class="book-info">'
+      + '<div class="book-info-title">' + title + '</div>'
+      + '<div class="book-info-sub">' + subtitle + '</div>'
+      + '<div class="book-tags">' + tags + '</div>'
+      + '<div class="book-info-price ' + (isFree ? 'free' : 'paid') + '">' + priceText + '</div>'
+      + '<button class="download-btn ' + (isFree ? 'free' : 'paid') + '" onclick="openModal(\'' + escAttr(b.title || '') + '\',\'' + escAttr(subtitle) + '\',\'' + escAttr(b.url || '') + '\',\'' + b.type + '\',' + (b.price || 0) + ')">' + btnText + '</button>'
+      + '</div></div>';
+  }).join('');
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,' ');
+}
+function escAttr(s) {
+  return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' ');
+}
+
+// ── Nav filter (header) ──
+function setNavFilter(type, el) {
+  currentCat = type;
+  currentTag = null;
+  // Update header nav
+  document.querySelectorAll('.header-nav a[data-nav]').forEach(a => a.classList.remove('active'));
+  el.classList.add('active');
+  // Update sidebar cats
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === type));
+  // Clear tag selection
+  document.querySelectorAll('.tag-btn[data-tag]').forEach(b => b.classList.remove('active'));
+  applyFilters();
+}
+
+// ── Category filter (sidebar) ──
+function setCatFilter(type, el) {
+  currentCat = type;
+  currentTag = null;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  // Sync header nav
+  document.querySelectorAll('.header-nav a[data-nav]').forEach(a => a.classList.toggle('active', a.dataset.nav === type));
+  document.querySelectorAll('.tag-btn[data-tag]').forEach(b => b.classList.remove('active'));
+  applyFilters();
+}
+
+// ── Tag filter ──
+function toggleTag(el) {
+  const tag = el.dataset.tag;
+  if (currentTag === tag) {
+    currentTag = null;
+    el.classList.remove('active');
+  } else {
+    currentTag = tag;
+    document.querySelectorAll('.tag-btn[data-tag]').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+  applyFilters();
+}
+
+// ── Sort ──
+function setSort(sort, el) {
+  currentSort = sort;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  applyFilters();
+}
+
+// ── Mobile filter ──
+function setMobileCat(type, el) {
+  currentCat = type;
+  currentTag = null;
+  document.querySelectorAll('#mobileFilter [data-mcat]').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#mobileFilter [data-mtag]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  // Sync sidebar + header
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === type));
+  document.querySelectorAll('.header-nav a[data-nav]').forEach(a => a.classList.toggle('active', a.dataset.nav === type));
+  document.querySelectorAll('.tag-btn[data-tag]').forEach(b => b.classList.remove('active'));
+  applyFilters();
+}
+
+function toggleMobileTag(el) {
+  const tag = el.dataset.mtag;
+  if (currentTag === tag) {
+    currentTag = null;
+    el.classList.remove('active');
+  } else {
+    currentTag = tag;
+    document.querySelectorAll('#mobileFilter [data-mtag]').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    // Sync sidebar tags
+    document.querySelectorAll('.tag-btn[data-tag]').forEach(b => b.classList.toggle('active', b.dataset.tag === tag));
+  }
+  // Clear mobile cat active to just "all"
+  document.querySelectorAll('#mobileFilter [data-mcat]').forEach(b => b.classList.toggle('active', b.dataset.mcat === currentCat));
+  applyFilters();
+}
+
+// ── Modal ──
+function openModal(title, subtitle, url, type, price) {
+  currentUrl = url;
+  currentBookType = type;
+  document.getElementById('dlTitle').textContent = title;
+  document.getElementById('dlSub').textContent = subtitle;
+  const btn = document.getElementById('dlSubmitBtn');
+  if (type === 'paid') {
+    btn.textContent = (price || 7900).toLocaleString() + '원 구매하기';
+    btn.className = 'submit-btn paid-btn';
+  } else {
+    btn.textContent = '전자책 받기';
+    btn.className = 'submit-btn';
+  }
+  document.getElementById('chkFollow').checked = false;
+  document.getElementById('chkLike').checked = false;
+  document.getElementById('dlEmail').value = '';
+  document.getElementById('dlModal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('dlModal').classList.remove('show');
+}
+
+function doDownload() {
+  const email = document.getElementById('dlEmail').value.trim();
+  const follow = document.getElementById('chkFollow').checked;
+  const like = document.getElementById('chkLike').checked;
+
+  // Save lead if email provided
+  if (email) {
+    fetch('/api/lead', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        email,
+        source: 'ebook-library',
+        book: document.getElementById('dlTitle').textContent,
+        confirmed_follow: follow,
+        confirmed_like: like
+      })
+    }).catch(function(){});
+  }
+
+  // Open ebook in new tab
+  window.open(currentUrl, '_blank');
+  closeModal();
+}
+
+// Close modal on backdrop click
+document.getElementById('dlModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+
+// ── Init ──
+loadBooks();
+</script>
+</body>
+</html>

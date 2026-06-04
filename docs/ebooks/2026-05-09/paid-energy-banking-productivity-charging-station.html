@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>에너지 뱅킹 생산성 충전소 - Lighthouse Media</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: #FAF8F3;
+  color: #333;
+  line-height: 2.0;
+  font-size: 16px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 28px 80px;
+  word-break: keep-all;
+}
+
+/* 커버 */
+.cover {
+  background: linear-gradient(135deg,#1a1a2e,#0f3460);
+  color: #fff;
+  padding: 70px 40px;
+  border-radius: 20px;
+  text-align: center;
+  margin-bottom: 50px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+.cover h1 { font-size: 30px; line-height: 1.4; margin-bottom: 14px; font-weight: 800; }
+.cover .sub { color: #BA7517; font-size: 17px; line-height: 1.6; }
+.cover .author { color: #888; margin-top: 24px; font-size: 14px; }
+.badge {
+  display: inline-block;
+  background: #BA7517;
+  color: #fff;
+  padding: 5px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* 본문 타이포그래피 */
+h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 48px 0 20px;
+  line-height: 1.4;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #BA7517;
+  margin: 44px 0 18px;
+  padding: 14px 0 14px 16px;
+  border-left: 4px solid #BA7517;
+  background: rgba(29,158,117,0.03);
+  border-radius: 0 8px 8px 0;
+  line-height: 1.4;
+}
+h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2a2a2a;
+  margin: 32px 0 14px;
+  line-height: 1.5;
+}
+p {
+  margin-bottom: 18px;
+  font-size: 16px;
+  line-height: 2.0;
+  color: #444;
+  letter-spacing: -0.2px;
+}
+strong { color: #1a1a2e; font-weight: 700; }
+em { color: #BA7517; font-style: normal; font-weight: 600; }
+
+/* 리스트 */
+ul, ol {
+  margin: 14px 0 20px 24px;
+  line-height: 2.0;
+}
+li {
+  margin-bottom: 10px;
+  padding-left: 4px;
+  color: #444;
+}
+li strong { color: #2a2a2a; }
+
+/* 구분선 */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ddd, transparent);
+  margin: 36px 0;
+}
+
+/* 인용 */
+blockquote {
+  border-left: 3px solid #BA7517;
+  background: rgba(29,158,117,0.04);
+  padding: 16px 20px;
+  margin: 20px 0;
+  border-radius: 0 10px 10px 0;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.9;
+}
+
+/* 테이블 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+}
+th {
+  background: #BA7517;
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+}
+tr:nth-child(even) td { background: #f9f9f6; }
+
+/* 코드 블록 (체크리스트 등) */
+code {
+  background: #f0ede6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #BA7517;
+}
+pre {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 20px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 20px 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* PDF 저장 버튼 */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(250,248,243,0.95);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.toolbar .brand { font-size: 13px; color: #999; font-weight: 600; }
+.toolbar .btn {
+  background: #BA7517;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+.toolbar .btn:hover { opacity: 0.9; }
+
+/* CTA (무료 전자책 하단) */
+.cta-box {
+  background: linear-gradient(135deg, rgba(29,158,117,0.08), rgba(186,117,23,0.06));
+  border: 1px solid rgba(29,158,117,0.2);
+  border-radius: 14px;
+  padding: 30px;
+  margin-top: 40px;
+  text-align: center;
+}
+.cta-box h3 { color: #1a1a2e; margin-bottom: 8px; }
+.cta-box p { font-size: 14px; color: #888; margin-bottom: 16px; }
+.cta-box a {
+  display: inline-block;
+  background: #BA7517;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* 푸터 */
+.footer {
+  text-align: center;
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.8;
+}
+
+/* 인쇄 */
+@media print {
+  .toolbar, .cta-box { display: none; }
+  body { max-width: 100%; padding: 20px; font-size: 14px; }
+  h2 { page-break-before: always; }
+  p, li { orphans: 3; widows: 3; }
+}
+
+/* 모바일 */
+@media (max-width: 600px) {
+  body { padding: 20px 16px 60px; font-size: 15px; }
+  .cover { padding: 50px 24px; }
+  .cover h1 { font-size: 24px; }
+  h2 { font-size: 19px; }
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="brand">Lighthouse Media</span>
+  <button class="btn" onclick="window.print()">PDF로 저장</button>
+</div>
+
+<div style="height:50px"></div>
+
+<div class="cover">
+  <span class="badge">7,900원</span>
+  <h1>에너지 뱅킹<br>생산성 충전소</h1>
+  <p class="sub">번아웃 직장인을 위한 | 지속가능한 에너지 관리 시스템</p>
+  <div class="author">류선희 | Lighthouse Media</div>
+</div>
+
+<h1 id="_1">에너지 뱅킹: 생산성 충전소</h1>
+<h2 id="_2">번아웃 직장인을 위한 지속가능한 에너지 관리 시스템</h2>
+<p><strong>저자:</strong> 류선희 (Lighthouse Media)<br />
+<strong>가격:</strong> 7,900원<br />
+<strong>분량:</strong> 30페이지</p>
+<hr />
+<h2 id="1">챕터 1: 에너지 파산 상태에서 벗어나기</h2>
+<p>매일 아침 알람이 울릴 때, 당신은 어떤 기분인가요? 침대에서 일어나기조차 버거우신가요? 이는 단순한 게으름이 아닙니다. 현대 직장인들이 겪는 '에너지 파산' 상태의 전형적인 신호입니다.</p>
+<p>스탠포드 대학교의 에너지 관리 연구팀이 2023년 발표한 연구에 따르면, 현대인의 73%가 만성적인 피로감을 호소하며, 이 중 68%가 업무 효율성 저하를 경험한다고 보고했습니다. 특히 한국 직장인들의 경우, OECD 국가 중 연간 근무시간이 상위권에 속하면서도 생산성 지수는 중하위권에 머물러 있는 현실입니다.</p>
+<p><strong>에너지 파산의 3가지 신호</strong></p>
+<p>첫째, <strong>아침 기상의 어려움</strong>입니다. 충분히 잤다고 생각하는데도 아침에 일어나기가 힘들다면, 이는 수면의 양이 아닌 질의 문제일 가능성이 높습니다. 하버드 의과대학의 수면 연구소에서는 현대인의 60%가 깊은 잠에 들지 못해 진정한 회복을 경험하지 못한다고 발표했습니다.</p>
+<p>둘째, <strong>오후 3시 증후군</strong>입니다. 점심 식사 후 찾아오는 극심한 졸음과 집중력 저하는 단순히 식후 현상이 아닙니다. 이는 혈당 조절 실패와 에너지 배분의 불균형을 나타내는 중요한 신호입니다.</p>
+<p>셋째, <strong>주말 회복 불가능</strong>입니다. 주말 내내 쉬어도 월요일이 되면 다시 지친 상태로 돌아간다면, 이는 근본적인 에너지 관리 시스템에 문제가 있음을 의미합니다.</p>
+<p><strong>에너지 뱅킹 개념의 탄생</strong></p>
+<p>제가 '에너지 뱅킹'이라는 개념을 개발하게 된 계기는, 10년간 기업 컨설팅을 하며 만난 수많은 번아웃 직장인들의 이야기에서 시작되었습니다. 그들 대부분이 "더 열심히 하려고 하는데 몸이 따라주지 않는다"고 토로했습니다.</p>
+<p>에너지 뱅킹은 간단한 원리입니다. 은행에 돈을 저축하듯이, 우리의 에너지도 전략적으로 저축하고 투자할 수 있다는 것입니다. MIT 경영대학원의 행동경제학 교수인 댄 애리얼리(Dan Ariely)는 "인간의 의지력과 에너지는 재생 가능한 자원이지만, 올바른 관리 없이는 고갈될 수밖에 없다"고 설명합니다.</p>
+<p><strong>실천 방법: 에너지 현황 파악하기</strong></p>
+<p>오늘부터 3일간 간단한 실험을 해보세요. 하루를 3시간 단위로 나누어, 각 시간대의 에너지 레벨을 1-10점으로 기록해보는 것입니다. </p>
+<ul>
+<li>07:00-10:00: 기상 후 첫 3시간</li>
+<li>10:00-13:00: 오전 업무 시간</li>
+<li>13:00-16:00: 점심 식사 후</li>
+<li>16:00-19:00: 오후 업무 시간</li>
+<li>19:00-22:00: 퇴근 후</li>
+<li>22:00-25:00: 잠들기 전</li>
+</ul>
+<p>이 간단한 기록만으로도 당신만의 에너지 패턴을 발견할 수 있을 것입니다. 삼성경제연구소의 연구에 따르면, 자신의 에너지 패턴을 정확히 파악한 직장인들이 그렇지 않은 사람들보다 업무 만족도가 31% 높다는 결과가 나왔습니다.</p>
+<p>변화는 인식에서 시작됩니다. 당신의 에너지 상태를 정확히 아는 것, 그것이 에너지 뱅킹의 첫 번째 단계입니다.</p>
+<hr />
+<h2 id="2">챕터 2: 에너지 자산과 부채 구분하기</h2>
+<p>회계학에서 자산과 부채를 구분하듯이, 우리의 일상 속 활동들도 에너지 자산과 에너지 부채로 나눌 수 있습니다. 이 구분을 명확히 하는 것이 지속가능한 에너지 관리의 핵심입니다.</p>
+<p><strong>에너지 자산: 나를 충전시키는 것들</strong></p>
+<p>UC 버클리의 웰니스 연구소에서 2022년 발표한 연구에 따르면, 에너지 충전 활동은 크게 4가지 유형으로 분류됩니다.</p>
+<p>첫째, <strong>신체적 충전 활동</strong>입니다. 단순히 휴식만을 의미하는 것이 아닙니다. 깊은 숙면, 균형 잡힌 영양 섭취, 적절한 운동이 포함됩니다. 특히 주목할 점은 '적극적 휴식'의 개념입니다. 넷플릭스를 보며 소파에 누워있는 것보다, 10분간 산책하는 것이 실제로 더 큰 에너지 회복 효과를 가져온다는 연구 결과가 있습니다.</p>
+<p>둘째, <strong>정서적 충전 활동</strong>입니다. 하버드 공중보건대학원의 연구팀이 20년간 추적 조사한 결과, 인간관계의 질이 개인의 에너지 레벨에 미치는 영향이 수면이나 운동보다도 크다는 것을 발견했습니다. 진정한 소통과 공감을 나누는 관계는 강력한 에너지 자산입니다.</p>
+<p>셋째, <strong>정신적 충전 활동</strong>입니다. 새로운 것을 배우고, 창의적 사고를 하며, 의미 있는 도전을 하는 것들입니다. 역설적으로 들릴 수 있지만, 적절한 정신적 자극은 에너지를 소모하기보다는 오히려 증진시킵니다.</p>
+<p>넷째, <strong>영적 충전 활동</strong>입니다. 종교적 의미가 아닌, 자신만의 가치와 의미를 찾는 활동을 말합니다. 명상, 자연과의 교감, 감사 일기 쓰기 등이 여기에 해당합니다.</p>
+<p><strong>에너지 부채: 나를 소진시키는 것들</strong></p>
+<p>반면 에너지 부채는 당장은 필요해 보이지만, 장기적으로 우리의 에너지를 고갈시키는 활동들입니다.</p>
+<p><strong>직장 내 에너지 부채</strong>의 대표적 사례를 살펴보겠습니다. 인사이트 코리아가 실시한 직장인 1,200명 대상 설문조사에서 가장 큰 에너지 부채로 꼽힌 것들입니다:</p>
+<ol>
+<li><strong>무의미한 회의</strong> (76.3%): 명확한 목적 없이 진행되는 회의들</li>
+<li><strong>불필요한 보고서 작성</strong> (68.7%): 읽히지도 않는 형식적 보고서들</li>
+<li><strong>동료와의 갈등</strong> (61.2%): 해결되지 않고 반복되는 인간관계 문제</li>
+<li><strong>멀티태스킹 강요</strong> (59.4%): 동시에 여러 업무를 처리해야 하는 상황</li>
+</ol>
+<p><strong>개인적 에너지 부채</strong>도 있습니다. 스마트폰 중독, 완벽주의적 사고, 타인과의 무의미한 비교, 부정적 뉴스 과다 노출 등이 대표적입니다.</p>
+<p><strong>실천 방법: 에너지 자산/부채 분석</strong></p>
+<p>이번 주 동안 간단한 에너지 가계부를 작성해보세요. 하루의 모든 활동을 다음과 같이 분류해보는 것입니다:</p>
+<p><strong>에너지 자산 (+)</strong>
+- 활동명:
+- 시간:
+- 에너지 충전도 (1-5점):</p>
+<p><strong>에너지 부채 (-)</strong>
+- 활동명:
+- 시간:
+- 에너지 소모도 (1-5점):</p>
+<p><strong>에너지 중립 (0)</strong>
+- 꼭 해야 하지만 충전도 소모도 아닌 활동들</p>
+<p>경희대학교 경영학과의 워라밸(Work-Life Balance) 연구팀에서 이 방법을 실험한 결과, 참가자들이 불과 1주일 만에 자신의 에너지 패턴을 명확히 인식하게 되었고, 2주 후에는 에너지 부채 활동을 평균 23% 줄이는 성과를 보였습니다.</p>
+<p><strong>작은 변화의 큰 효과</strong></p>
+<p>에너지 자산과 부채를 구분했다면, 이제 작은 변화를 시작할 차례입니다. 갑자기 큰 변화를 시도하지 마세요. 대신 하루에 에너지 부채 활동 하나를 줄이고, 에너지 자산 활동 하나를 늘리는 것부터 시작하세요.</p>
+<p>예를 들어, 점심시간에 스마트폰 보기(에너지 부채)를 줄이고, 대신 5분간 명상하기(에너지 자산)를 추가하는 것입니다. 이런 작은 변화들이 복리 효과를 일으켜, 몇 주 후에는 놀라운 에너지 증가를 경험하게 될 것입니다.</p>
+<hr />
+<h2 id="3">챕터 3: 개인별 에너지 리듬 발견하기</h2>
+<p>사람마다 고유한 생체리듬이 있다는 것은 잘 알려진 사실입니다. 하지만 대부분의 직장인들은 획일적인 업무 시간에 맞춰 자신의 자연스러운 에너지 리듬을 무시하며 살아갑니다. 이것이 바로 많은 사람들이 비효율과 피로를 경험하는 근본적인 이유입니다.</p>
+<p><strong>크로노타입: 당신만의 생체시계</strong></p>
+<p>독일 뮌헨대학교의 로엔베르크 박사가 개발한 크로노타입(Chronotype) 이론에 따르면, 사람들은 크게 세 가지 유형으로 나뉩니다.</p>
+<p><strong>아침형 인간(약 25%)</strong>은 오전 6-9시에 최고 컨디션을 보입니다. 이들은 일찍 일어나는 것이 자연스럽고, 오전에 가장 창의적이며 집중력이 높습니다. 반면 오후 늦은 시간과 저녁에는 에너지가 급격히 떨어집니다.</p>
+<p><strong>저녁형 인간(약 25%)</strong>은 정반대입니다. 오전에는 몸과 마음이 완전히 깨어나지 않은 상태이며, 오후 2시 이후부터 진짜 컨디션이 올라오기 시작합니다. 오후 6-9시에 최고점에 달하며, 밤늦게까지도 높은 집중력을 유지할 수 있습니다.</p>
+<p><strong>중간형 인간(약 50%)</strong>은 두 유형의 중간적 특성을 보이며, 상황에 따라 어느 정도 적응이 가능합니다.</p>
+<p><strong>국내 연구 사례</strong></p>
+<p>연세대학교 의과대학 정신건강의학과에서 한국 직장인 2,500명을 대상으로 실시한 연구(2023년)는 흥미로운 결과를 보여줍니다. 자신의 크로노타입을 정확히 알고 그에 맞춰 업무 일정을 조정한 직장인들이 그렇지 않은 사람들에 비해:</p>
+<ul>
+<li>업무 효율성 38% 향상</li>
+<li>스트레스 레벨 42% 감소</li>
+<li>창의적 아이디어 도출 29% 증가</li>
+<li>직무 만족도 35% 향상</li>
+</ul>
+<p><strong>에너지 피크타임과 딥타임</strong></p>
+<p>크로노타입 외</p>
+
+
+
+<div class="footer">
+  <strong>Lighthouse Media</strong><br>
+  류선희 | 실제로 삶이 나아지는 콘텐츠<br>
+  <a href="/lighthouse-media/free.html" style="color:#BA7517;text-decoration:none;">무료 PDF 더 받기</a>
+</div>
+
+</body>
+</html>

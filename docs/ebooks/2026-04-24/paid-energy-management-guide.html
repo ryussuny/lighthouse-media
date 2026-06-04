@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>번아웃에서 벗어나는 에너지 관리의 기술 - Lighthouse Media</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: #FAF8F3;
+  color: #333;
+  line-height: 2.0;
+  font-size: 16px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 28px 80px;
+  word-break: keep-all;
+}
+
+/* 커버 */
+.cover {
+  background: linear-gradient(135deg,#1a1a2e,#0f3460);
+  color: #fff;
+  padding: 70px 40px;
+  border-radius: 20px;
+  text-align: center;
+  margin-bottom: 50px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+.cover h1 { font-size: 30px; line-height: 1.4; margin-bottom: 14px; font-weight: 800; }
+.cover .sub { color: #BA7517; font-size: 17px; line-height: 1.6; }
+.cover .author { color: #888; margin-top: 24px; font-size: 14px; }
+.badge {
+  display: inline-block;
+  background: #BA7517;
+  color: #fff;
+  padding: 5px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* 본문 타이포그래피 */
+h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 48px 0 20px;
+  line-height: 1.4;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #BA7517;
+  margin: 44px 0 18px;
+  padding: 14px 0 14px 16px;
+  border-left: 4px solid #BA7517;
+  background: rgba(29,158,117,0.03);
+  border-radius: 0 8px 8px 0;
+  line-height: 1.4;
+}
+h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2a2a2a;
+  margin: 32px 0 14px;
+  line-height: 1.5;
+}
+p {
+  margin-bottom: 18px;
+  font-size: 16px;
+  line-height: 2.0;
+  color: #444;
+  letter-spacing: -0.2px;
+}
+strong { color: #1a1a2e; font-weight: 700; }
+em { color: #BA7517; font-style: normal; font-weight: 600; }
+
+/* 리스트 */
+ul, ol {
+  margin: 14px 0 20px 24px;
+  line-height: 2.0;
+}
+li {
+  margin-bottom: 10px;
+  padding-left: 4px;
+  color: #444;
+}
+li strong { color: #2a2a2a; }
+
+/* 구분선 */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ddd, transparent);
+  margin: 36px 0;
+}
+
+/* 인용 */
+blockquote {
+  border-left: 3px solid #BA7517;
+  background: rgba(29,158,117,0.04);
+  padding: 16px 20px;
+  margin: 20px 0;
+  border-radius: 0 10px 10px 0;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.9;
+}
+
+/* 테이블 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+}
+th {
+  background: #BA7517;
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+}
+tr:nth-child(even) td { background: #f9f9f6; }
+
+/* 코드 블록 (체크리스트 등) */
+code {
+  background: #f0ede6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #BA7517;
+}
+pre {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 20px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 20px 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* PDF 저장 버튼 */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(250,248,243,0.95);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.toolbar .brand { font-size: 13px; color: #999; font-weight: 600; }
+.toolbar .btn {
+  background: #BA7517;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+.toolbar .btn:hover { opacity: 0.9; }
+
+/* CTA (무료 전자책 하단) */
+.cta-box {
+  background: linear-gradient(135deg, rgba(29,158,117,0.08), rgba(186,117,23,0.06));
+  border: 1px solid rgba(29,158,117,0.2);
+  border-radius: 14px;
+  padding: 30px;
+  margin-top: 40px;
+  text-align: center;
+}
+.cta-box h3 { color: #1a1a2e; margin-bottom: 8px; }
+.cta-box p { font-size: 14px; color: #888; margin-bottom: 16px; }
+.cta-box a {
+  display: inline-block;
+  background: #BA7517;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* 푸터 */
+.footer {
+  text-align: center;
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.8;
+}
+
+/* 인쇄 */
+@media print {
+  .toolbar, .cta-box { display: none; }
+  body { max-width: 100%; padding: 20px; font-size: 14px; }
+  h2 { page-break-before: always; }
+  p, li { orphans: 3; widows: 3; }
+}
+
+/* 모바일 */
+@media (max-width: 600px) {
+  body { padding: 20px 16px 60px; font-size: 15px; }
+  .cover { padding: 50px 24px; }
+  .cover h1 { font-size: 24px; }
+  h2 { font-size: 19px; }
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="brand">Lighthouse Media</span>
+  <button class="btn" onclick="window.print()">PDF로 저장</button>
+</div>
+
+<div style="height:50px"></div>
+
+<div class="cover">
+  <span class="badge">7,900원</span>
+  <h1>번아웃에서 벗어나는<br>에너지 관리의 기술</h1>
+  <p class="sub">지속가능한 성과를 위한 | 30일 실전 가이드북</p>
+  <div class="author">류선희 | Lighthouse Media</div>
+</div>
+
+<h1 id="_1">번아웃에서 벗어나는 에너지 관리의 기술</h1>
+<h2 id="30">지속가능한 성과를 위한 30일 실전 가이드북</h2>
+<p><strong>저자</strong>: 류선희 (Lighthouse Media)<br />
+<strong>가격</strong>: 7,900원<br />
+<strong>분량</strong>: 30페이지  </p>
+<hr />
+<h2 id="_2">프롤로그</h2>
+<p>매일 아침 알람이 울릴 때마다 무거운 몸을 이끌고 일어나는 당신. 커피 없이는 하루를 시작할 수 없고, 저녁이 되면 아무것도 하고 싶지 않은 당신에게 이 책을 전합니다.</p>
+<p>번아웃은 단순한 피로가 아닙니다. 세계보건기구(WHO)가 2019년 공식 질병으로 분류한 현대인의 고질병입니다. 하지만 여기엔 희망이 있습니다. 에너지는 관리할 수 있고, 회복할 수 있으며, 더 나은 방향으로 활용할 수 있습니다.</p>
+<p>이 책은 30일간의 체계적인 에너지 관리 여정을 제시합니다. 과학적 근거와 실제 사례, 그리고 즉시 적용 가능한 실천 방법들로 구성되어 있습니다. 당신의 에너지를 되찾고, 지속가능한 성과를 만들어가는 여정을 함께 시작해보겠습니다.</p>
+<hr />
+<h2 id="1">제1장: 번아웃의 정체를 파악하라</h2>
+<h3 id="_3">번아웃이 우리에게 보내는 신호들</h3>
+<p>번아웃은 하루아침에 찾아오지 않습니다. 마치 서서히 타들어가는 촛불처럼, 우리의 에너지를 조금씩 소모시키다가 어느 순간 완전히 꺼뜨려버립니다.</p>
+<p>2021년 갤럽의 조사에 따르면, 직장인의 76%가 업무로 인한 번아웃을 경험한다고 응답했습니다. 특히 한국 직장인들의 경우, OECD 평균보다 300시간 더 많은 연간 2,124시간을 근무하며, 이는 번아웃 위험을 더욱 높이는 요인이 됩니다.</p>
+<p>번아웃의 대표적인 신호들을 살펴보겠습니다:</p>
+<p><strong>신체적 신호</strong>
+- 만성 피로감과 수면 장애
+- 두통, 근육 긴장, 소화불량
+- 면역력 저하로 인한 잦은 감기</p>
+<p><strong>정서적 신호</strong><br />
+- 냉소적 태도와 업무에 대한 무관심
+- 짜증과 분노의 빈번한 표출
+- 성취감 상실과 자존감 하락</p>
+<p><strong>행동적 신호</strong>
+- 업무 효율성 급격한 저하
+- 사회적 고립과 대인관계 회피
+- 알코올이나 카페인 의존도 증가</p>
+<h3 id="_4">에너지 고갈의 숨겨진 원인들</h3>
+<p>많은 사람들이 번아웃을 단순히 '일을 너무 많이 해서' 생기는 문제로 생각합니다. 하지만 스탠ford 대학의 크리스티나 마슬라치 교수의 연구에 따르면, 번아웃의 원인은 훨씬 복합적입니다.</p>
+<p><strong>업무량 과부하</strong>: 처리할 수 있는 범위를 넘어선 업무량은 가장 직관적인 원인입니다. 하지만 이것만이 전부는 아닙니다.</p>
+<p><strong>통제력 부족</strong>: 자신의 업무 방식이나 일정에 대한 결정권이 없을 때, 우리는 더 큰 스트레스를 경험합니다. 삼성경제연구소의 2022년 보고서에 따르면, 업무 자율성이 높은 직장인들의 번아웃 발생률이 30% 낮았습니다.</p>
+<p><strong>인정과 보상의 부족</strong>: 노력에 비해 적절한 인정이나 보상이 따르지 않을 때, 우리의 동기는 급속히 사라집니다.</p>
+<p><strong>공정성 결여</strong>: 불공정한 대우나 편파적인 의사결정은 깊은 좌절감을 야기합니다.</p>
+<p><strong>공동체 의식 부족</strong>: 동료들과의 소통 부재, 팀워크 결여는 고립감을 증대시킵니다.</p>
+<p><strong>가치관의 충돌</strong>: 개인의 가치관과 조직의 방향성이 맞지 않을 때, 내적 갈등이 에너지를 소모시킵니다.</p>
+<h3 id="_5">에너지 회복의 첫걸음</h3>
+<p>번아웃에서 벗어나는 첫 단계는 현재 상태를 정확히 진단하는 것입니다. 다음 질문들에 솔직하게 답해보세요:</p>
+<ol>
+<li>최근 3개월간 업무에 대한 열정이 얼마나 변했나요?</li>
+<li>퇴근 후 개인적인 활동을 할 에너지가 남아있나요?</li>
+<li>동료들과의 관계에서 피로감을 느끼시나요?</li>
+<li>잠들기 전 내일 출근에 대한 생각이 어떤가요?</li>
+</ol>
+<p>이러한 자기 진단을 통해 번아웃의 정도를 파악하고, 개인에게 맞는 회복 전략을 세울 수 있습니다. 중요한 것은 번아웃을 개인의 나약함이 아닌, 시스템적 문제로 인식하는 것입니다.</p>
+<p>다음 장에서는 에너지의 4가지 차원에 대해 알아보고, 각각을 어떻게 관리할 수 있는지 구체적인 방법을 제시하겠습니다.</p>
+<hr />
+<h2 id="2-4">제2장: 에너지의 4차원 이해하기</h2>
+<h3 id="_6">에너지는 단일체가 아니다</h3>
+<p>많은 사람들이 에너지를 하나의 연료통처럼 생각합니다. 마치 휘발유가 떨어지면 주유소에서 채우듯, 잠을 자거나 휴식을 취하면 에너지가 회복될 것이라고 믿습니다. 하지만 인간의 에너지는 훨씬 복합적이고 정교한 시스템입니다.</p>
+<p>하버드 비즈니스 스쿨의 토니 슈바르츠 교수는 인간의 에너지를 4가지 차원으로 분류했습니다: 신체적, 정신적, 감정적, 영적 에너지. 각 차원은 서로 독립적이면서도 상호 연결되어 있어, 한 부분의 고갈이 전체 시스템에 영향을 미칩니다.</p>
+<h3 id="_7">신체적 에너지: 모든 것의 기반</h3>
+<p>신체적 에너지는 다른 모든 에너지의 토대가 됩니다. 아무리 의욕이 넘치고 명확한 목표가 있어도, 몸이 따라주지 않으면 지속적인 성과를 만들어낼 수 없습니다.</p>
+<p><strong>수면의 과학</strong><br />
+국립수면재단의 연구에 따르면, 성인은 하루 7-9시간의 수면이 필요하지만, 한국 성인의 평균 수면시간은 6시간 24분에 불과합니다. 더 중요한 것은 수면의 질입니다.</p>
+<p>좋은 수면을 위한 실천법:
+- 취침 2시간 전 전자기기 사용 금지
+- 침실 온도를 18-20도로 유지
+- 매일 같은 시간에 잠자리에 들기
+- 오후 2시 이후 카페인 섭취 피하기</p>
+<p><strong>영양과 에너지</strong><br />
+혈당 스파이크는 에너지의 큰 적입니다. 급격한 혈당 상승 후 오는 저하는 오후 2-3시의 극심한 피로감을 유발합니다. </p>
+<p>에너지를 안정적으로 유지하는 식습관:
+- 복합탄수화물 중심의 식사 (현미, 통밀, 퀴노아)
+- 단백질과 건강한 지방의 적절한 조합
+- 3-4시간마다 소량씩 섭취
+- 충분한 수분 섭취 (하루 2L 이상)</p>
+<h3 id="_8">정신적 에너지: 집중력의 원천</h3>
+<p>정신적 에너지는 우리의 인지 능력, 집중력, 의사결정 능력을 좌우합니다. 마이크로소프트의 2015년 연구에 따르면, 디지털 기기의 발달로 현대인의 평균 집중시간은 8초로 줄어들었습니다.</p>
+<p><strong>뇌의 에너지 관리</strong><br />
+우리의 뇌는 의사결정을 할 때마다 에너지를 소모합니다. 바우마이스터 교수의 '의지력 소모' 이론에 따르면, 하루 중 의사결정이 누적될수록 판단력이 떨어지고 충동적 행동이 증가합니다.</p>
+<p>정신적 에너지 관리법:
+- 중요한 일은 오전에 처리하기
+- 일상적 결정들 자동화하기 (옷, 식단, 출퇴근 루트)
+- 90분 집중 후 20분 휴식의 울트라디언 리듬 활용
+- 멀티태스킹 대신 싱글태스킹 습관화</p>
+<h3 id="_9">감정적 에너지: 관계의 힘</h3>
+<p>감정적 에너지는 다른 사람들과의 관계, 자신에 대한 감정, 그리고 전반적인 기분 상태에서 나옵니다. 갤럽의 조사에 따르면, 직장에서 가장 친한 친구가 있는 직원들의 업무 몰입도가 7배 더 높았습니다.</p>
+<p><strong>감정 전염의 법칙</strong><br />
+하버드 의과대학의 니콜라스 크리스타키스 교수 연구팀은 감정이 최대 3단계까지 전파된다는 것을 발견했습니다. 즉, 당신의 감정 상태는 직접 만나지 않는 사람들에게까지 영향을 미칠 수 있습니다.</p>
+<p>감정적 에너지 충전법:
+- 긍정적인 사람들과 시간 보내기
+- 감사 일기 쓰기 (하루 3가지씩)
+- 자연과 접촉하기 (산책, 식물 키우기)
+- 의미 있는 대화 나누기</p>
+<h3 id="_10">영적 에너지: 목적의식의 힘</h3>
+<p>영적 에너지는 종교적 의미가 아닌, 삶의 목적과 의미, 가치관과 연결된 에너지입니다. 빅터 프랭클의 『의미를 찾아서』에서 보듯, 명확한 목적의식은 가혹한 상황에서도 인간을 지탱하는 힘이 됩니다.</p>
+<p><strong>목적 의식과 성과의 상관관계</strong><br />
+듀크 대학의 댄 애리얼리 교수 실험에서, 자신의 작업이 의미 있다고 느끼는 참가자들은 그렇지 않은 그룹보다 2.5배 더 오래 작업을 지속했습니다.</p>
+<p>영적 에너지 발굴법:
+- 개인 미션 스테이트먼트 작성
+- 가치관 명확화 작업
+- 봉사활동이나 사회공헌 참여
+- 성장과 배움의 기회 추구</p>
+<h3 id="4">4차원의 조화로운 관리</h3>
+<p>중요한 것은 한 차원에만 집중하는 것이 아니라, 4가지 차원의 균형을 맞추는 것입니다. 어느 한 차원이 크게 떨어지면 다른 차원들도 연쇄적으로 영향을 받습니다.</p>
+<p>다음 장에서는 이 4가지 차원을 실제로 어떻게 진단하고 관리할 수 있는지, 구체적인 방법들을 제시하겠습니다.</p>
+<hr />
+<h2 id="3">제3장: 나만의 에너지 지도 만들기</h2>
+<h3 id="_11">에너지 패턴을 관찰하라</h3>
+<p>효과적인 에너지 관리의 첫 단계는 자신만의 고유한 에너지 패턴을 이해하는 것입니다. 우리는 모두 다른 생체리듬을 가지고 있고, 서로 다른 요소들에서 에너지를 얻거나 잃습니다.</p>
+<p>독일 뮌헨대학의 틸 뢰네베르크 교수는 인간을 크게 '종달새형'과 '부엉이형</p>
+
+
+
+<div class="footer">
+  <strong>Lighthouse Media</strong><br>
+  류선희 | 실제로 삶이 나아지는 콘텐츠<br>
+  <a href="/lighthouse-media/free.html" style="color:#BA7517;text-decoration:none;">무료 PDF 더 받기</a>
+</div>
+
+</body>
+</html>

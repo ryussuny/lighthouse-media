@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>화났을 때 3분 마음 정리법 - Lighthouse Media</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: #FAF8F3;
+  color: #333;
+  line-height: 2.0;
+  font-size: 16px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 28px 80px;
+  word-break: keep-all;
+}
+
+/* 커버 */
+.cover {
+  background: linear-gradient(135deg,#1a1a2e,#16213e);
+  color: #fff;
+  padding: 70px 40px;
+  border-radius: 20px;
+  text-align: center;
+  margin-bottom: 50px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+.cover h1 { font-size: 30px; line-height: 1.4; margin-bottom: 14px; font-weight: 800; }
+.cover .sub { color: #1D9E75; font-size: 17px; line-height: 1.6; }
+.cover .author { color: #888; margin-top: 24px; font-size: 14px; }
+.badge {
+  display: inline-block;
+  background: #1D9E75;
+  color: #fff;
+  padding: 5px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* 본문 타이포그래피 */
+h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 48px 0 20px;
+  line-height: 1.4;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1D9E75;
+  margin: 44px 0 18px;
+  padding: 14px 0 14px 16px;
+  border-left: 4px solid #1D9E75;
+  background: rgba(29,158,117,0.03);
+  border-radius: 0 8px 8px 0;
+  line-height: 1.4;
+}
+h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2a2a2a;
+  margin: 32px 0 14px;
+  line-height: 1.5;
+}
+p {
+  margin-bottom: 18px;
+  font-size: 16px;
+  line-height: 2.0;
+  color: #444;
+  letter-spacing: -0.2px;
+}
+strong { color: #1a1a2e; font-weight: 700; }
+em { color: #1D9E75; font-style: normal; font-weight: 600; }
+
+/* 리스트 */
+ul, ol {
+  margin: 14px 0 20px 24px;
+  line-height: 2.0;
+}
+li {
+  margin-bottom: 10px;
+  padding-left: 4px;
+  color: #444;
+}
+li strong { color: #2a2a2a; }
+
+/* 구분선 */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ddd, transparent);
+  margin: 36px 0;
+}
+
+/* 인용 */
+blockquote {
+  border-left: 3px solid #1D9E75;
+  background: rgba(29,158,117,0.04);
+  padding: 16px 20px;
+  margin: 20px 0;
+  border-radius: 0 10px 10px 0;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.9;
+}
+
+/* 테이블 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+}
+th {
+  background: #1D9E75;
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+}
+tr:nth-child(even) td { background: #f9f9f6; }
+
+/* 코드 블록 (체크리스트 등) */
+code {
+  background: #f0ede6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #1D9E75;
+}
+pre {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 20px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 20px 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* PDF 저장 버튼 */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(250,248,243,0.95);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.toolbar .brand { font-size: 13px; color: #999; font-weight: 600; }
+.toolbar .btn {
+  background: #1D9E75;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+.toolbar .btn:hover { opacity: 0.9; }
+
+/* CTA (무료 전자책 하단) */
+.cta-box {
+  background: linear-gradient(135deg, rgba(29,158,117,0.08), rgba(186,117,23,0.06));
+  border: 1px solid rgba(29,158,117,0.2);
+  border-radius: 14px;
+  padding: 30px;
+  margin-top: 40px;
+  text-align: center;
+}
+.cta-box h3 { color: #1a1a2e; margin-bottom: 8px; }
+.cta-box p { font-size: 14px; color: #888; margin-bottom: 16px; }
+.cta-box a {
+  display: inline-block;
+  background: #1D9E75;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* 푸터 */
+.footer {
+  text-align: center;
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.8;
+}
+
+/* 인쇄 */
+@media print {
+  .toolbar, .cta-box { display: none; }
+  body { max-width: 100%; padding: 20px; font-size: 14px; }
+  h2 { page-break-before: always; }
+  p, li { orphans: 3; widows: 3; }
+}
+
+/* 모바일 */
+@media (max-width: 600px) {
+  body { padding: 20px 16px 60px; font-size: 15px; }
+  .cover { padding: 50px 24px; }
+  .cover h1 { font-size: 24px; }
+  h2 { font-size: 19px; }
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="brand">Lighthouse Media</span>
+  <button class="btn" onclick="window.print()">PDF로 저장</button>
+</div>
+
+<div style="height:50px"></div>
+
+<div class="cover">
+  <span class="badge">FREE EBOOK</span>
+  <h1>화났을 때<br>3분 마음 정리법</h1>
+  <p class="sub">감정에 휘둘리지 않고 | 현명하게 대처하기</p>
+  <div class="author">류선희 | Lighthouse Media</div>
+</div>
+
+<h1 id="3">화났을 때 3분 마음 정리법</h1>
+<h2 id="_1">감정에 휘둘리지 않고 현명하게 대처하기</h2>
+<p><strong>저자:</strong> 류선희 (Lighthouse Media)</p>
+<hr />
+<h3 id="_2">들어가며</h3>
+<p>하루 종일 쌓인 스트레스가 어느 순간 폭발할 것 같은 기분, 누구나 한 번쯤 경험해봤을 것입니다. 특히 바쁜 일상을 살아가는 우리에게 화는 자연스러운 감정입니다. 중요한 것은 화를 억누르는 것이 아니라, 그 감정을 건강하게 다루는 방법을 아는 것입니다.</p>
+<p>이 책에서는 단 3분만으로도 실천할 수 있는 현실적인 마음 정리법을 소개합니다. 복잡한 이론보다는 바로 써먹을 수 있는 구체적인 방법들로 구성했습니다.</p>
+<hr />
+<h2 id="chapter-1">Chapter 1. 화의 정체를 파악하기</h2>
+<p>화는 우리에게 무언가 잘못되었다는 신호를 보내는 감정입니다. 막연히 "화가 난다"고 느끼기보다는 그 감정의 정체를 구체적으로 파악해보세요.</p>
+<p><strong>3분 실천법: 감정 라벨링</strong></p>
+<p>화가 날 때 즉시 다음 질문들을 스스로에게 던져보세요:
+- "지금 내가 느끼는 감정을 한 단어로 표현하면?"
+- "이 감정의 강도를 1-10점으로 매긴다면?"
+- "이 감정을 촉발한 구체적인 상황은 무엇인가?"</p>
+<p>예를 들어 "동료가 내 아이디어를 가로챘다"는 상황에서 느끼는 감정을 "배신감 7점"으로 구체화하는 것입니다. 이렇게 감정에 정확한 이름을 붙이면 막연한 분노가 명확한 문제로 바뀝니다.</p>
+<p>감정을 객관화하는 것만으로도 뇌의 전전두엽이 활성화되어 충동적인 반응을 줄일 수 있습니다. 스마트폰 메모장에 간단히 적어보는 것도 좋은 방법입니다.</p>
+<p><strong>핵심 포인트:</strong> 화는 문제를 알려주는 신호등입니다. 신호를 무시하지 말고 정확히 읽어보세요.</p>
+<hr />
+<h2 id="chapter-2-3">Chapter 2. 3분 호흡 정리법</h2>
+<p>화가 날 때 우리 몸은 스트레스 호르몬을 분비하며 긴장 상태가 됩니다. 가장 빠르고 효과적으로 이 상태를 진정시키는 방법은 의식적인 호흡입니다.</p>
+<p><strong>3분 실천법: 4-7-8 호흡법</strong></p>
+<ol>
+<li><strong>4초간 코로 천천히 숨을 들이마십니다</strong></li>
+<li>배가 부풀어 오르도록 깊게 호흡하세요</li>
+<li>
+<p>어깨에 힘을 빼고 편안한 자세를 취하세요</p>
+</li>
+<li>
+<p><strong>7초간 숨을 참습니다</strong></p>
+</li>
+<li>처음에는 어려울 수 있으니 5초부터 시작해도 됩니다</li>
+<li>
+<p>이 시간 동안 마음속으로 "진정하자"라고 말해보세요</p>
+</li>
+<li>
+<p><strong>8초간 입으로 천천히 내뱉습니다</strong></p>
+</li>
+<li>"후~~" 소리를 내며 몸의 긴장을 함께 내보내세요</li>
+<li>발끝부터 머리끝까지 힘이 빠지는 것을 느껴보세요</li>
+</ol>
+<p>이 사이클을 3-5번 반복하면 약 3분이 소요됩니다. 규칙적인 호흡은 자율신경계를 안정시키고 감정의 파도를 잠재워줍니다.</p>
+<p><strong>핵심 포인트:</strong> 호흡은 우리가 통제할 수 있는 가장 강력한 감정 조절 도구입니다.</p>
+<hr />
+<h2 id="chapter-3">Chapter 3. 관점 전환하기</h2>
+<p>화가 날 때는 시야가 좁아져 한 가지 관점에만 매몰되기 쉽습니다. 의식적으로 다른 각도에서 상황을 바라보면 감정의 강도를 줄일 수 있습니다.</p>
+<p><strong>3분 실천법: 3단계 관점 전환</strong></p>
+<p><strong>1단계: 시간 확장하기 (1분)</strong>
+- "1년 후에도 이 일이 중요할까?"
+- "10년 후 나는 이 일을 기억이나 할까?"
+- "지금으로부터 한 달 전 비슷하게 화났던 일이 기억나는가?"</p>
+<p><strong>2단계: 상대방 입장 되어보기 (1분)</strong>
+- "상대방도 나름의 이유가 있을까?"
+- "만약 내가 그 사람 상황이라면 어떻게 행동했을까?"
+- "그 사람이 의도적으로 나를 화나게 하려고 한 걸까?"</p>
+<p><strong>3단계: 성장 관점 찾기 (1분)</strong>
+- "이 상황에서 내가 배울 수 있는 것은 무엇일까?"
+- "이 경험이 나를 더 강하게 만들어줄 수 있을까?"
+- "앞으로 비슷한 상황을 어떻게 예방할 수 있을까?"</p>
+<p><strong>핵심 포인트:</strong> 한 가지 관점에 갇히지 말고 여러 각도에서 상황을 바라보세요. 문제는 그대로여도 감정은 달라집니다.</p>
+<hr />
+<h2 id="chapter-4">Chapter 4. 건설적인 표현하기</h2>
+<p>화를 무조건 참는 것은 건강하지 않습니다. 중요한 것은 자신과 상대방 모두에게 도움이 되는 방식으로 감정을 표현하는 것입니다.</p>
+<p><strong>3분 실천법: I-Message 활용하기</strong></p>
+<p>화를 표현할 때는 "You-Message" (너는 왜 그랬어?) 대신 "I-Message"를 사용해보세요.</p>
+<p><strong>I-Message 공식:</strong>
+"나는 [상황]에서 [감정]을 느꼈어. 왜냐하면 [이유] 때문이야. 앞으로는 [요청사항]을 부탁해."</p>
+<p><strong>예시:</strong>
+- ❌ "너는 왜 맨날 늦어? 시간 개념이 없어?"
+- ✅ "나는 네가 약속 시간에 늦을 때 무시받는 기분이 들어. 내 시간도 소중하거든. 앞으로는 늦을 것 같으면 미리 연락해줄 수 있어?"</p>
+<p><strong>즉석 표현이 어려울 때:</strong>
+- 편지나 메시지로 차분히 정리해서 전달하기
+- "지금 감정적이니까 나중에 차근차근 이야기하자"고 시간 요청하기
+- 신뢰할 수 있는 사람에게 먼저 털어놓기</p>
+<p><strong>핵심 포인트:</strong> 감정을 표현하되, 상대방을 공격하지 말고 내 마음을 전달하세요. 관계를 깨뜨리지 않으면서도 내 감정을 존중받을 수 있습니다.</p>
+<hr />
+<h2 id="chapter-5">Chapter 5. 화 에너지 활용하기</h2>
+<p>화는 단순히 없애야 할 감정이 아닙니다. 적절히 활용하면 변화와 성장의 원동력이 될 수 있습니다.</p>
+<p><strong>3분 실천법: 화를 행동 에너지로 전환하기</strong></p>
+<p><strong>1. 즉시 실행 가능한 작은 액션 찾기</strong>
+- 책상 정리하기, 방 청소하기, 짧은 산책하기
+- 운동하기, 그림그리기, 일기 쓰기
+- 미뤄왔던 간단한 업무 처리하기</p>
+<p><strong>2. 문제 해결을 위한 구체적 계획 세우기</strong>
+- "이 상황을 개선하기 위해 내가 할 수 있는 3가지는?"
+- "비슷한 문제가 재발하지 않도록 어떤 시스템을 만들까?"
+- "이 경험을 통해 내가 성장할 수 있는 부분은?"</p>
+<p><strong>3. 화의 에너지를 창조적 활동으로 승화시키기</strong>
+- 감정을 글로 써보기 (분석적으로, 창작으로)
+- 몸을 움직이는 활동하기 (운동, 청소, 요리)
+- 새로운 배움이나 도전 계획하기</p>
+<p>화는 현상태에 만족하지 않겠다는 내면의 의지입니다. 이 에너지를 파괴적으로 쓰지 말고 건설적인 변화의 동력으로 활용해보세요.</p>
+<p><strong>핵심 포인트:</strong> 화의 에너지를 문제 해결과 자기 발전의 연료로 사용하면 감정도 정리되고 실질적인 변화도 만들어낼 수 있습니다.</p>
+<hr />
+<h2 id="7">7일 실천 체크리스트</h2>
+<p>화날 때 3분 마음 정리를 습관으로 만들기 위한 일주일 실천 체크리스트입니다. 매일 하나씩 체크해보세요.</p>
+<h3 id="1">📋 1주차 체크리스트</h3>
+<p><strong>Day 1: 감정 라벨링 연습</strong>
+- [ ] 화가 날 때 감정을 구체적으로 명명해보기
+- [ ] 감정의 강도를 1-10점으로 매겨보기
+- [ ] 스마트폰에 감정 일기 메모하기</p>
+<p><strong>Day 2: 호흡법 익히기</strong>
+- [ ] 4-7-8 호흡법 3번 이상 연습하기
+- [ ] 조용한 공간에서 의식적인 호흡 시간 갖기
+- [ ] 호흡 전후 몸의 변화 느껴보기</p>
+<p><strong>Day 3: 시간 관점 적용하기</strong>
+- [ ] "1년 후에도 중요할까?" 질문해보기
+- [ ] 과거 화났던 일이 지금은 어떻게 느껴지는지 되돌아보기
+- [ ] 현재 상황을 더 넓은 시간 축에서 바라보기</p>
+<p><strong>Day 4: 상대방 관점 이해하기</strong>
+- [ ] 나를 화나게 한 상대방의 입장에서 생각해보기
+- [ ] 상대방의 의도를 선하게 해석해보기
+- [ ] 내가 같은 상황이라면 어떻게 행동했을지 생각해보기</p>
+<p><strong>Day 5: I-Message 연습하기</strong>
+- [ ] You-Message를 I-Message로 바꿔서 표현해보기
+- [ ] 감정을 표현할 때 상대방을 비난하지 않도록 주의하기
+- [ ] 건설적인 요청사항으로 대화 마무리하기</p>
+<p>**Day 6: 화 에너지 </p>
+
+<div class='cta-box'><h3>더 깊은 내용이 궁금하다면</h3><p>유료 전자책에서 실전 가이드를 만나보세요</p><a href="/lighthouse-media/shop.html">전자책 보러가기</a></div>
+
+<div class="footer">
+  <strong>Lighthouse Media</strong><br>
+  류선희 | 실제로 삶이 나아지는 콘텐츠<br>
+  <a href="/lighthouse-media/free.html" style="color:#1D9E75;text-decoration:none;">무료 PDF 더 받기</a>
+</div>
+
+</body>
+</html>
