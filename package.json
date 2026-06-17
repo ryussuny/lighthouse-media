@@ -8,6 +8,7 @@
     "agents": "node scripts/run-agents.js",
     "daily": "node scripts/daily-routine.js",
     "report": "node scripts/weekly-report.js",
+    "organizer": "node app-organizer/server.js",
     "start": "node dashboard/server.js"
   },
   "dependencies": {

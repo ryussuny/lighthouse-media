@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>📱 앱 정리 도우미</title>
+<style>
+  :root {
+    --bg: #0f1226;
+    --panel: #1a1e3a;
+    --panel-2: #232850;
+    --accent: #6c8cff;
+    --accent-2: #a06bff;
+    --text: #eef1ff;
+    --muted: #9aa3c7;
+    --chip: #2c3260;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", sans-serif;
+    background: radial-gradient(1200px 600px at 50% -10%, #25305f 0%, var(--bg) 60%);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 32px 20px 80px; }
+  header { text-align: center; margin-bottom: 28px; }
+  header h1 { font-size: 1.9rem; margin: 0 0 6px; }
+  header p { color: var(--muted); margin: 0; font-size: 0.95rem; }
+  .card {
+    background: var(--panel);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  }
+  label { display: block; font-size: 0.9rem; color: var(--muted); margin-bottom: 8px; }
+  textarea {
+    width: 100%;
+    min-height: 160px;
+    resize: vertical;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 1rem;
+    line-height: 1.6;
+    font-family: inherit;
+  }
+  textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; align-items: center; }
+  button {
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .08s ease, opacity .2s;
+    font-family: inherit;
+  }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; }
+  .btn-ghost { background: var(--chip); color: var(--text); }
+  .count { color: var(--muted); font-size: 0.88rem; margin-left: auto; }
+  .hint { color: var(--muted); font-size: 0.82rem; margin-top: 10px; }
+  #status { margin-top: 16px; min-height: 22px; font-size: 0.92rem; }
+  .err { color: #ff8b8b; }
+  .results { margin-top: 28px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .folder {
+    background: var(--panel-2);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .folder h3 { margin: 0 0 12px; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
+  .folder .badge { margin-left: auto; font-size: 0.75rem; color: var(--muted); background: var(--bg); padding: 2px 8px; border-radius: 999px; }
+  .apps { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip {
+    background: var(--chip);
+    border-radius: 9px;
+    padding: 6px 11px;
+    font-size: 0.86rem;
+  }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin: 28px 0 6px; }
+  .toolbar h2 { font-size: 1.2rem; margin: 0; }
+  .spinner {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.25); border-top-color: #fff;
+    display: inline-block; animation: spin .7s linear infinite; vertical-align: -3px; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>📱 앱 정리 도우미</h1>
+    <p>설치된 앱 이름을 붙여넣으면 AI가 종류별 폴더로 자동 분류해 드립니다.</p>
+  </header>
+
+  <div class="card">
+    <label for="apps">앱 이름 (한 줄에 하나씩, 또는 쉼표로 구분)</label>
+    <textarea id="apps" placeholder="카카오톡&#10;인스타그램&#10;토스&#10;유튜브&#10;배달의민족&#10;네이버 지도&#10;..."></textarea>
+    <div class="row">
+      <button class="btn-primary" id="organizeBtn">✨ 폴더로 정리하기</button>
+      <button class="btn-ghost" id="sampleBtn">예시 채우기</button>
+      <button class="btn-ghost" id="clearBtn">지우기</button>
+      <span class="count" id="count">0개</span>
+    </div>
+    <div class="hint">💡 정리 결과는 보기용 안내입니다. 실제 핸드폰 홈 화면에서 같은 이름의 폴더를 만들어 옮기시면 됩니다.</div>
+    <div id="status"></div>
+  </div>
+
+  <div id="resultsWrap" style="display:none;">
+    <div class="toolbar">
+      <h2 id="resultsTitle">정리 결과</h2>
+      <button class="btn-ghost" id="copyBtn">📋 텍스트로 복사</button>
+    </div>
+    <div class="results" id="results"></div>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const appsEl = $("apps"), statusEl = $("status"), countEl = $("count");
+  const resultsWrap = $("resultsWrap"), resultsEl = $("results");
+  let lastFolders = [];
+
+  const SAMPLE = [
+    "카카오톡","인스타그램","페이스북","유튜브","넷플릭스","토스","카카오뱅크","삼성페이",
+    "배달의민족","쿠팡","네이버","네이버 지도","카카오맵","멜론","스포티파이","갤러리",
+    "카메라","노션","구글 캘린더","Gmail","슬랙","줌","링크드인","당근마켓","오늘의집",
+    "런데이","삼성 헬스","듀오링고","날씨","계산기","설정"
+  ].join("\n");
+
+  function updateCount() {
+    const n = appsEl.value.split(/[\n,\t]+/).map(s => s.trim()).filter(Boolean).length;
+    countEl.textContent = n + "개";
+  }
+
+  appsEl.addEventListener("input", () => { updateCount(); localStorage.setItem("organizer:apps", appsEl.value); });
+  $("sampleBtn").onclick = () => { appsEl.value = SAMPLE; updateCount(); localStorage.setItem("organizer:apps", appsEl.value); };
+  $("clearBtn").onclick = () => { appsEl.value = ""; updateCount(); resultsWrap.style.display = "none"; localStorage.removeItem("organizer:apps"); };
+
+  // 마지막 입력 복원
+  appsEl.value = localStorage.getItem("organizer:apps") || "";
+  updateCount();
+
+  function setStatus(msg, isErr) {
+    statusEl.innerHTML = msg ? (isErr ? `<span class="err">${msg}</span>` : msg) : "";
+  }
+
+  function render(folders) {
+    resultsEl.innerHTML = "";
+    for (const f of folders) {
+      const div = document.createElement("div");
+      div.className = "folder";
+      const chips = f.apps.map(a => `<span class="chip">${escapeHtml(a)}</span>`).join("");
+      div.innerHTML = `<h3>${escapeHtml(f.emoji || "📁")} ${escapeHtml(f.name)}<span class="badge">${f.apps.length}</span></h3><div class="apps">${chips}</div>`;
+      resultsEl.appendChild(div);
+    }
+    resultsWrap.style.display = "block";
+    $("resultsTitle").textContent = `정리 결과 — 폴더 ${folders.length}개`;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  }
+
+  $("organizeBtn").onclick = async () => {
+    const apps = appsEl.value.trim();
+    if (!apps) { setStatus("앱 이름을 먼저 입력하세요.", true); return; }
+    const btn = $("organizeBtn");
+    btn.disabled = true;
+    setStatus('<span class="spinner"></span>AI가 분류하는 중...');
+    try {
+      const r = await fetch("/api/organize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apps }),
+      });
+      const data = await r.json();
+      if (!r.ok) { setStatus(data.error || "오류가 발생했습니다.", true); return; }
+      lastFolders = data.folders;
+      render(data.folders);
+      setStatus(`✅ 앱 ${data.total}개를 폴더 ${data.folders.length}개로 정리했습니다.`);
+    } catch (e) {
+      setStatus("서버에 연결하지 못했습니다: " + e.message, true);
+    } finally {
+      btn.disabled = false;
+    }
+  };
+
+  $("copyBtn").onclick = async () => {
+    const text = lastFolders.map(f => `${f.emoji} ${f.name}\n  - ${f.apps.join("\n  - ")}`).join("\n\n");
+    try { await navigator.clipboard.writeText(text); setStatus("📋 클립보드에 복사했습니다."); }
+    catch { setStatus("복사에 실패했습니다.", true); }
+  };
+</script>
+</body>
+</html>
