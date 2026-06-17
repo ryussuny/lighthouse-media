@@ -13,11 +13,21 @@ TODAY = datetime.now().strftime("%Y-%m-%d")
 OUTPUT = os.path.join(os.path.expanduser("~"), "lighthouse-media", "output", TODAY)
 os.makedirs(OUTPUT, exist_ok=True)
 
-def claude(prompt):
-    r = requests.post("https://api.anthropic.com/v1/messages", headers={
-        "x-api-key": API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json",
-    }, json={"model": "claude-sonnet-4-6", "max_tokens": 3000, "messages": [{"role": "user", "content": prompt}]})
-    return r.json()["content"][0]["text"]
+def claude(prompt, retries=3):
+    for attempt in range(retries):
+        try:
+            r = requests.post("https://api.anthropic.com/v1/messages", headers={
+                "x-api-key": API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json",
+            }, json={"model": "claude-sonnet-4-6", "max_tokens": 3000, "messages": [{"role": "user", "content": prompt}]}, timeout=120)
+            data = r.json()
+            if "content" in data:
+                return data["content"][0]["text"]
+            print(f"  API error (attempt {attempt+1}/{retries}): {data.get('error', {}).get('message', str(data))}")
+        except Exception as e:
+            print(f"  API exception (attempt {attempt+1}/{retries}): {e}")
+        if attempt < retries - 1:
+            import time; time.sleep(10 * (attempt + 1))
+    raise RuntimeError("Claude API failed after all retries")
 
 print(f"[{TODAY}] 일일 채널 조사 시작...")
 

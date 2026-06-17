@@ -45,7 +45,12 @@ reply_templates = {
 def auto_engage_hashtags():
     """유사 계정 게시물에 댓글 달기"""
     engaged = load_json(ENGAGED_FILE)
-    tags = ['직장인힐링', '마음관리', '번아웃극복', '자기계발', '동기부여', '직장인공감', '힐링', '멘탈케어']
+    tags = [
+        '직장인힐링', '마음관리', '번아웃극복', '자기계발', '동기부여', '직장인공감', '힐링', '멘탈케어',
+        '마음챙김', '감정일기', '자존감', '일상기록', '오늘의명언', '위로', '공감글', '하루한줄',
+        '마인드셋', '긍정에너지', '자기관리', '습관만들기', '독서기록', '글쓰기', '에세이', '생각정리',
+        'selfcare', 'mindfulness', 'motivation', 'healing', 'mentalhealth', 'dailyquote',
+    ]
     random.shuffle(tags)
     new_count = 0
 

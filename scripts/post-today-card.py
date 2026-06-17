@@ -10,6 +10,7 @@ import os, json, re, time, base64, subprocess, math
 from datetime import datetime, timedelta
 from PIL import Image, ImageDraw, ImageFont
 import requests
+import traceback
 
 # ═══════════════════════════════════════════════════════════════
 # 설정
@@ -29,6 +30,162 @@ IMGUR_ID = "546c25a59c58ad7"
 
 WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일']
 W, H = 1080, 1350
+
+# ═══════════════════════════════════════════════════════════════
+# Claude API 설정
+# ═══════════════════════════════════════════════════════════════
+def load_api_key():
+    """Load Anthropic API key from .env"""
+    env_path = os.path.join(REPO_DIR, ".env")
+    if os.path.exists(env_path):
+        for line in open(env_path, encoding='utf-8'):
+            if line.startswith("ANTHROPIC_API_KEY="):
+                return line.strip().split("=", 1)[1].strip('"').strip("'")
+    return ""
+
+ANTHROPIC_API_KEY = load_api_key()
+CLAUDE_MODEL = "claude-sonnet-4-6"
+
+def call_claude(system_prompt, user_prompt, max_tokens=1500):
+    """Claude API 호출 (3회 재시도)"""
+    if not ANTHROPIC_API_KEY:
+        print("  Claude API: No API key found")
+        return None
+
+    for attempt in range(3):
+        try:
+            r = requests.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": ANTHROPIC_API_KEY,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": CLAUDE_MODEL,
+                    "max_tokens": max_tokens,
+                    "system": system_prompt,
+                    "messages": [{"role": "user", "content": user_prompt}],
+                },
+                timeout=60,
+            )
+            data = r.json()
+            if r.status_code == 200 and "content" in data:
+                text = data["content"][0]["text"]
+                print(f"  Claude API OK (attempt {attempt+1})")
+                return text
+            print(f"  Claude API attempt {attempt+1} fail: {data.get('error', data)}")
+        except Exception as e:
+            print(f"  Claude API attempt {attempt+1} error: {e}")
+        if attempt < 2:
+            time.sleep(3)
+
+    print("  Claude API: All 3 attempts failed, using fallback")
+    return None
+
+
+def generate_ai_caption(date_str, entry, series_num, content):
+    """Claude AI로 Instagram 최적화 캡션 생성"""
+    dt = datetime.strptime(date_str, "%Y-%m-%d")
+    day_kr = WEEKDAYS[dt.weekday()]
+    ref = entry['ref']
+    title = entry['title']
+    book_name = get_series_book(ref)
+    chapter = get_chapter(ref)
+
+    ref_map = {'삼하': '사무엘하', '삼상': '사무엘상', '왕상': '열왕기상', '왕하': '열왕기하'}
+    ref_full = ref
+    for short, full in ref_map.items():
+        if ref.startswith(short + ' '):
+            ref_full = ref.replace(short, full, 1)
+            break
+
+    system_prompt = """당신은 동산감리교회 @garden___church 인스타그램 계정의 캡션 작가입니다.
+목회자이자 동행자 — 가르치되 함께 걷는 사람. "나도 이 말씀 앞에서 울었습니다" 에너지.
+
+2026년 인스타그램 알고리즘은 DM 공유("sends")를 좋아요보다 3~5배 높게 평가합니다.
+모든 캡션은 "이거 내 친구한테 보내야 해" 충동을 일으켜야 합니다.
+
+캡션은 반드시 아래 구조를 따르세요:
+
+[HOOK — 질문이나 상황 묘사, 첫 줄에서 스크롤을 멈추게]
+(빈 줄)
+[핵심 메시지 — 묵상의 가장 강력한 한 문단, 2~4문장]
+(빈 줄)
+[멈춤의 순간 — 읽는 사람이 자기 삶을 돌아보는 한 줄]
+(빈 줄)
+[오늘의 한 마디 — 기억에 남을 핵심 문장, 따옴표로 감싸기]
+(빈 줄)
+이 말씀이 필요한 사람이 떠오르시나요? 💌 보내주세요.
+
+절대 지킬 것:
+- 설교 톤 금지. 함께 걷는 동행자 톤.
+- 구체적 상황 사용 (새벽에 혼자 깨어 있을 때, 카톡 답장이 안 올 때, 회의실에서 무시당했을 때...)
+- 감정 중심 — 분석이 아니라 체험
+- 캡션 본문(해시태그 제외)은 800자 이내로 간결하게
+- 해시태그는 별도로 생성하므로 캡션에 해시태그 넣지 마세요
+- 교회명, 계정명도 넣지 마세요 (별도로 추가됩니다)"""
+
+    user_prompt = f"""오늘 날짜: {date_str} ({day_kr}요일)
+성경 본문: {ref_full}
+묵상 제목: {title}
+시리즈: {book_name} 묵상 #{series_num}
+
+아래는 오늘의 전체 묵상 내용입니다. 이 내용을 기반으로 Instagram 최적화 캡션을 작성하세요:
+
+---
+{content if content else '(묵상 파일 없음 — 제목과 성경 본문만으로 작성하세요)'}
+---
+
+위 구조대로 캡션을 작성하세요. 해시태그/교회명/계정명은 넣지 마세요."""
+
+    result = call_claude(system_prompt, user_prompt, max_tokens=1200)
+    return result
+
+
+def generate_ai_hashtags(date_str, entry, content):
+    """Claude AI로 동적 해시태그 생성"""
+    ref = entry['ref']
+    title = entry['title']
+    book_name = get_series_book(ref)
+    chapter = get_chapter(ref)
+
+    system_prompt = """당신은 인스타그램 해시태그 전략가입니다.
+성경 묵상 콘텐츠의 도달률을 극대화하는 해시태그를 생성합니다.
+
+규칙:
+- 총 15~20개 해시태그
+- 한국어 10~12개 + 영어 5~8개
+- 반드시 포함: #오늘의말씀 #동산감리교회 #말씀카드 #묵상
+- 성경 본문 키워드 (인물, 장소, 주제)
+- 오늘 묵상의 핵심 감정
+- 이 본문이 다루는 삶의 상황
+- 해시태그만 출력하세요. 설명 없이 한 줄에 모든 해시태그를 나열하세요.
+- #을 빠뜨리지 마세요."""
+
+    user_prompt = f"""성경 본문: {ref}
+제목: {title}
+책: {book_name} {chapter}장
+
+묵상 내용 요약:
+{content[:500] if content else title}
+
+해시태그를 생성하세요:"""
+
+    result = call_claude(system_prompt, user_prompt, max_tokens=300)
+    if result:
+        # 해시태그만 추출 (# 으로 시작하는 단어들)
+        tags = re.findall(r'#\S+', result)
+        # 필수 태그 확인 및 추가
+        required = ['#오늘의말씀', '#동산감리교회', '#말씀카드', '#묵상']
+        for req in required:
+            if req not in tags:
+                tags.insert(0, req)
+        # 20개 제한
+        tags = tags[:20]
+        return ' '.join(tags)
+    return None
+
 
 # ═══════════════════════════════════════════════════════════════
 # 색상 팔레트
@@ -265,8 +422,8 @@ def get_key_message(content, schedule_title):
                 return second
     return schedule_title
 
-def build_caption(date_str, entry, series_num, content):
-    """인스타 캡션 — 오늘의말씀 전체 묵상 내용 포함"""
+def build_caption_fallback(date_str, entry, series_num, content):
+    """폴백 캡션 — AI 실패 시 기존 방식으로 생성"""
     dt = datetime.strptime(date_str, "%Y-%m-%d")
     day_kr = WEEKDAYS[dt.weekday()]
     ref = entry['ref']
@@ -288,7 +445,6 @@ def build_caption(date_str, entry, series_num, content):
         body_lines = []
         for line in lines:
             line = line.strip()
-            # 헤더(📖), 해시태그(#으로만 구성), 계정(@garden), 교회명 제외
             if not line:
                 body_lines.append('')
             elif line.startswith('📖'):
@@ -296,11 +452,9 @@ def build_caption(date_str, entry, series_num, content):
             elif line.startswith('@garden') or line.startswith('동산감리교회') or line.startswith('동산교회'):
                 continue
             elif line.startswith('#') and all(c in '#_가-힣a-zA-Z0-9 ' for c in line):
-                # 해시태그 줄은 제외 (마지막에 별도로 추가)
                 continue
             else:
                 body_lines.append(line)
-        # 앞뒤 빈줄 제거
         while body_lines and not body_lines[0]:
             body_lines.pop(0)
         while body_lines and not body_lines[-1]:
@@ -328,7 +482,6 @@ def build_caption(date_str, entry, series_num, content):
 
     # 인스타 캡션 2200자 제한 체크
     if len(caption) > 2200:
-        # 해시태그 부분 보존하며 묵상 본문 줄임
         hashtag_start = caption.rfind('#오늘의말씀')
         if hashtag_start > 0:
             tail = caption[hashtag_start:]
@@ -338,6 +491,99 @@ def build_caption(date_str, entry, series_num, content):
                 head = head[:max_head].rsplit('\n', 1)[0] + '\n\n'
             caption = head + '\n\n' + tail
 
+    return caption
+
+
+def build_caption(date_str, entry, series_num, content):
+    """Instagram 최적화 캡션 생성 — AI 우선, 실패 시 폴백"""
+    dt = datetime.strptime(date_str, "%Y-%m-%d")
+    day_kr = WEEKDAYS[dt.weekday()]
+    ref = entry['ref']
+    book_name = get_series_book(ref)
+    chapter = get_chapter(ref)
+
+    ref_map = {'삼하': '사무엘하', '삼상': '사무엘상', '왕상': '열왕기상', '왕하': '열왕기하'}
+    ref_full = ref
+    for short, full in ref_map.items():
+        if ref.startswith(short + ' '):
+            ref_full = ref.replace(short, full, 1)
+            break
+
+    # ── Step 1: AI 캡션 본문 생성 ──
+    ai_body = None
+    try:
+        print("  Generating AI caption...")
+        ai_body = generate_ai_caption(date_str, entry, series_num, content)
+    except Exception as e:
+        print(f"  AI caption error: {e}")
+        traceback.print_exc()
+
+    # ── Step 2: AI 해시태그 생성 ──
+    ai_hashtags = None
+    try:
+        print("  Generating AI hashtags...")
+        ai_hashtags = generate_ai_hashtags(date_str, entry, content)
+    except Exception as e:
+        print(f"  AI hashtag error: {e}")
+        traceback.print_exc()
+
+    # ── AI 실패 시 폴백 ──
+    if not ai_body:
+        print("  Fallback: using raw devotional text caption")
+        return build_caption_fallback(date_str, entry, series_num, content)
+
+    # ── Step 3: 캡션 조립 ──
+    # 시리즈 헤더
+    header = f'📖 {book_name} 묵상 #{series_num} | {ref_full}\n'
+    header += f'오늘의 말씀 | {dt.strftime("%m/%d")} ({day_kr})\n\n'
+
+    # AI 본문 (해시태그/교회명이 혼입되었을 경우 제거)
+    body = ai_body.strip()
+    # AI가 혼입했을 수 있는 해시태그 줄 제거
+    body_lines = body.split('\n')
+    clean_lines = []
+    for line in body_lines:
+        stripped = line.strip()
+        # 해시태그만으로 구성된 줄 제거
+        if stripped and all(word.startswith('#') for word in stripped.split()):
+            continue
+        clean_lines.append(line)
+    body = '\n'.join(clean_lines).strip()
+
+    # 푸터
+    footer = '\n\n—\n'
+    footer += '동산감리교회 @garden___church\n\n'
+
+    # 해시태그
+    if ai_hashtags:
+        hashtags = ai_hashtags
+    else:
+        # 폴백 해시태그
+        hashtags = (
+            f'#오늘의말씀 #{book_name} #{book_name}{chapter}장 #성경말씀 #묵상 '
+            f'#기도 #교회 #말씀카드 #동산감리교회 #매일묵상 '
+            f'#성경 #은혜 #다윗 #기독교 #하나님 #예배 '
+            f'#BibleVerse #DailyDevotional'
+        )
+
+    caption = header + body + footer + hashtags
+
+    # ── 2200자 제한 체크 ──
+    if len(caption) > 2200:
+        # 해시태그/푸터 보존, 본문 줄임
+        fixed_len = len(header) + len(footer) + len(hashtags) + 10
+        max_body = 2200 - fixed_len
+        if max_body < 200:
+            max_body = 200
+        if len(body) > max_body:
+            body = body[:max_body].rsplit('\n', 1)[0].rstrip() + '...'
+        caption = header + body + footer + hashtags
+
+    # 최종 안전장치
+    if len(caption) > 2200:
+        caption = caption[:2197] + '...'
+
+    print(f"  Caption length: {len(caption)} chars")
     return caption
 
 def generate_card(date_str, entry, next_entry, series_num, content):
