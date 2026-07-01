@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>에너지 뱅크 시스템 - Lighthouse Media</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: #FAF8F3;
+  color: #333;
+  line-height: 2.0;
+  font-size: 16px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 28px 80px;
+  word-break: keep-all;
+}
+
+/* 커버 */
+.cover {
+  background: linear-gradient(135deg,#1a1a2e,#0f3460);
+  color: #fff;
+  padding: 70px 40px;
+  border-radius: 20px;
+  text-align: center;
+  margin-bottom: 50px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+.cover h1 { font-size: 30px; line-height: 1.4; margin-bottom: 14px; font-weight: 800; }
+.cover .sub { color: #BA7517; font-size: 17px; line-height: 1.6; }
+.cover .author { color: #888; margin-top: 24px; font-size: 14px; }
+.badge {
+  display: inline-block;
+  background: #BA7517;
+  color: #fff;
+  padding: 5px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* 본문 타이포그래피 */
+h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 48px 0 20px;
+  line-height: 1.4;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #BA7517;
+  margin: 44px 0 18px;
+  padding: 14px 0 14px 16px;
+  border-left: 4px solid #BA7517;
+  background: rgba(29,158,117,0.03);
+  border-radius: 0 8px 8px 0;
+  line-height: 1.4;
+}
+h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2a2a2a;
+  margin: 32px 0 14px;
+  line-height: 1.5;
+}
+p {
+  margin-bottom: 18px;
+  font-size: 16px;
+  line-height: 2.0;
+  color: #444;
+  letter-spacing: -0.2px;
+}
+strong { color: #1a1a2e; font-weight: 700; }
+em { color: #BA7517; font-style: normal; font-weight: 600; }
+
+/* 리스트 */
+ul, ol {
+  margin: 14px 0 20px 24px;
+  line-height: 2.0;
+}
+li {
+  margin-bottom: 10px;
+  padding-left: 4px;
+  color: #444;
+}
+li strong { color: #2a2a2a; }
+
+/* 구분선 */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ddd, transparent);
+  margin: 36px 0;
+}
+
+/* 인용 */
+blockquote {
+  border-left: 3px solid #BA7517;
+  background: rgba(29,158,117,0.04);
+  padding: 16px 20px;
+  margin: 20px 0;
+  border-radius: 0 10px 10px 0;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.9;
+}
+
+/* 테이블 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+}
+th {
+  background: #BA7517;
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+}
+tr:nth-child(even) td { background: #f9f9f6; }
+
+/* 코드 블록 (체크리스트 등) */
+code {
+  background: #f0ede6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #BA7517;
+}
+pre {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 20px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 20px 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* PDF 저장 버튼 */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(250,248,243,0.95);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.toolbar .brand { font-size: 13px; color: #999; font-weight: 600; }
+.toolbar .btn {
+  background: #BA7517;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+.toolbar .btn:hover { opacity: 0.9; }
+
+/* CTA (무료 전자책 하단) */
+.cta-box {
+  background: linear-gradient(135deg, rgba(29,158,117,0.08), rgba(186,117,23,0.06));
+  border: 1px solid rgba(29,158,117,0.2);
+  border-radius: 14px;
+  padding: 30px;
+  margin-top: 40px;
+  text-align: center;
+}
+.cta-box h3 { color: #1a1a2e; margin-bottom: 8px; }
+.cta-box p { font-size: 14px; color: #888; margin-bottom: 16px; }
+.cta-box a {
+  display: inline-block;
+  background: #BA7517;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* 푸터 */
+.footer {
+  text-align: center;
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.8;
+}
+
+/* 인쇄 */
+@media print {
+  .toolbar, .cta-box { display: none; }
+  body { max-width: 100%; padding: 20px; font-size: 14px; }
+  h2 { page-break-before: always; }
+  p, li { orphans: 3; widows: 3; }
+}
+
+/* 모바일 */
+@media (max-width: 600px) {
+  body { padding: 20px 16px 60px; font-size: 15px; }
+  .cover { padding: 50px 24px; }
+  .cover h1 { font-size: 24px; }
+  h2 { font-size: 19px; }
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="brand">Lighthouse Media</span>
+  <button class="btn" onclick="window.print()">PDF로 저장</button>
+</div>
+
+<div style="height:50px"></div>
+
+<div class="cover">
+  <span class="badge">7,900원</span>
+  <h1>에너지 뱅크<br>시스템</h1>
+  <p class="sub">번아웃 없이 성과내는 | 지속가능한 생산성 관리법</p>
+  <div class="author">류선희 | Lighthouse Media</div>
+</div>
+
+<h1 id="_1">에너지 뱅크 시스템</h1>
+<h2 id="_2">번아웃 없이 성과내는 지속가능한 생산성 관리법</h2>
+<p><strong>저자:</strong> 류선희 (Lighthouse Media)<br />
+<strong>가격:</strong> 7,900원<br />
+<strong>분량:</strong> 30페이지 (약 15,000자)</p>
+<hr />
+<h2 id="_3">서문</h2>
+<p>매일 아침 알람과 함께 시작되는 하루, 저녁에는 지친 몸을 이끌고 집으로 돌아가는 일상. 이런 패턴이 반복되면서 어느새 우리는 '에너지 적자' 상태에 빠져 있습니다.</p>
+<p>현대 직장인들은 더 많은 일을, 더 빠르게, 더 완벽하게 해내야 한다는 압박감에 시달리고 있습니다. 하지만 우리의 에너지는 무한하지 않습니다. 마치 은행 잔고처럼 관리해야 할 자원입니다.</p>
+<p>이 책은 에너지를 체계적으로 관리하여 번아웃 없이 지속 가능한 성과를 만들어내는 방법을 제시합니다. 7년간 조직 컨설팅과 개인 코칭을 통해 만난 수백 명의 직장인들과 함께 검증한 실용적인 방법론입니다.</p>
+<hr />
+<h2 id="chapter-1-">Chapter 1: 에너지 뱅크의 원리 - 왜 우리는 항상 피곤할까?</h2>
+<h3 id="_4">에너지 고갈의 진실</h3>
+<p>스탠ford 대학의 켈리 맥고니걸 교수는 그의 연구에서 현대인들이 겪는 만성 피로의 주원인을 '에너지 관리의 부재'라고 지적했습니다. 우리는 시간 관리는 배웠지만, 에너지 관리는 배우지 못했습니다.</p>
+<p>김태현 과장(35세, 마케팅팀)의 사례를 살펴보겠습니다. 그는 매일 오전 9시부터 저녁 10시까지 일하며 '열심히' 산다고 생각했습니다. 하지만 6개월 후 병원에서 만성 피로 증후군 진단을 받았습니다. </p>
+<p>"처음에는 의욕적으로 시작한 프로젝트들이 하나둘씩 미뤄지기 시작했어요. 집중력도 떨어지고, 작은 일에도 짜증이 났습니다."</p>
+<h3 id="4">에너지 뱅크 시스템의 4가지 계좌</h3>
+<p>우리의 에너지는 네 가지 종류로 나뉩니다:</p>
+<ol>
+<li><strong>신체 에너지</strong>: 물리적 활력과 체력</li>
+<li><strong>정신 에너지</strong>: 집중력과 인지 능력  </li>
+<li><strong>감정 에너지</strong>: 긍정적 감정과 회복력</li>
+<li><strong>영적 에너지</strong>: 목적의식과 의미감</li>
+</ol>
+<p>각각의 에너지는 독립적으로 작동하면서도 서로 영향을 주고받습니다. 한 영역이 고갈되면 다른 영역도 함께 약해집니다.</p>
+<h3 id="_5">실천 방법: 에너지 현황 파악하기</h3>
+<p>오늘부터 3일간 에너지 일지를 작성해보세요:</p>
+<ul>
+<li>오전 10시, 오후 2시, 저녁 7시에 1-10점으로 에너지 상태 기록</li>
+<li>각 시점에서 주요 활동과 감정 상태 함께 기록</li>
+<li>에너지가 높아지거나 낮아지는 패턴 관찰</li>
+</ul>
+<p>하버드 경영대학원의 연구에 따르면, 자신의 에너지 패턴을 인식하는 것만으로도 업무 효율성이 평균 23% 향상됩니다.</p>
+<h3 id="_6">에너지 투자와 회수의 원칙</h3>
+<p>은행 계좌처럼 에너지도 '입금'과 '출금'이 있습니다. 출금만 계속하면 파산하듯, 에너지도 충전 없이 소모만 하면 번아웃됩니다.</p>
+<p>에너지 입금 활동의 예:
+- 깊은 수면 (신체)
+- 명상과 휴식 (정신)<br />
+- 감사 표현 (감정)
+- 의미있는 목표 설정 (영적)</p>
+<p>에너지 뱅크 시스템은 이 네 가지 계좌의 잔고를 꾸준히 관리하여, 필요할 때 충분한 에너지를 사용할 수 있게 하는 체계입니다.</p>
+<hr />
+<h2 id="chapter-2-">Chapter 2: 신체 에너지 관리 - 몸이 곧 생산성의 기반</h2>
+<h3 id="_7">수면의 과학적 접근</h3>
+<p>수면 연구의 권위자 매튜 워커 교수는 "Why We Sleep"에서 7시간 미만의 수면이 면역체계를 40%까지 약화시킨다고 밝혔습니다. 더 중요한 것은 수면 부족이 창의성과 문제 해결 능력을 현저히 떨어뜨린다는 점입니다.</p>
+<p>이수진 차장(32세, 기획팀)은 야근을 줄이고 수면 시간을 6시간에서 7.5시간으로 늘린 후 놀라운 변화를 경험했습니다:</p>
+<p>"전에는 오후 3시만 되면 머리가 무거워져서 커피에 의존했는데, 충분히 잔 다음날은 저녁까지도 집중력이 유지됐어요. 업무 처리 속도도 확실히 빨라졌습니다."</p>
+<h3 id="_8">에너지 충전을 위한 수면 최적화 전략</h3>
+<p><strong>1. 수면 환경 설계</strong>
+- 실내 온도 18-20도 유지
+- 취침 1시간 전 디지털 기기 사용 금지
+- 암막 커튼으로 완전한 어둠 조성</p>
+<p><strong>2. 수면 루틴 구축</strong>
+- 매일 같은 시간에 취침/기상 (주말 포함)
+- 취침 전 30분간 독서나 명상
+- 카페인 섭취는 오후 2시 이후 금지</p>
+<h3 id="_9">영양과 에너지의 상관관계</h3>
+<p>하버드 공중보건대학원의 연구에 따르면, 혈당 지수가 낮은 음식을 섭취한 그룹이 높은 음식을 섭취한 그룹보다 오후 시간대 집중력이 평균 35% 높았습니다.</p>
+<p><strong>에너지 지속형 식단 원칙:</strong></p>
+<ul>
+<li>아침: 단백질 + 복합 탄수화물 (달걀 + 귀리)</li>
+<li>점심: 균형잡힌 영양소 배분 (생선 + 현미 + 채소)  </li>
+<li>저녁: 가벼운 식사 (닭가슴살 샐러드)</li>
+<li>간식: 견과류, 그릭 요거트 등 혈당 상승이 완만한 음식</li>
+</ul>
+<h3 id="_10">미세 회복의 힘</h3>
+<p>Tony Schwartz의 "The Way We're Working Isn't Working" 연구에서는 90분 집중 후 20분 휴식하는 울트라디안 리듬을 따를 때 생산성이 최대화됨을 입증했습니다.</p>
+<p><strong>실천 가능한 미세 회복법:</strong></p>
+<ol>
+<li><strong>90분 법칙</strong>: 집중 업무 90분 후 15-20분 완전한 휴식</li>
+<li><strong>5분 리셋</strong>: 매 시간마다 5분간 스트레칭이나 깊은 호흡</li>
+<li><strong>점심시간 산책</strong>: 15분간 실외 걷기로 비타민 D 충전</li>
+<li><strong>주말 디지털 디톡스</strong>: 토요일 오전 3시간 스마트폰 끄기</li>
+</ol>
+<h3 id="_11">운동과 에너지의 역설</h3>
+<p>"운동하면 피곤할 텐데"라는 통념과 달리, 규칙적인 운동은 에너지를 증가시킵니다. 조지아 대학교 연구진은 저강도 운동을 6주간 지속한 그룹의 피로도가 65% 감소함을 확인했습니다.</p>
+<p><strong>직장인을 위한 최소 운동 프로그램:</strong>
+- 주 3회, 1회 30분
+- 강도: 대화 가능한 수준
+- 종류: 빠른 걷기, 계단 오르기, 간단한 맨몸 운동</p>
+<p>신체 에너지는 모든 에너지의 기초입니다. 몸이 건강해야 마음도, 머리도 제 기능을 발휘할 수 있습니다.</p>
+<hr />
+<h2 id="chapter-3-">Chapter 3: 정신 에너지 관리 - 집중력이라는 한정된 자원</h2>
+<h3 id="_12">집중력의 경제학</h3>
+<p>칼 뉴포트 교수는 "Deep Work"에서 현대 직장인들이 평균 11분마다 업무가 중단된다고 밝혔습니다. 더 심각한 것은 중단된 후 원래 집중 상태로 돌아가는 데 평균 25분이 걸린다는 점입니다.</p>
+<p>박민수 대리(29세, 개발팀)의 변화 사례를 보겠습니다:</p>
+<p>"예전에는 하루 종일 여러 일을 동시에 처리한다고 바빴는데, 실제로는 아무것도 제대로 끝내지 못했어요. 집중 블록 시간을 도입한 후, 같은 시간에 2배 이상의 성과를 낼 수 있게 됐습니다."</p>
+<h3 id="_13">딥 워크 시스템 구축</h3>
+<p><strong>1단계: 집중 환경 설계</strong>
+- 스마트폰을 시야에서 완전히 제거
+- 알림 기능 모두 해제 (업무 시간 동안)
+- 정리된 작업 공간 유지
+- 노이즈 캔슬링 헤드폰 활용</p>
+<p><strong>2단계: 시간 블록 설정</strong><br />
+MIT의 연구에 따르면, 90분이 인간의 자연스러운 집중 주기입니다.</p>
+<ul>
+<li>오전 9-10:30: 가장 중요한 업무 (딥 워크)</li>
+<li>10:30-10:45: 휴식</li>
+<li>10:45-12:15: 두 번째 중요 업무</li>
+<li>오후: 회의, 이메일 등 상대적으로 덜 집중이 필요한 업무</li>
+</ul>
+<h3 id="_14">인지 부하 최소화 전략</h3>
+<p>심리학자 존 스웰러의 인지 부하 이론에 따르면, 우리의 작업 기억은 동시에 처리할 수 있는 정보가 제한적입니다.</p>
+<p><strong>실천 방법:</strong></p>
+<ol>
+<li><strong>외부 기억 장치 활용</strong></li>
+<li>할 일은 머릿속이 아닌 시스템에 기록</li>
+<li>Todoist, Notion 등 도구 활용</li>
+<li>
+<p>아이디어는 즉시 메모</p>
+</li>
+<li>
+<p><strong>의사결정 피로 줄이기</strong></p>
+</li>
+<li>중요하지 않은 선택은 미리 정해두기</li>
+<li>아침 루틴 고정화</li>
+<li>
+<p>업무 템플릿 활용</p>
+</li>
+<li>
+<p><strong>배치 프로세싱</strong></p>
+</li>
+<li>이메일은 하루 3회만 확인 (오전 10시, 오후 2시, 5시)</li>
+<li>유사한 업무끼리 묶어서 처리</li>
+<li>회의는 특정 요일/시간대에 집중</li>
+</ol>
+<h3 id="_15">멀티태스킹의 함정</h3>
+<p>스탠퍼드 대학교 연구진은 멀티태스킹이 생산성을 40%까지 떨어뜨린다는 사실을 입증했습니다. 뇌는 실제로 여러 일을 '동시에' 하는 것이 아니라 빠르게 '전환'할 뿐입니다.</p>
+<p><strong>싱글태스킹 실천법:</strong>
+- 한 번에 하나의 프로젝트만 화면에 열기
+- 포모도로 기법 활용 (25분 집중 + 5분 휴식)
+- "지금 이 순간, 이 일에만 집중"이라는 의식적 선언</p>
+<h3 id="_16">정신 에너지 회복법</h3>
+<p><strong>능동적 휴식:</strong>
+- 명상: 하루 10분 마음챙김 명상
+- 독서: 업무와 무관한 교양서적 읽기
+- 산책: 생각 없이 걷기 (Walking meditation)</p>
+<p><strong>수동적 휴식:</strong>
+- 낮잠: 15-20분의 파워 냅
+- 음악 감상: 클래식이나 자연음
+- 따뜻한 목욕</p>
+<p>UC 산타바바라의 연구에서는 의식적인 휴식을 취한 그룹이 그렇지 않은 그룹보다 창의적 문제 해결 능력이 41% 향상됨을 확인했습니다.</p>
+<p>정신 에너지는 근육과 같습니다. 사용하면 피로해지지만,</p>
+
+
+
+<div class="footer">
+  <strong>Lighthouse Media</strong><br>
+  류선희 | 실제로 삶이 나아지는 콘텐츠<br>
+  <a href="/free.html" style="color:#BA7517;text-decoration:none;">무료 PDF 더 받기</a>
+</div>
+
+</body>
+</html>

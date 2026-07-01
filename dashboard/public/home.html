@@ -5,6 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lighthouse Media — 오늘 하루가 조금 더 괜찮아지는 콘텐츠</title>
   <meta name="description" content="공감에서 시작해, 위로를 건네고, 내일의 한 걸음을 함께 설계합니다. 번아웃 회복, 감정 관리, 습관 설계 전자책 — Lighthouse Media">
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2BA47A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="LH Media">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
+  <!-- OG / Social -->
+  <meta property="og:title" content="Lighthouse Media">
+  <meta property="og:description" content="오늘 하루가 조금 더 괜찮아지는 콘텐츠">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://lighthouse-media.onrender.com/home.html">
+
   <link rel="preconnect" href="https://cdn.jsdelivr.net">
   <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
   <style>
@@ -760,9 +775,63 @@
     @media (max-width: 480px) {
       .ebook-header { padding: 0 20px; }
     }
+
+    /* ════════════════════════════════════════
+       PWA INSTALL BANNER
+    ════════════════════════════════════════ */
+    #installBanner {
+      display: none;
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      z-index: 2000; width: calc(100% - 40px); max-width: 420px;
+      background: var(--card-bg); border-radius: var(--radius);
+      box-shadow: var(--shadow-xl); border: 1px solid rgba(43,164,122,0.15);
+      padding: 16px 20px; align-items: center; gap: 12px;
+      animation: slideUp 0.4s cubic-bezier(0.22,1,0.36,1);
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    .install-icon {
+      width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--main), var(--main-dark));
+      display: flex; align-items: center; justify-content: center;
+    }
+    .install-icon svg { width: 22px; height: 22px; color: #fff; }
+    .install-text { flex: 1; }
+    .install-text strong { display: block; font-size: 14px; font-weight: 700; color: var(--text); }
+    .install-text span { font-size: 12px; color: var(--text-muted); }
+    .install-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .install-yes {
+      padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700;
+      background: var(--main); color: #fff; border: none; cursor: pointer;
+      font-family: inherit; transition: opacity 0.2s;
+    }
+    .install-yes:hover { opacity: 0.85; }
+    .install-no {
+      padding: 8px; border-radius: 8px; font-size: 18px; line-height: 1;
+      background: transparent; color: var(--text-muted); border: none; cursor: pointer;
+    }
   </style>
 </head>
 <body>
+
+  <!-- ═══════ PWA INSTALL BANNER ═══════ -->
+  <div id="installBanner">
+    <div class="install-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L12 6"/><path d="M12 6C12 6 6 12 6 16C6 19.3 8.7 22 12 22C15.3 22 18 19.3 18 16C18 12 12 6 12 6Z"/>
+      </svg>
+    </div>
+    <div class="install-text">
+      <strong>홈 화면에 추가하기</strong>
+      <span>앱처럼 바로 열 수 있어요</span>
+    </div>
+    <div class="install-actions">
+      <button class="install-yes" id="installBtn">설치</button>
+      <button class="install-no" id="installDismiss">✕</button>
+    </div>
+  </div>
 
   <!-- ═══════ NAVIGATION ═══════ -->
   <nav class="nav" id="nav">
@@ -1019,7 +1088,7 @@
           <p class="channel-desc">5분 안에 마음이 따뜻해지는 영상 에세이와 힐링 콘텐츠</p>
           <div class="channel-stat yt-color" id="ytCount">-</div>
           <div class="channel-stat-label">구독자</div>
-          <a href="https://youtube.com" target="_blank" rel="noopener" class="channel-link yt-link">구독하기 &rarr;</a>
+          <a href="https://youtube.com/@LighthouseMedia" target="_blank" rel="noopener" class="channel-link yt-link">구독하기 &rarr;</a>
         </div>
         <div class="channel-card fade-in fade-in-delay-1">
           <div class="channel-icon ig">
@@ -1041,7 +1110,7 @@
           <p class="channel-desc">깊이 있는 글과 독자 커뮤니티, 함께 성장하는 공간</p>
           <div class="channel-stat fb-color" id="fbCount">-</div>
           <div class="channel-stat-label">팬</div>
-          <a href="https://facebook.com" target="_blank" rel="noopener" class="channel-link fb-link">좋아요 &rarr;</a>
+          <a href="https://facebook.com/LighthouseMedia" target="_blank" rel="noopener" class="channel-link fb-link">좋아요 &rarr;</a>
         </div>
       </div>
     </div>
@@ -1460,6 +1529,51 @@
 
     /* Auto-refresh ebooks every 60s */
     setInterval(fetchEbooks, 60000);
+
+    /* ════════════════════════════════════════
+       PWA — Service Worker + Install Banner
+    ════════════════════════════════════════ */
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(() => console.log('SW registered'))
+          .catch(e => console.log('SW error', e));
+      });
+    }
+
+    /* Install banner (Android Chrome / Edge) */
+    let deferredPrompt;
+    const installBanner = document.getElementById('installBanner');
+    const installBtn = document.getElementById('installBtn');
+    const installDismiss = document.getElementById('installDismiss');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (installBanner) installBanner.style.display = 'flex';
+    });
+
+    if (installBtn) {
+      installBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        installBanner.style.display = 'none';
+      });
+    }
+
+    if (installDismiss) {
+      installDismiss.addEventListener('click', () => {
+        installBanner.style.display = 'none';
+        localStorage.setItem('installDismissed', '1');
+      });
+    }
+
+    /* Don't show banner if already dismissed */
+    if (localStorage.getItem('installDismissed')) {
+      if (installBanner) installBanner.style.display = 'none';
+    }
   </script>
 
 </body>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>퇴근 후 30분 나를 회복하기 - Lighthouse Media</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Pretendard', -apple-system, sans-serif;
+  background: #FAF8F3;
+  color: #333;
+  line-height: 2.0;
+  font-size: 16px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 28px 80px;
+  word-break: keep-all;
+}
+
+/* 커버 */
+.cover {
+  background: linear-gradient(135deg,#1a1a2e,#16213e);
+  color: #fff;
+  padding: 70px 40px;
+  border-radius: 20px;
+  text-align: center;
+  margin-bottom: 50px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+}
+.cover h1 { font-size: 30px; line-height: 1.4; margin-bottom: 14px; font-weight: 800; }
+.cover .sub { color: #1D9E75; font-size: 17px; line-height: 1.6; }
+.cover .author { color: #888; margin-top: 24px; font-size: 14px; }
+.badge {
+  display: inline-block;
+  background: #1D9E75;
+  color: #fff;
+  padding: 5px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+/* 본문 타이포그래피 */
+h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin: 48px 0 20px;
+  line-height: 1.4;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1D9E75;
+  margin: 44px 0 18px;
+  padding: 14px 0 14px 16px;
+  border-left: 4px solid #1D9E75;
+  background: rgba(29,158,117,0.03);
+  border-radius: 0 8px 8px 0;
+  line-height: 1.4;
+}
+h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2a2a2a;
+  margin: 32px 0 14px;
+  line-height: 1.5;
+}
+p {
+  margin-bottom: 18px;
+  font-size: 16px;
+  line-height: 2.0;
+  color: #444;
+  letter-spacing: -0.2px;
+}
+strong { color: #1a1a2e; font-weight: 700; }
+em { color: #1D9E75; font-style: normal; font-weight: 600; }
+
+/* 리스트 */
+ul, ol {
+  margin: 14px 0 20px 24px;
+  line-height: 2.0;
+}
+li {
+  margin-bottom: 10px;
+  padding-left: 4px;
+  color: #444;
+}
+li strong { color: #2a2a2a; }
+
+/* 구분선 */
+hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #ddd, transparent);
+  margin: 36px 0;
+}
+
+/* 인용 */
+blockquote {
+  border-left: 3px solid #1D9E75;
+  background: rgba(29,158,117,0.04);
+  padding: 16px 20px;
+  margin: 20px 0;
+  border-radius: 0 10px 10px 0;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.9;
+}
+
+/* 테이블 */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
+}
+th {
+  background: #1D9E75;
+  color: #fff;
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+}
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+}
+tr:nth-child(even) td { background: #f9f9f6; }
+
+/* 코드 블록 (체크리스트 등) */
+code {
+  background: #f0ede6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #1D9E75;
+}
+pre {
+  background: #1a1a2e;
+  color: #e0e0e0;
+  padding: 20px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 20px 0;
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+/* PDF 저장 버튼 */
+.toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(250,248,243,0.95);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.toolbar .brand { font-size: 13px; color: #999; font-weight: 600; }
+.toolbar .btn {
+  background: #1D9E75;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+.toolbar .btn:hover { opacity: 0.9; }
+
+/* CTA (무료 전자책 하단) */
+.cta-box {
+  background: linear-gradient(135deg, rgba(29,158,117,0.08), rgba(186,117,23,0.06));
+  border: 1px solid rgba(29,158,117,0.2);
+  border-radius: 14px;
+  padding: 30px;
+  margin-top: 40px;
+  text-align: center;
+}
+.cta-box h3 { color: #1a1a2e; margin-bottom: 8px; }
+.cta-box p { font-size: 14px; color: #888; margin-bottom: 16px; }
+.cta-box a {
+  display: inline-block;
+  background: #1D9E75;
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+/* 푸터 */
+.footer {
+  text-align: center;
+  margin-top: 50px;
+  padding-top: 30px;
+  border-top: 1px solid #eee;
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.8;
+}
+
+/* 인쇄 */
+@media print {
+  .toolbar, .cta-box { display: none; }
+  body { max-width: 100%; padding: 20px; font-size: 14px; }
+  h2 { page-break-before: always; }
+  p, li { orphans: 3; widows: 3; }
+}
+
+/* 모바일 */
+@media (max-width: 600px) {
+  body { padding: 20px 16px 60px; font-size: 15px; }
+  .cover { padding: 50px 24px; }
+  .cover h1 { font-size: 24px; }
+  h2 { font-size: 19px; }
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="brand">Lighthouse Media</span>
+  <button class="btn" onclick="window.print()">PDF로 저장</button>
+</div>
+
+<div style="height:50px"></div>
+
+<div class="cover">
+  <span class="badge">FREE EBOOK</span>
+  <h1>퇴근 후 30분<br>나를 회복하기</h1>
+  <p class="sub">지친 하루 끝에서 | 다시 충전하는 저녁 의식</p>
+  <div class="author">류선희 | Lighthouse Media</div>
+</div>
+
+<h1 id="30">퇴근 후 30분, 나를 회복하기</h1>
+<h2 id="_1">지친 하루 끝에서 다시 충전하는 저녁 의식</h2>
+<p><strong>저자: 류선희 (Lighthouse Media)</strong></p>
+<hr />
+<h3 id="_2">들어가며</h3>
+<p>퇴근길 지하철에서 스마트폰을 들여다보며 하루를 되돌아봅니다. 오늘도 바쁘게 지나간 시간들, 처리해야 할 업무들, 내일의 일정들이 머릿속을 맴돕니다. 집에 도착하면 또 다른 일상이 기다리고 있죠.</p>
+<p>그런데 잠깐, 오늘 하루 나는 언제 진짜 '나'였을까요?</p>
+<p>이 책은 매일 반복되는 일상 속에서 자신을 잃어버린 듯한 느낌을 받는 직장인들을 위해 쓰여졌습니다. 거창한 변화나 완전한 라이프스타일 개선을 약속하지 않습니다. 대신 퇴근 후 단 30분이라는 시간을 통해 스스로를 돌보고 내일을 위한 에너지를 차근차근 충전하는 현실적인 방법들을 제안합니다.</p>
+<hr />
+<h2 id="1">1. 전환의 의식: 일과 나를 분리하기</h2>
+<p>퇴근했다고 해서 자동으로 '퇴근 모드'가 되는 건 아닙니다. 몸은 집에 와 있지만 마음은 여전히 사무실에 머물러 있는 경우가 많죠. 진정한 퇴근을 위해서는 의도적인 '전환의 의식'이 필요합니다.</p>
+<p><strong>5분 디브리핑 의식</strong>을 추천합니다. 집에 들어서자마자 바로 다른 일을 시작하지 말고, 편안한 곳에 앉아 오늘 하루를 간단히 정리해보세요. "오늘 잘한 일 하나, 힘들었던 일 하나, 내일 처리할 일 하나"를 머릿속으로 정리하고 의식적으로 "이제 퇴근이다"라고 선언합니다.</p>
+<p><strong>옷 갈아입기</strong>도 강력한 전환 신호입니다. 단순히 편한 옷으로 갈아입는 것이 아니라, 옷을 벗으면서 "오늘의 역할들을 벗어둔다"는 마음가짐으로 임해보세요. 새로운 옷을 입으면서 "이제 나만의 시간이다"라고 의식적으로 인식하는 것입니다.</p>
+<p>마지막으로 <strong>공간 정리하기</strong>입니다. 가방 속 물건들을 제자리에 두고, 내일 입을 옷을 미리 준비해두세요. 이런 작은 정리는 마음의 정리로 이어집니다. 물리적 공간이 정돈되면 정신적 공간도 여유로워집니다.</p>
+<hr />
+<h2 id="2">2. 몸의 신호 듣기: 피로를 풀어주는 기본 케어</h2>
+<p>하루 종일 책상에 앉아 있던 몸은 생각보다 많은 스트레스를 받았습니다. 어깨가 굳어있고, 목이 뻣뻣하며, 눈이 피로할 것입니다. 몸의 신호를 듣고 적절한 케어를 해주는 것이 회복의 첫걸음입니다.</p>
+<p><strong>10분 스트레칭 루틴</strong>을 만들어보세요. 복잡한 동작은 필요 없습니다. 목을 좌우로 천천히 돌리기, 어깨 으쓱하며 올렸다 내리기, 허리 좌우로 비틀기, 다리 앞뒤로 쭉 뻗어주기 등 간단한 동작들로 충분합니다. 중요한 건 규칙적으로 하는 것입니다.</p>
+<p><strong>따뜻한 물로 씻기</strong>는 단순하지만 효과적인 회복 방법입니다. 샤워를 하거나 손과 발을 따뜻한 물에 담그는 것만으로도 혈액순환이 개선되고 근육이 이완됩니다. 이때 의식적으로 "하루의 피로를 씻어내고 있다"고 생각해보세요.</p>
+<p><strong>깊게 호흡하기</strong>도 놓치지 마세요. 배에 손을 얹고 천천히 코로 숨을 들이마시고, 입으로 길게 내쉬는 복식호흡을 5분간 해보세요. 산소 공급이 원활해지면서 자연스럽게 마음도 안정됩니다. 이 시간만큼은 아무 생각 없이 오직 호흡에만 집중해보세요.</p>
+<hr />
+<h2 id="3">3. 마음의 정원 가꾸기: 감정 정리와 마음챙김</h2>
+<p>몸의 피로만큼이나 중요한 것이 마음의 피로입니다. 하루 동안 쌓인 크고 작은 감정들, 스트레스, 자극들을 그대로 두면 다음 날까지 영향을 미칩니다. 마음도 몸처럼 의식적인 케어가 필요합니다.</p>
+<p><strong>감정 일기 쓰기</strong>를 추천합니다. 길게 쓸 필요는 없습니다. "오늘 어떤 감정을 주로 느꼈는지, 그 감정이 어디서 왔는지, 지금은 어떤 기분인지" 세 문장만 써도 충분합니다. 감정을 글로 표현하는 과정에서 객관화가 이루어지고, 마음이 한결 가벼워집니다.</p>
+<p><strong>감사 찾기</strong>는 하루를 긍정적으로 마무리하는 좋은 방법입니다. 아무리 힘든 하루라도 감사할 점 한 가지는 있기 마련입니다. 맛있게 먹은 점심, 동료의 작은 배려, 날씨가 좋았던 것, 무사히 집에 도착한 것 등 사소한 것이라도 괜찮습니다.</p>
+<p><strong>명상이나 마음챙김</strong>이 어렵다면 <strong>좋아하는 음악 듣기</strong>부터 시작해보세요. 눈을 감고 음악에만 집중하는 5분의 시간도 충분한 마음챙김입니다. 또는 창밖을 바라보며 멍하니 있는 시간을 의도적으로 만들어보세요. 아무것도 하지 않는 시간도 소중한 회복의 시간입니다.</p>
+<hr />
+<h2 id="4">4. 나만의 작은 즐거움: 취미와 관심사 키우기</h2>
+<p>퇴근 후 시간을 오롯이 '나'를 위해 사용해보세요. 일과 관련 없는, 순수하게 즐거움을 주는 활동들은 삶에 활력을 불어넣습니다. 거창할 필요 없습니다. 작은 즐거움들이 모여 일상을 풍요롭게 만듭니다.</p>
+<p><strong>책 읽기</strong>는 가장 접근하기 쉬운 취미 중 하나입니다. 매일 10페이지씩만 읽어도 한 달이면 한 권을 완독할 수 있습니다. 업무서적이 아닌, 순수하게 재미나 관심으로 선택한 책을 읽어보세요. 소설이든 에세이든 만화든 상관없습니다.</p>
+<p><strong>간단한 요리나 베이킹</strong>도 좋은 취미입니다. 복잡한 요리가 아니라 차 한 잔을 정성껏 우려내거나, 간단한 디저트를 만들어보는 것만으로도 창조의 즐거움을 느낄 수 있습니다. 무언가를 만들어내는 과정은 성취감을 주고, 결과물을 즐기는 것은 또 다른 기쁨입니다.</p>
+<p><strong>식물 키우기, 그림 그리기, 악기 연주, 사진 찍기</strong> 등 손을 사용하는 활동들은 특히 좋습니다. 디지털 업무에 지친 뇌에게 아날로그적 자극을 주어 균형을 맞춰줍니다. 중요한 건 결과가 아니라 과정 자체를 즐기는 것입니다.</p>
+<hr />
+<h2 id="5">5. 내일을 위한 준비: 긍정적 에너지 충전하기</h2>
+<p>회복은 단순히 피로를 푸는 것만이 아닙니다. 내일을 위한 에너지를 충전하고, 긍정적인 마음가짐을 만드는 것도 중요합니다. 하루를 마무리하면서 다음 날에 대한 기대감을 만들어보세요.</p>
+<p><strong>내일의 작은 기대거리 만들기</strong>를 추천합니다. 새로 출시된 음료 마셔보기, 점심시간에 산책하기, 퇴근 후 친구와 전화하기 등 아주 작은 것이라도 괜찮습니다. 기대할 것이 있다는 것만으로도 아침이 조금 더 가벼워집니다.</p>
+<p><strong>긍정적 다짐하기</strong>도 도움이 됩니다. "내일은 더 여유롭게 일해보자", "동료에게 고마움을 표현해보자", "점심시간에는 핸드폰을 보지 말고 음식에 집중해보자" 등 실현 가능한 작은 다짐들로 충분합니다.</p>
+<p><strong>수면 준비하기</strong>는 내일을 위한 가장 중요한 투자입니다. 침실을 시원하고 어둡게 만들고, 잠들기 한 시간 전부터는 스마트폰 사용을 줄여보세요. 대신 가벼운 스트레칭을 하거나 차분한 음악을 들으며 마음을 진정시키세요.</p>
+<p>마지막으로 <strong>스스로에게 격려 한 마디</strong> 건네보세요. "오늘도 수고했어", "잘 버텨줘서 고마워", "내일도 할 수 있어" 같은 따뜻한 말들이 생각보다 큰 힘이 됩니다.</p>
+<hr />
+<h2 id="7">7일 실천 체크리스트</h2>
+<p>매일 퇴근 후 30분, 아래 항목들 중 최소 3가지를 실천해보세요.</p>
+<h3 id="1_1">1일차</h3>
+<ul>
+<li>[ ] 5분 디브리핑 의식</li>
+<li>[ ] 편안한 옷으로 갈아입기</li>
+<li>[ ] 10분 스트레칭</li>
+<li>[ ] 따뜻한 물로 손발 씻기</li>
+<li>[ ] 감사할 점 하나 찾기</li>
+</ul>
+<h3 id="2_1">2일차</h3>
+<ul>
+<li>[ ] 작업 공간 정리하</li>
+</ul>
+
+<div class='cta-box'><h3>더 깊은 내용이 궁금하다면</h3><p>유료 전자책에서 실전 가이드를 만나보세요</p><a href="/shop.html">전자책 보러가기</a></div>
+
+<div class="footer">
+  <strong>Lighthouse Media</strong><br>
+  류선희 | 실제로 삶이 나아지는 콘텐츠<br>
+  <a href="/free.html" style="color:#1D9E75;text-decoration:none;">무료 PDF 더 받기</a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,44 @@
+{
+  "name": "Lighthouse Media",
+  "short_name": "LH Media",
+  "description": "오늘 하루가 조금 더 괜찮아지는 콘텐츠 — 번아웃 회복, 감정 관리, 습관 설계",
+  "start_url": "/home.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FDFBF7",
+  "theme_color": "#2BA47A",
+  "lang": "ko",
+  "categories": ["lifestyle", "education", "books"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "전자책 라이브러리",
+      "short_name": "전자책",
+      "description": "무료 전자책 바로 읽기",
+      "url": "/home.html#ebooks",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "오늘의 인사이트",
+      "short_name": "오늘의 글",
+      "description": "매일 아침 따뜻한 메시지",
+      "url": "/home.html#daily",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": []
+}
