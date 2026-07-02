@@ -333,15 +333,12 @@ app.post("/api/order", (req, res) => {
   saveOrders(orders);
   console.log(`\n💰 새 주문! #${order.id} — ${order.name} / ${order.email} / ${order.amount?.toLocaleString()}원`);
 
-  // 다운로드 토큰 발급 (결제 확인 전에도 열람 가능)
-  const token = Date.now().toString(36) + Math.random().toString(36).slice(2);
-  downloadTokens.set(token, { type: "paid", email: order.email, orderId: order.id, created: Date.now() });
-
+  // 유료 전자책은 입금 확인 후 이메일로 발송 (선열람 토큰 발급 안 함)
   io.emit("sale", { amount: order.amount, product: order.product, name: order.name });
   io.emit("metrics-update", getRealMetrics());
   io.emit("order-new", order);
   onNewOrder(order);
-  res.json({ success: true, orderId: order.id, downloadUrl: `/ebook-paid.html?token=${token}` });
+  res.json({ success: true, orderId: order.id });
 });
 
 // 주기적 메트릭 브로드캐스트 (30초)
@@ -366,5 +363,5 @@ server.listen(PORT, () => {
   console.log(`   책 표지:    http://localhost:${PORT}/covers.html`);
   console.log(`   관리자:     http://localhost:${PORT}/admin.html`);
   console.log(`   무료 전자책: http://localhost:${PORT}/ebook-free.html`);
-  console.log(`   유료 전자책: http://localhost:${PORT}/ebook-paid.html\n`);
+  console.log(`   유료 전자책: (비공개 — 입금 확인 후 PDF 이메일 발송)\n`);
 });
