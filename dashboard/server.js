@@ -3,6 +3,31 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import nodemailer from "nodemailer";
+import "dotenv/config";
+
+// === 주문/리드 이메일 알림 ===
+const mailer = process.env.GMAIL_APP_PASS
+  ? nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASS },
+    })
+  : null;
+
+async function notify(subject, text) {
+  if (!mailer) { console.log("⚠️ 메일 알림 미설정 (GMAIL_APP_PASS 없음)"); return; }
+  try {
+    await mailer.sendMail({
+      from: `"Lighthouse 알림" <${process.env.GMAIL_USER}>`,
+      to: process.env.NOTIFY_TO || process.env.GMAIL_USER,
+      subject,
+      text,
+    });
+    console.log(`📨 알림 발송: ${subject}`);
+  } catch (e) {
+    console.error("메일 알림 실패:", e.message);
+  }
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -315,6 +340,11 @@ app.post("/api/lead", (req, res) => {
   saveLeads(leads);
   console.log(`📧 새 리드! #${lead.id} — ${lead.name} / ${lead.email}`);
 
+  notify(
+    `📧 새 구독자 #${lead.id} — ${lead.name || lead.email}`,
+    `무료 전자책 신청/뉴스레터 구독이 들어왔습니다.\n\n이름: ${lead.name || "-"}\n이메일: ${lead.email}\n시각: ${lead.created}`
+  );
+
   // 다운로드 토큰 발급
   const token = Date.now().toString(36) + Math.random().toString(36).slice(2);
   downloadTokens.set(token, { type: "free", email: lead.email, created: Date.now() });
@@ -332,6 +362,23 @@ app.post("/api/order", (req, res) => {
   orders.push(order);
   saveOrders(orders);
   console.log(`\n💰 새 주문! #${order.id} — ${order.name} / ${order.email} / ${order.amount?.toLocaleString()}원`);
+
+  notify(
+    `💰 새 주문 #${order.id} — ${order.name}님 ${order.amount?.toLocaleString()}원`,
+    [
+      `새 주문이 접수되었습니다!`,
+      ``,
+      `상품: ${order.product || "-"}`,
+      `입금자명: ${order.name}`,
+      `이메일: ${order.email}`,
+      `연락처: ${order.phone || "-"}`,
+      `금액: ${order.amount?.toLocaleString()}원`,
+      `시각: ${order.created}`,
+      ``,
+      `▶ 할 일: 농협 185-12-226647 입금 확인 후, 위 이메일로 PDF를 보내주세요.`,
+      `▶ 주문 관리: https://lighthouse-media.onrender.com/admin.html`,
+    ].join("\n")
+  );
 
   // 유료 전자책은 입금 확인 후 이메일로 발송 (선열람 토큰 발급 안 함)
   io.emit("sale", { amount: order.amount, product: order.product, name: order.name });
