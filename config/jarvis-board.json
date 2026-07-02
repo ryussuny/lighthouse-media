@@ -237,6 +237,11 @@
   },
   "schedulers": [
     {
+      "time": "매시간",
+      "name": "MusicUpload — 새 음원 자동 유튜브 업로드",
+      "station": "MINT"
+    },
+    {
       "time": "시작 시",
       "name": "DongsanChurch_BridgeServer / MainServer",
       "station": "SHEPHERD"
