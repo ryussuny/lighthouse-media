@@ -91,6 +91,13 @@ app.get("/api/ebooks", (req, res) => {
   res.json(all);
 });
 
+// JARVIS 관제탑: 프로젝트 보드 + 실시간 지표 통합
+app.get("/api/jarvis", (req, res) => {
+  const boardFile = join(__dirname, "..", "config", "jarvis-board.json");
+  const board = existsSync(boardFile) ? JSON.parse(readFileSync(boardFile, "utf-8")) : { projects: [], music: { tracks: [] }, schedulers: [], links: [], goal: { monthly: 5000000 }, updated: "-" };
+  res.json({ board, metrics: getRealMetrics(), orders: getOrders() });
+});
+
 // 메인 페이지를 홈페이지로 리디렉트
 app.get("/", (req, res) => {
   res.sendFile(join(__dirname, "public", "home.html"));

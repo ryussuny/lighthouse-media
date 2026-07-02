@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JARVIS 관제탑 — Lighthouse</title>
+<style>
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Pretendard',-apple-system,sans-serif; background:#0d1220; color:#e8ecf5; line-height:1.6; padding-bottom:60px; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 16px; }
+
+  header { padding:28px 0 20px; border-bottom:1px solid #1e2740; margin-bottom:24px; }
+  header .wrap { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+  h1 { font-size:22px; font-weight:800; letter-spacing:-0.5px; }
+  h1 span { color:#F5C562; }
+  .updated { font-size:12px; color:#5a6785; }
+
+  h2 { font-size:15px; font-weight:800; color:#8fa0bf; letter-spacing:1.2px; text-transform:uppercase; margin:28px 0 12px; }
+
+  /* Revenue gauge */
+  .revenue { background:linear-gradient(135deg,#16223f,#1a2a4f); border:1px solid #263659; border-radius:14px; padding:20px; }
+  .revenue .row { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; }
+  .revenue .amount { font-size:30px; font-weight:800; color:#F5C562; }
+  .revenue .goal { font-size:13px; color:#8fa0bf; }
+  .bar { height:10px; background:#0d1220; border-radius:999px; margin-top:12px; overflow:hidden; }
+  .bar>div { height:100%; background:linear-gradient(90deg,#C48220,#F5C562); border-radius:999px; transition:width .6s; }
+  .kpis { display:flex; gap:20px; margin-top:14px; flex-wrap:wrap; }
+  .kpi { font-size:13px; color:#8fa0bf; }
+  .kpi strong { color:#e8ecf5; font-size:16px; margin-right:2px; }
+
+  /* Project cards */
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
+  .card { background:#131a2e; border:1px solid #1e2740; border-radius:14px; padding:18px; }
+  .card .top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .station { font-size:10px; font-weight:800; letter-spacing:1px; padding:3px 9px; border-radius:999px; flex-shrink:0; }
+  .st-MINT { background:#3d2e10; color:#F5C562; }
+  .st-FORGE { background:#10303d; color:#62cdf5; }
+  .st-SHEPHERD { background:#12351c; color:#6fe58f; }
+  .card h3 { font-size:15px; font-weight:700; margin:8px 0 4px; }
+  .card .next { font-size:12.5px; color:#8fa0bf; margin-top:8px; }
+  .card .next b { color:#F5C562; font-weight:700; }
+  .mini-bar { height:6px; background:#0d1220; border-radius:999px; margin-top:12px; overflow:hidden; }
+  .mini-bar>div { height:100%; border-radius:999px; }
+  .pct { font-size:11px; color:#5a6785; margin-top:4px; text-align:right; }
+  .tasks { margin-top:10px; font-size:12.5px; }
+  .tasks li { list-style:none; padding:3px 0; color:#8fa0bf; }
+  .tasks li.done { color:#4a5a78; text-decoration:line-through; }
+  .tasks li .owner { font-size:10px; background:#1e2740; border-radius:999px; padding:1px 7px; margin-left:6px; color:#F5C562; }
+
+  /* Music pipeline */
+  table { width:100%; border-collapse:collapse; background:#131a2e; border:1px solid #1e2740; border-radius:14px; overflow:hidden; font-size:13px; }
+  th, td { padding:9px 10px; text-align:left; border-bottom:1px solid #1a2340; }
+  th { background:#161f38; color:#8fa0bf; font-size:11px; letter-spacing:1px; text-transform:uppercase; }
+  tr:last-child td { border-bottom:none; }
+  .chip { display:inline-block; width:22px; height:22px; line-height:22px; text-align:center; border-radius:6px; font-size:12px; }
+  .chip.ok { background:#12351c; color:#6fe58f; }
+  .chip.no { background:#1a2340; color:#3d4b6e; }
+  .yt-link { color:#F56262; font-weight:700; text-decoration:none; }
+  .table-scroll { overflow-x:auto; border-radius:14px; }
+
+  /* Schedulers & links */
+  .sched { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:8px; }
+  .sched div { background:#131a2e; border:1px solid #1e2740; border-radius:10px; padding:10px 14px; font-size:12.5px; color:#8fa0bf; }
+  .sched b { color:#e8ecf5; font-weight:700; }
+  .links { display:flex; flex-wrap:wrap; gap:8px; }
+  .links a { background:#131a2e; border:1px solid #263659; color:#e8ecf5; text-decoration:none; font-size:13px; font-weight:600; padding:10px 16px; border-radius:10px; }
+  .links a:hover { border-color:#F5C562; }
+
+  .orders li { list-style:none; background:#131a2e; border:1px solid #1e2740; border-radius:10px; padding:10px 14px; margin-bottom:6px; font-size:13px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; }
+  .orders .amt { color:#F5C562; font-weight:700; }
+  .empty { color:#4a5a78; font-size:13px; padding:8px 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>🗼 JARVIS <span>관제탑</span></h1>
+    <span class="updated">기준: <b id="updated">—</b> · 실시간 수익/주문 자동 갱신</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- 수익 -->
+  <div class="revenue">
+    <div class="row">
+      <div><div class="amount" id="revMonth">₩0</div><div class="goal">이번 달 누적 · 목표 <b id="revGoal">₩5,000,000</b></div></div>
+      <div class="kpis">
+        <span class="kpi"><strong id="kOrders">0</strong>총 주문</span>
+        <span class="kpi"><strong id="kPending">0</strong>입금 대기</span>
+        <span class="kpi"><strong id="kLeads">0</strong>구독자</span>
+        <span class="kpi"><strong id="kToday">₩0</strong>오늘</span>
+      </div>
+    </div>
+    <div class="bar"><div id="revBar" style="width:0%"></div></div>
+  </div>
+
+  <!-- 프로젝트 -->
+  <h2>프로젝트 보드</h2>
+  <div class="grid" id="projects"></div>
+
+  <!-- 음원 파이프라인 -->
+  <h2>🎵 음원 파이프라인 — <span id="epName" style="color:#F5C562"></span></h2>
+  <div class="table-scroll">
+  <table>
+    <thead><tr><th>#</th><th>곡</th><th>언어</th><th>가사</th><th>Suno</th><th>WAV</th><th>MP4</th><th>YouTube</th></tr></thead>
+    <tbody id="tracks"></tbody>
+  </table>
+  </div>
+
+  <!-- 최근 주문 -->
+  <h2>최근 주문</h2>
+  <ul class="orders" id="orders"><li class="empty">주문이 들어오면 여기 표시됩니다</li></ul>
+
+  <!-- 스케줄러 -->
+  <h2>자동화 스케줄러</h2>
+  <div class="sched" id="sched"></div>
+
+  <!-- 빠른 링크 -->
+  <h2>빠른 링크</h2>
+  <div class="links" id="links"></div>
+
+</div>
+
+<script>
+const won = n => '₩' + (n||0).toLocaleString();
+
+async function load() {
+  try {
+    const d = await (await fetch('/api/jarvis')).json();
+
+    document.getElementById('updated').textContent = d.board.updated;
+
+    /* 수익 */
+    const m = d.metrics;
+    document.getElementById('revMonth').textContent = won(m.revenue.month);
+    document.getElementById('revGoal').textContent = won(d.board.goal.monthly);
+    document.getElementById('kOrders').textContent = m.orders.total;
+    document.getElementById('kPending').textContent = m.orders.pending;
+    document.getElementById('kLeads').textContent = m.leads.total;
+    document.getElementById('kToday').textContent = won(m.revenue.today);
+    document.getElementById('revBar').style.width = Math.min(100, m.revenue.month / d.board.goal.monthly * 100) + '%';
+
+    /* 프로젝트 */
+    document.getElementById('projects').innerHTML = d.board.projects.map(p => `
+      <div class="card">
+        <div class="top">
+          <h3>${p.name}</h3>
+          <span class="station st-${p.station}">${p.station}</span>
+        </div>
+        <div class="next"><b>다음 →</b> ${p.next}</div>
+        ${p.tasks.length ? `<ul class="tasks">${p.tasks.map(t =>
+          `<li class="${t.done?'done':''}">${t.done?'✅':'⬜'} ${t.name}${t.owner&&!t.done?`<span class="owner">${t.owner}</span>`:''}</li>`).join('')}</ul>` : ''}
+        <div class="mini-bar"><div style="width:${p.progress}%;background:${p.progress>=100?'#6fe58f':'linear-gradient(90deg,#C48220,#F5C562)'}"></div></div>
+        <div class="pct">${p.progress}%</div>
+      </div>`).join('');
+
+    /* 음원 */
+    document.getElementById('epName').textContent = d.board.music.ep;
+    const chip = v => `<span class="chip ${v?'ok':'no'}">${v?'✓':'·'}</span>`;
+    document.getElementById('tracks').innerHTML = d.board.music.tracks.map(t => `
+      <tr>
+        <td>${t.no||'★'}</td><td><b>${t.title}</b></td><td>${t.lang}</td>
+        <td>${chip(t.lyrics)}</td><td>${chip(t.suno)}</td><td>${chip(t.wav)}</td><td>${chip(t.mp4)}</td>
+        <td>${t.youtube ? `<a class="yt-link" href="https://youtu.be/${t.youtube}" target="_blank">▶ 보기</a>` : chip(false)}</td>
+      </tr>`).join('');
+
+    /* 주문 */
+    if (d.orders && d.orders.length) {
+      document.getElementById('orders').innerHTML = d.orders.slice(-5).reverse().map(o => `
+        <li><span>#${o.id} ${o.name} <small style="color:#5a6785">${(o.created||'').slice(0,16).replace('T',' ')}</small></span>
+        <span><span class="amt">${won(o.amount)}</span> <small style="color:${o.status==='confirmed'?'#6fe58f':'#F5C562'}">${o.status==='confirmed'?'입금확인':'대기'}</small></span></li>`).join('');
+    }
+
+    /* 스케줄러 */
+    document.getElementById('sched').innerHTML = d.board.schedulers.map(s =>
+      `<div><b>${s.time}</b> · ${s.name}</div>`).join('');
+
+    /* 링크 */
+    document.getElementById('links').innerHTML = d.board.links.map(l =>
+      `<a href="${l.url}" target="${l.url.startsWith('http')?'_blank':'_self'}">${l.name}</a>`).join('');
+
+  } catch(e) { console.error(e); }
+}
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>

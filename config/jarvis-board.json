@@ -1,0 +1,315 @@
+{
+  "updated": "2026-07-02",
+  "goal": {
+    "monthly": 5000000,
+    "label": "월 500만원"
+  },
+  "projects": [
+    {
+      "id": "ebook-launch",
+      "station": "MINT",
+      "name": "전자책 「월요일이 기다려지는 사람들의 비밀」 발사",
+      "status": "active",
+      "progress": 90,
+      "next": "① Render 환경변수 3개 (목사님·2분) ② 인스타 프로필 링크+출간 게시물 (목사님·5분)",
+      "tasks": [
+        {
+          "name": "31쪽 PDF + 표지 + 가격전략",
+          "done": true
+        },
+        {
+          "name": "스토어 정비 (9,900원 런칭가·컴플라이언스)",
+          "done": true
+        },
+        {
+          "name": "주문 이메일 알림 시스템",
+          "done": true
+        },
+        {
+          "name": "Render 환경변수 설정",
+          "done": false,
+          "owner": "목사님"
+        },
+        {
+          "name": "인스타 링크 교체 + 출간 게시물",
+          "done": false,
+          "owner": "목사님"
+        },
+        {
+          "name": "부크크 등록 (교보/예스24/알라딘 유통)",
+          "done": false,
+          "owner": "목사님"
+        },
+        {
+          "name": "크몽 등록",
+          "done": false,
+          "owner": "목사님"
+        }
+      ]
+    },
+    {
+      "id": "worship-ep01",
+      "station": "MINT",
+      "name": "Lighthouse Worship — EP01 「Rest / 안식」",
+      "status": "active",
+      "progress": 30,
+      "next": "Suno Pro에서 10곡 생성 (목사님·suno-ready.md 복붙) → 저장 후 JARVIS가 MP4 변환+유튜브 업로드 자동 실행",
+      "tasks": [
+        {
+          "name": "가사 10곡 (EN 6 + KR 4)",
+          "done": true
+        },
+        {
+          "name": "앨범 커버 (3000×3000)",
+          "done": true
+        },
+        {
+          "name": "Suno 프롬프트 (suno-ready.md)",
+          "done": true
+        },
+        {
+          "name": "Suno 음원 생성 10곡",
+          "done": false,
+          "owner": "목사님"
+        },
+        {
+          "name": "MP4 변환 + YouTube 업로드 (자동화 준비됨)",
+          "done": false,
+          "owner": "JARVIS"
+        },
+        {
+          "name": "DistroKid 제출 (스포티파이/멜론 유통)",
+          "done": false,
+          "owner": "목사님"
+        }
+      ]
+    },
+    {
+      "id": "forge-daily",
+      "station": "FORGE",
+      "name": "말씀카드·영상·SNS 데일리 자동화",
+      "status": "running",
+      "progress": 100,
+      "next": "무인 운영 중 — 이상 시 JARVIS가 보고",
+      "tasks": []
+    },
+    {
+      "id": "shepherd-church",
+      "station": "SHEPHERD",
+      "name": "동산교회 목회 시스템 (설교 283편·백업)",
+      "status": "running",
+      "progress": 100,
+      "next": "매일 05:30 자동 백업 운영 중",
+      "tasks": []
+    },
+    {
+      "id": "treasure-camp",
+      "station": "SHEPHERD",
+      "name": "보물캠프 어린이 1일 캠프 (7/18)",
+      "status": "active",
+      "progress": 70,
+      "next": "신청서+QR 완성 — 홍보 배포 및 신청 접수 확인",
+      "tasks": []
+    }
+  ],
+  "music": {
+    "ep": "EP01 Rest / 안식",
+    "channel": "Lighthouse Worship",
+    "stages": [
+      "가사",
+      "Suno",
+      "WAV",
+      "MP4",
+      "YouTube"
+    ],
+    "tracks": [
+      {
+        "no": 1,
+        "title": "Be Still",
+        "lang": "EN",
+        "lyrics": true,
+        "suno": false,
+        "wav": false,
+        "mp4": false,
+        "youtube": null
+      },
+      {
+        "no": 2,
+        "title": "Anchor for My Soul",
+        "lang": "EN",
+        "lyrics": true,
+        "suno": false,
+        "wav": false,
+        "mp4": false,
+        "youtube": null
+      },
+      {
+        "no": 3,
+        "title": "Rest in You",
+        "lang": "EN",
+        "lyrics": true,
+        "suno": false,
+        "wav": false,
+        "mp4": false,
+        "youtube": null
+      },
+      {
+        "no": 4,
+        "title": "Quiet Waters",
+        "lang": "EN",
+        "lyrics": true,
+        "suno": false,
+        "wav": false,
+        "mp4": false,
+        "youtube": null
+      },
+      {
+        "no": 5,
+        "title": "Morning Light",
+        "lang": "EN",
+        "lyrics": true,
+        "suno": false,
+        "wav": false,
+        "mp4": false,
+        "youtube": null
+      },
+      {
+        "no": 6,
+        "title": "Carry Me Home",
+        "lang": "EN",
+        "lyrics": true,
+        "suno": false,
+        "wav": false,
+        "mp4": false,
+        "youtube": null
+      },
+      {
+        "no": 7,
+        "title": "쉼",
+        "lang": "KR",
+        "lyrics": true,
+        "suno": false,
+        "wav": false,
+        "mp4": false,
+        "youtube": null
+      },
+      {
+        "no": 8,
+        "title": "잔잔한 물가",
+        "lang": "KR",
+        "lyrics": true,
+        "suno": false,
+        "wav": false,
+        "mp4": false,
+        "youtube": null
+      },
+      {
+        "no": 9,
+        "title": "다시 일어나",
+        "lang": "KR",
+        "lyrics": true,
+        "suno": false,
+        "wav": false,
+        "mp4": false,
+        "youtube": null
+      },
+      {
+        "no": 10,
+        "title": "평온",
+        "lang": "KR",
+        "lyrics": true,
+        "suno": false,
+        "wav": false,
+        "mp4": false,
+        "youtube": null
+      },
+      {
+        "no": 0,
+        "title": "Quiet Before You (보너스)",
+        "lang": "EN",
+        "lyrics": true,
+        "suno": true,
+        "wav": true,
+        "mp4": true,
+        "youtube": null
+      }
+    ]
+  },
+  "schedulers": [
+    {
+      "time": "시작 시",
+      "name": "DongsanChurch_BridgeServer / MainServer",
+      "station": "SHEPHERD"
+    },
+    {
+      "time": "05:00",
+      "name": "LighthouseMedia_DailyVideo",
+      "station": "FORGE"
+    },
+    {
+      "time": "05:30",
+      "name": "DongsanChurch_DailyBackup",
+      "station": "SHEPHERD"
+    },
+    {
+      "time": "06:00",
+      "name": "BibleCard / DailyResearch",
+      "station": "FORGE"
+    },
+    {
+      "time": "12:00",
+      "name": "DailyReels",
+      "station": "FORGE"
+    },
+    {
+      "time": "19:00",
+      "name": "Premium",
+      "station": "FORGE"
+    },
+    {
+      "time": "30분마다",
+      "name": "AutoEngage",
+      "station": "FORGE"
+    },
+    {
+      "time": "실패 시",
+      "name": "RetryIG",
+      "station": "FORGE"
+    },
+    {
+      "time": "주 1회",
+      "name": "TokenCheck",
+      "station": "FORGE"
+    }
+  ],
+  "links": [
+    {
+      "name": "🛒 스토어",
+      "url": "/shop.html"
+    },
+    {
+      "name": "📋 주문 관리",
+      "url": "/admin.html"
+    },
+    {
+      "name": "🏠 홈페이지",
+      "url": "/home.html"
+    },
+    {
+      "name": "📺 YouTube Studio",
+      "url": "https://studio.youtube.com"
+    },
+    {
+      "name": "📸 Instagram",
+      "url": "https://www.instagram.com/lighthouse_media77/"
+    },
+    {
+      "name": "⚙️ Render",
+      "url": "https://dashboard.render.com"
+    },
+    {
+      "name": "💻 GitHub",
+      "url": "https://github.com/ryussuny/lighthouse-media"
+    }
+  ]
+}
