@@ -128,20 +128,20 @@
         "title": "Be Still",
         "lang": "EN",
         "lyrics": true,
-        "suno": false,
-        "wav": false,
-        "mp4": false,
-        "youtube": null
+        "suno": true,
+        "wav": true,
+        "mp4": true,
+        "youtube": "E_3JNNkg964"
       },
       {
         "no": 2,
         "title": "Anchor for My Soul",
         "lang": "EN",
         "lyrics": true,
-        "suno": false,
-        "wav": false,
-        "mp4": false,
-        "youtube": null
+        "suno": true,
+        "wav": true,
+        "mp4": true,
+        "youtube": "8EqyYgihDwk"
       },
       {
         "no": 3,
