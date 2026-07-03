@@ -19,7 +19,8 @@ from googleapiclient.http import MediaFileUpload
 HOME = os.path.expanduser("~")
 MUSIC = os.path.join(HOME, "lighthouse-biz", "music", "pilot-ep01")
 AUDIO = os.path.join(MUSIC, "audio")
-COVER = os.path.join(MUSIC, "cover", "cover.png")
+COVER = os.path.join(MUSIC, "cover", "cover.png")            # 폴백 커버
+COVERS = os.path.join(MUSIC, "cover", "tracks")               # 곡별 커버
 BOARD = os.path.join(HOME, "lighthouse-media", "config", "jarvis-board.json")
 TOKEN = os.path.join(HOME, "OneDrive", "바탕 화면", "lighthouse_media", "token_lighthouse.json")
 
@@ -66,13 +67,89 @@ def track_of(board, no):
         if t["no"] == no: return t
     return None
 
-def make_mp4(wav, mp4):
-    """커버 정지화면 + 오디오 → 1080p mp4"""
-    cmd = ["ffmpeg", "-y", "-loop", "1", "-i", COVER, "-i", wav,
+def cover_for(no):
+    """곡별 커버 (없으면 공용 커버)"""
+    p = os.path.join(COVERS, f"{CANON[no]}.png")
+    return p if os.path.exists(p) else COVER
+
+def parse_lyric_lines(no):
+    """가사 md → 순수 가사 라인 목록 ([섹션] 마커·frontmatter 제외)"""
+    import glob
+    pats = glob.glob(os.path.join(MUSIC, "lyrics", f"{no:02d}-*.md"))
+    if not pats: return []
+    lines, in_fm = [], False
+    for raw in open(pats[0], encoding="utf-8").read().splitlines():
+        s = raw.strip()
+        if s == "---": in_fm = not in_fm; continue
+        if in_fm or not s or s.startswith("[") or s.startswith("#"): continue
+        lines.append(s)
+    return lines
+
+def _norm_txt(s):
+    return re.sub(r"[^0-9a-z가-힣]", "", s.lower())
+
+_WHISPER = None
+def make_subs(wav, no, ass_path):
+    """Whisper로 보컬 타이밍 추출 → 가사 라인과 매칭 → ASS 자막 생성"""
+    global _WHISPER
+    import difflib
+    from faster_whisper import WhisperModel
+    if _WHISPER is None:
+        _WHISPER = WhisperModel("small", device="cpu", compute_type="int8")
+    segments, _info = _WHISPER.transcribe(wav, vad_filter=False)  # VAD는 노래를 음성 아님으로 오판
+
+    lines = parse_lyric_lines(no)
+    events, li = [], 0
+    for seg in segments:
+        text = seg.text.strip()
+        if not text: continue
+        if lines:
+            best, bscore = None, 0.0
+            for j in range(max(0, li - 1), min(li + 5, len(lines))):
+                r = difflib.SequenceMatcher(None, _norm_txt(text), _norm_txt(lines[j])).ratio()
+                if r > bscore: bscore, best = r, j
+            if bscore >= 0.30:
+                text, li = lines[best], best
+        events.append([seg.start, seg.end, text])
+    if not events: return False
+
+    # 같은 문장 연속 구간 병합
+    merged = [events[0]]
+    for s, e, t in events[1:]:
+        if t == merged[-1][2] and s - merged[-1][1] < 2.0: merged[-1][1] = e
+        else: merged.append([s, e, t])
+
+    def ts(t):
+        h = int(t // 3600); m = int(t % 3600 // 60); sec = t % 60
+        return f"{h}:{m:02d}:{sec:05.2f}"
+
+    style = ("[Script Info]\nPlayResX: 1920\nPlayResY: 1080\nWrapStyle: 0\n\n"
+             "[V4+ Styles]\n"
+             "Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, "
+             "BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
+             "Style: Lyric,Malgun Gothic,58,&H00FFFFFF,&H00000000,&H96000000,-1,1,0,2,2,80,80,64,1\n\n"
+             "[Events]\nFormat: Layer, Start, End, Style, Text\n")
+    with open(ass_path, "w", encoding="utf-8") as f:
+        f.write(style)
+        for s, e, t in merged:
+            t = t.replace("{", "").replace("}", "")
+            f.write(f"Dialogue: 0,{ts(s)},{ts(e)},Lyric,{{\\fad(250,250)}}{t}\n")
+    return True
+
+def make_mp4(wav, mp4, no):
+    """곡별 커버 정지화면 + 오디오 + 가사 자막 → 1080p mp4"""
+    vf = "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black"
+    ass_name = f"{CANON[no]}.ass"
+    ass_path = os.path.join(AUDIO, ass_name)
+    try:
+        if make_subs(wav, no, ass_path):
+            vf += f",ass={ass_name}"  # 상대경로 (cwd=AUDIO) — 윈도우 경로 이스케이프 회피
+    except Exception as e:
+        print(f"   ⚠️ 자막 생성 실패(자막 없이 진행): {e}")
+    cmd = ["ffmpeg", "-y", "-loop", "1", "-i", cover_for(no), "-i", wav,
            "-c:v", "libx264", "-tune", "stillimage", "-c:a", "aac", "-b:a", "256k",
-           "-pix_fmt", "yuv420p", "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black",
-           "-shortest", mp4]
-    subprocess.run(cmd, check=True, capture_output=True)
+           "-pix_fmt", "yuv420p", "-vf", vf, "-shortest", mp4]
+    subprocess.run(cmd, check=True, capture_output=True, cwd=AUDIO)
 
 def yt_client():
     creds = Credentials.from_authorized_user_info(json.load(open(TOKEN)))
@@ -93,11 +170,25 @@ def lyrics_snippet(no):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--rebuild", action="store_true", help="기존 업로드 영상을 새 커버+자막 버전으로 교체 (구버전은 비공개 전환)")
     args = ap.parse_args()
 
     board = load_board()
     yt = None
     done, skipped = 0, 0
+
+    if args.rebuild and not args.dry_run:
+        yt = yt_client()
+        for t in board["music"]["tracks"]:
+            if t.get("youtube"):
+                old = t["youtube"]
+                print(f"🔒 구버전 비공개 전환: {t['title']} ({old})")
+                yt.videos().update(part="status", body={
+                    "id": old, "status": {"privacyStatus": "private", "selfDeclaredMadeForKids": False}}).execute()
+                t["youtube"] = None
+                mp4 = os.path.join(AUDIO, f"{CANON[t['no']]}-youtube.mp4")
+                if os.path.exists(mp4): os.remove(mp4)
+        save_board(board)
 
     for fname in sorted(os.listdir(AUDIO)):
         base, ext = os.path.splitext(fname)
@@ -110,11 +201,11 @@ def main():
 
         t["suno"] = True; t["wav"] = True
 
-        # 1) MP4 준비 (표준 슬러그 이름으로 생성)
+        # 1) MP4 준비 (표준 슬러그 이름으로 생성 — 곡별 커버 + 가사 자막)
         mp4 = os.path.join(AUDIO, f"{CANON[no]}-youtube.mp4")
         if not os.path.exists(mp4):
-            print(f"🎬 MP4 변환: {t['title']}")
-            if not args.dry_run: make_mp4(os.path.join(AUDIO, fname), mp4)
+            print(f"🎬 MP4 변환 (커버+자막): {t['title']}")
+            if not args.dry_run: make_mp4(os.path.join(AUDIO, fname), mp4, no)
         t["mp4"] = True
 
         # 2) 업로드 (이미 업로드된 트랙은 건너뜀)
