@@ -23,7 +23,7 @@ COVER = os.path.join(MUSIC, "cover", "cover.png")
 BOARD = os.path.join(HOME, "lighthouse-media", "config", "jarvis-board.json")
 TOKEN = os.path.join(HOME, "OneDrive", "바탕 화면", "lighthouse_media", "token_lighthouse.json")
 
-# 파일명 → 보드 트랙 매칭 (audio 파일 슬러그 → 트랙 번호)
+# 파일명 → 보드 트랙 매칭 (슬러그 또는 곡 제목 어느 쪽으로 저장해도 인식)
 SLUGS = {
     "01-be-still": 1, "02-anchor-for-my-soul": 2, "03-rest-in-you": 3,
     "04-quiet-waters": 4, "05-morning-light": 5, "06-carry-me-home": 6,
@@ -31,6 +31,29 @@ SLUGS = {
     "09-dasi-ireona": 9, "10-pyeongon": 10,
     "quiet-before-you": 0,
 }
+CANON = {1:"01-be-still", 2:"02-anchor-for-my-soul", 3:"03-rest-in-you",
+         4:"04-quiet-waters", 5:"05-morning-light", 6:"06-carry-me-home",
+         7:"07-shim", 8:"08-janjanhan-mulga", 9:"09-dasi-ireona",
+         10:"10-pyeongon", 0:"quiet-before-you"}
+TITLES = {  # 정규화된 제목 → 트랙 번호
+    "bestill": 1, "anchorformysoul": 2, "restinyou": 3, "quietwaters": 4,
+    "morninglight": 5, "carrymehome": 6, "쉼": 7, "잔잔한물가": 8,
+    "다시일어나": 9, "평온": 10, "quietbeforeyou": 0,
+}
+
+def norm(s):
+    """소문자화 + 공백/구두점 제거 (한글 유지)"""
+    return re.sub(r"[^0-9a-z가-힣]", "", s.lower())
+
+def match_no(base):
+    b = base.replace("-youtube", "")
+    if b in SLUGS: return SLUGS[b]
+    n = norm(b)
+    if n in TITLES: return TITLES[n]
+    # 부분 일치 (Suno가 "Be Still (v2)" 같은 접미사를 붙이는 경우)
+    for k, v in TITLES.items():
+        if n.startswith(k) or k in n: return v
+    return None
 
 def load_board():
     with open(BOARD, encoding="utf-8") as f: return json.load(f)
@@ -78,9 +101,8 @@ def main():
 
     for fname in sorted(os.listdir(AUDIO)):
         base, ext = os.path.splitext(fname)
-        base_clean = base.replace("-youtube", "")
         if ext.lower() not in (".wav", ".mp3", ".m4a"): continue
-        no = SLUGS.get(base_clean)
+        no = match_no(base)
         if no is None:
             print(f"⚠️  매칭 안 됨 (건너뜀): {fname}"); continue
         t = track_of(board, no)
@@ -88,8 +110,8 @@ def main():
 
         t["suno"] = True; t["wav"] = True
 
-        # 1) MP4 준비
-        mp4 = os.path.join(AUDIO, f"{base_clean}-youtube.mp4")
+        # 1) MP4 준비 (표준 슬러그 이름으로 생성)
+        mp4 = os.path.join(AUDIO, f"{CANON[no]}-youtube.mp4")
         if not os.path.exists(mp4):
             print(f"🎬 MP4 변환: {t['title']}")
             if not args.dry_run: make_mp4(os.path.join(AUDIO, fname), mp4)
