@@ -38,7 +38,7 @@ CANON = {1:"01-be-still", 2:"02-anchor-for-my-soul", 3:"03-rest-in-you",
          10:"10-pyeongon", 0:"quiet-before-you"}
 TITLES = {  # 정규화된 제목 → 트랙 번호
     "bestill": 1, "anchorformysoul": 2, "restinyou": 3, "quietwaters": 4,
-    "morninglight": 5, "carrymehome": 6, "쉼": 7, "잔잔한물가": 8,
+    "morninglight": 5, "carrymehome": 6, "쉼": 7, "잠잠하라": 7, "잔잔한물가": 8,
     "다시일어나": 9, "평온": 10, "quietbeforeyou": 0,
 }
 
@@ -49,6 +49,9 @@ def norm(s):
 def match_no(base):
     b = base.replace("-youtube", "")
     if b in SLUGS: return SLUGS[b]
+    # "3. Rest in You" / "07 쉼" 같은 번호 접두사 우선 인식
+    m = re.match(r"^\s*(\d{1,2})[.\s\-_]", b)
+    if m and 1 <= int(m.group(1)) <= 10: return int(m.group(1))
     n = norm(b)
     if n in TITLES: return TITLES[n]
     # 부분 일치 (Suno가 "Be Still (v2)" 같은 접미사를 붙이는 경우)
@@ -212,10 +215,13 @@ def main():
         if t.get("youtube"):
             skipped += 1; continue
         title = f"{t['title']} — Lighthouse Worship (Official Audio)"
-        desc = (f"{t['title']} · EP01 「Rest / 안식」\n"
-                f"Lighthouse Worship — 쉼이 필요한 당신을 위한 묵상 음악\n\n"
-                f"{lyrics_snippet(no) if no else ''}\n\n"
-                f"#worship #ccm #묵상음악 #찬양 #LighthouseWorship")
+        desc = (f"{t['title']} · EP01 「Rest / 안식」 — Lighthouse Worship\n"
+                f"쉼이 필요한 당신을 위한 묵상 워십\n\n"
+                f"🎧 전곡 연속듣기: https://youtube.com/playlist?list=PLTt-NE3XVRRs\n"
+                f"🔔 구독하시면 새로운 묵상 워십을 가장 먼저 들으실 수 있습니다.\n\n"
+                f"[가사]\n{lyrics_snippet(no) if no else ''}\n\n"
+                f"* 본 음원은 AI 작곡 도구의 도움을 받아 제작되었습니다.\n\n"
+                f"#worship #ccm #찬양 #묵상음악 #수면음악 #기도음악 #LighthouseWorship")
         print(f"📤 업로드: {title}")
         if args.dry_run:
             done += 1; continue
