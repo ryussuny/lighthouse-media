@@ -851,7 +851,7 @@
         <li><a href="#ebooks">전자책</a></li>
         <li><a href="#newsletter">뉴스레터</a></li>
         <li><a href="#channels">채널</a></li>
-        <li><a href="/shop.html" style="background:#C48220;color:#fff !important;padding:9px 18px;border-radius:999px;font-weight:700;">🛒 스토어</a></li>
+        <li><a href="#store" style="background:#C48220;color:#fff !important;padding:9px 18px;border-radius:999px;font-weight:700;">🛒 스토어</a></li>
       </ul>
       <button class="hamburger" id="hamburger" aria-label="메뉴 열기">
         <span></span><span></span><span></span>
@@ -986,24 +986,73 @@
     </div>
   </section>
 
-  <!-- ═══════ FEATURED BOOK ═══════ -->
-  <section id="featured" style="padding:72px 24px;background:linear-gradient(135deg,#16223f,#2C3E6B);">
-    <div style="max-width:880px;margin:0 auto;display:flex;gap:44px;align-items:center;flex-wrap:wrap;justify-content:center;">
-      <a href="/shop.html" style="flex-shrink:0;">
-        <img src="/cover-monday.jpg" alt="월요일이 기다려지는 사람들의 비밀 표지" style="width:210px;border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,0.45);display:block;transition:transform .3s;" onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform='none'">
-      </a>
-      <div style="max-width:440px;color:#fff;">
-        <span style="display:inline-block;background:#C48220;color:#fff;font-size:12px;font-weight:800;letter-spacing:1.5px;padding:6px 14px;border-radius:999px;margin-bottom:16px;">신간 · 런칭 특가</span>
-        <h2 style="font-size:30px;font-weight:800;line-height:1.3;letter-spacing:-0.5px;margin-bottom:10px;">월요일이 기다려지는<br>사람들의 비밀</h2>
-        <p style="color:#C9D3E6;font-size:15px;margin-bottom:20px;">번아웃 없이 일하는 직장인의 마인드셋과 루틴<br>10가지 실천 전략 + 워크시트 2종 (PDF 31쪽)</p>
-        <div style="margin-bottom:22px;">
-          <span style="color:#8FA0BF;text-decoration:line-through;font-size:15px;">14,900원</span>
-          <span style="font-size:28px;font-weight:800;color:#F5C562;margin-left:8px;">9,900원</span>
+  <!-- ═══════ STORE (통합 스토어) ═══════ -->
+  <section id="store" style="padding:72px 24px 80px;background:linear-gradient(135deg,#16223f,#2C3E6B);">
+    <div style="max-width:880px;margin:0 auto;">
+      <div style="display:flex;gap:44px;align-items:center;flex-wrap:wrap;justify-content:center;">
+        <img src="/cover-monday.jpg" alt="월요일이 기다려지는 사람들의 비밀 표지" style="width:220px;border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,0.45);display:block;">
+        <div style="max-width:460px;color:#fff;">
+          <span style="display:inline-block;background:#C48220;color:#fff;font-size:12px;font-weight:800;letter-spacing:1.5px;padding:6px 14px;border-radius:999px;margin-bottom:16px;">신간 전자책 · 런칭 특가</span>
+          <h2 style="font-size:30px;font-weight:800;line-height:1.3;letter-spacing:-0.5px;margin-bottom:10px;">월요일이 기다려지는<br>사람들의 비밀</h2>
+          <p style="color:#C9D3E6;font-size:15px;margin-bottom:18px;">번아웃 없이 일하는 직장인의 마인드셋과 루틴<br>10챕터 · PDF 31쪽 · 워크시트 2종 포함</p>
+          <ul style="list-style:none;color:#C9D3E6;font-size:14px;margin-bottom:20px;line-height:1.9;">
+            <li>✓ 월요일 부담을 줄이는 일요일 저녁 15분 루틴</li>
+            <li>✓ 번아웃 없이 성과 내는 에너지 관리법</li>
+            <li>✓ 의지력 없이도 작동하는 루틴 시스템</li>
+            <li>✓ 30일 실천 워크시트 + 응급 처치 가이드</li>
+          </ul>
+          <div style="margin-bottom:20px;">
+            <span style="color:#8FA0BF;text-decoration:line-through;font-size:15px;">14,900원</span>
+            <span style="font-size:30px;font-weight:800;color:#F5C562;margin-left:8px;">9,900원</span>
+            <span style="font-size:13px;color:#C48220;font-weight:700;margin-left:6px;">33% 할인</span>
+          </div>
+          <button onclick="openBuy()" style="background:#C48220;color:#fff;font-size:17px;font-weight:800;border:none;cursor:pointer;padding:16px 44px;border-radius:12px;">지금 구매하기</button>
+          <p style="font-size:12.5px;color:#8FA0BF;margin-top:12px;">💳 계좌이체 · 입금 확인 후 이메일로 PDF 발송 · <b style="color:#C9D3E6;">7일 이내 100% 환불 보장</b></p>
         </div>
-        <a href="/shop.html" style="display:inline-block;background:#C48220;color:#fff;font-size:16px;font-weight:800;text-decoration:none;padding:15px 36px;border-radius:12px;">자세히 보기 →</a>
       </div>
     </div>
   </section>
+
+  <!-- 구매 모달 -->
+  <div id="buyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:2000;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#fff;color:#2a2a2a;max-width:420px;width:100%;border-radius:16px;padding:28px;position:relative;">
+      <button onclick="closeBuy()" style="position:absolute;top:12px;right:16px;font-size:24px;background:none;border:none;cursor:pointer;color:#999;">&times;</button>
+      <h3 style="font-size:19px;font-weight:800;margin-bottom:6px;">전자책 구매</h3>
+      <p style="font-size:13.5px;color:#666;">입금 확인 후 이메일로 PDF를 보내드립니다</p>
+      <div style="background:#f5f5f5;border-radius:10px;padding:16px;margin:16px 0;font-size:13.5px;line-height:1.9;">
+        <b style="color:#1D9E75;">계좌이체 안내</b><br>
+        은행: <b>농협</b> · 예금주: <b>류선희</b><br>
+        계좌: <b>185-12-226647</b><br>
+        금액: <b>9,900원</b> <span style="color:#888;font-size:12px;">(런칭 특가)</span>
+      </div>
+      <input id="byName" type="text" placeholder="입금자명" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px;">
+      <input id="byEmail" type="email" placeholder="이메일 (PDF 수신용)" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:8px;">
+      <input id="byPhone" type="tel" placeholder="연락처 (선택)" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px;">
+      <button id="byBtn" onclick="submitBuy()" style="width:100%;background:#1D9E75;color:#fff;padding:14px;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;">입금 확인 요청</button>
+      <p style="font-size:11px;color:#999;margin-top:10px;">입금 확인 후 1시간 이내 PDF 발송 · 문의: lighthouse.media.kr@gmail.com</p>
+      <div id="byResult" style="display:none;margin-top:14px;padding:14px;background:#e8f8f0;border-radius:8px;font-size:13.5px;">
+        <b style="color:#1D9E75;">주문이 접수되었습니다!</b><br>입금 확인 후 이메일로 PDF를 보내드립니다.
+      </div>
+    </div>
+  </div>
+  <script>
+    function openBuy(){ document.getElementById('buyModal').style.display='flex'; }
+    function closeBuy(){ document.getElementById('buyModal').style.display='none'; }
+    document.getElementById('buyModal').addEventListener('click', function(e){ if(e.target===this) closeBuy(); });
+    function submitBuy(){
+      const name = document.getElementById('byName').value.trim();
+      const email = document.getElementById('byEmail').value.trim();
+      if(!name || !email){ alert('입금자명과 이메일을 입력해주세요.'); return; }
+      fetch('/api/order', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ name, email, phone: document.getElementById('byPhone').value.trim(),
+          amount: 9900, product: '월요일이 기다려지는 사람들의 비밀' })
+      }).finally(() => {
+        document.getElementById('byResult').style.display='block';
+        const b = document.getElementById('byBtn');
+        b.textContent='접수 완료'; b.disabled=true; b.style.background='#888';
+      });
+    }
+  </script>
 
   <!-- ═══════ EBOOK LIBRARY ═══════ -->
   <section class="ebook-section" id="ebooks">
@@ -1148,7 +1197,7 @@
           <div class="footer-col">
             <h4>콘텐츠</h4>
             <a href="#ebooks">전자책</a>
-            <a href="/shop.html">판매페이지</a>
+            <a href="#store">스토어</a>
           </div>
           <div class="footer-col">
             <h4>회사</h4>
