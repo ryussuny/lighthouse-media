@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JARVIS 관제탑 — Lighthouse</title>
+<link rel="manifest" href="/jarvis.webmanifest">
+<meta name="theme-color" content="#0d1220">
 <style>
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -74,6 +76,30 @@
 </head>
 <body>
 
+<!-- PIN 잠금 -->
+<div id="pinGate" style="display:none;position:fixed;inset:0;background:#0d1220;z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:18px;">
+  <div style="font-size:40px;">🗼</div>
+  <div style="font-size:16px;font-weight:700;color:#8fa0bf;">JARVIS 관제탑 — PIN 입력</div>
+  <input id="pinInput" type="password" inputmode="numeric" maxlength="4" style="width:160px;font-size:28px;text-align:center;letter-spacing:12px;background:#131a2e;border:1px solid #263659;border-radius:12px;color:#F5C562;padding:14px;outline:none;">
+  <div id="pinErr" style="color:#F56262;font-size:13px;height:18px;"></div>
+</div>
+<script>
+(function(){
+  const PIN = '1216';
+  if (localStorage.getItem('jarvisPin') === PIN) return;
+  const gate = document.getElementById('pinGate');
+  gate.style.display = 'flex';
+  const inp = document.getElementById('pinInput');
+  setTimeout(()=>inp.focus(), 100);
+  inp.addEventListener('input', () => {
+    if (inp.value.length === 4) {
+      if (inp.value === PIN) { localStorage.setItem('jarvisPin', PIN); gate.style.display='none'; }
+      else { document.getElementById('pinErr').textContent = 'PIN이 올바르지 않습니다'; inp.value=''; }
+    }
+  });
+})();
+</script>
+
 <header>
   <div class="wrap">
     <h1>🗼 JARVIS <span>관제탑</span></h1>
@@ -113,6 +139,10 @@
   <!-- 최근 주문 -->
   <h2>최근 주문</h2>
   <ul class="orders" id="orders"><li class="empty">주문이 들어오면 여기 표시됩니다</li></ul>
+
+  <!-- 시스템 상태 (하트비트) -->
+  <h2>🖥️ 시스템 상태 <span id="hbAge" style="font-size:11px;color:#5a6785;font-weight:400;"></span></h2>
+  <div class="sched" id="sysStatus"><div>하트비트 수신 대기 중… (30분 주기)</div></div>
 
   <!-- 스케줄러 -->
   <h2>자동화 스케줄러</h2>
@@ -172,6 +202,22 @@ async function load() {
       document.getElementById('orders').innerHTML = d.orders.slice(-5).reverse().map(o => `
         <li><span>#${o.id} ${o.name} <small style="color:#5a6785">${(o.created||'').slice(0,16).replace('T',' ')}</small></span>
         <span><span class="amt">${won(o.amount)}</span> <small style="color:${o.status==='confirmed'?'#6fe58f':'#F5C562'}">${o.status==='confirmed'?'입금확인':'대기'}</small></span></li>`).join('');
+    }
+
+    /* 시스템 상태 (하트비트) */
+    const hb = d.heartbeat;
+    if (hb) {
+      const age = Math.round((Date.now() - new Date(hb.received).getTime()) / 60000);
+      document.getElementById('hbAge').textContent = age <= 60 ? `(${age}분 전 수신)` : `⚠️ ${Math.round(age/60)}시간 전 수신 — PC 확인 필요`;
+      const dot = ok => `<span style="color:${ok?'#6fe58f':'#F56262'};">${ok?'●':'●'}</span>`;
+      let html = '';
+      html += `<div>${dot(hb.church_server_up)} 동산교회 서버 <b>${hb.church_server_up?'정상':'중단'}</b></div>`;
+      html += `<div>${dot(!!hb.church_backup_last)} 교회 백업 <b>${hb.church_backup_last||'기록 없음'}</b></div>`;
+      html += `<div>${dot(true)} 오늘 생성 콘텐츠 <b>${hb.today_output_files}개</b></div>`;
+      (hb.schedulers||[]).forEach(s => {
+        html += `<div>${dot(s.ok)} ${s.name.replace('LighthouseMedia_','LH_').replace('DongsanChurch_','교회_')} <b>${s.ok?'정상':'점검필요'}</b></div>`;
+      });
+      document.getElementById('sysStatus').innerHTML = html;
     }
 
     /* 스케줄러 */

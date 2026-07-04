@@ -91,11 +91,18 @@ app.get("/api/ebooks", (req, res) => {
   res.json(all);
 });
 
+// 로컬 시스템 하트비트 (JARVIS PC → 관제탑, 30분마다)
+let lastHeartbeat = null;
+app.post("/api/heartbeat", (req, res) => {
+  lastHeartbeat = { ...req.body, received: new Date().toISOString() };
+  res.json({ ok: true });
+});
+
 // JARVIS 관제탑: 프로젝트 보드 + 실시간 지표 통합
 app.get("/api/jarvis", (req, res) => {
   const boardFile = join(__dirname, "..", "config", "jarvis-board.json");
   const board = existsSync(boardFile) ? JSON.parse(readFileSync(boardFile, "utf-8")) : { projects: [], music: { tracks: [] }, schedulers: [], links: [], goal: { monthly: 5000000 }, updated: "-" };
-  res.json({ board, metrics: getRealMetrics(), orders: getOrders() });
+  res.json({ board, metrics: getRealMetrics(), orders: getOrders(), heartbeat: lastHeartbeat });
 });
 
 // 메인 페이지를 홈페이지로 리디렉트
