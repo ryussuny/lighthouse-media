@@ -35,12 +35,24 @@ const server = createServer(app);
 const io = new Server(server);
 
 app.use(express.json());
+
+// 유료 전자책 직접 접근 차단 → 스토어로 (구매 후 이메일 발송)
+app.use((req, res, next) => {
+  if (/^\/ebooks\/[^/]+\/paid-.*\.html$/i.test(req.path)) {
+    return res.redirect("/home.html#store");
+  }
+  next();
+});
+
 app.use(express.static(join(__dirname, "public")));
 
 // 전자책 다운로드 요청 (팔로우+좋아요 확인 후 발송)
 app.post("/api/ebook-request", (req, res) => {
   const { name, email, instagram_handle, ebook_slug, confirmed_follow, confirmed_like } = req.body;
   if (!email) return res.status(400).json({ error: "이메일 필수" });
+  if (/^paid-/i.test(ebook_slug || "")) {
+    return res.status(403).json({ error: "유료 전자책은 스토어에서 구매해 주세요.", redirect: "/home.html#store" });
+  }
 
   const requestsFile = join(dataDir, "ebook-requests.json");
   const reqs = existsSync(requestsFile) ? JSON.parse(readFileSync(requestsFile, "utf-8")) : [];
@@ -81,7 +93,7 @@ app.get("/api/ebooks", (req, res) => {
   if (!existsSync(ebooksDir)) return res.json([]);
   const dates = readdirSync(ebooksDir).filter(d => /\d{4}-\d{2}-\d{2}/.test(d)).sort().reverse();
   const all = [];
-  for (const date of dates.slice(0, 7)) {
+  for (const date of dates) {
     const indexFile = join(ebooksDir, date, "index.json");
     if (existsSync(indexFile)) {
       const data = JSON.parse(readFileSync(indexFile, "utf-8"));
