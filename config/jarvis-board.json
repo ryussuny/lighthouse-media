@@ -98,11 +98,24 @@
     {
       "id": "shepherd-church",
       "station": "SHEPHERD",
-      "name": "동산교회 목회 시스템 (설교 283편·백업)",
+      "name": "동산교회 목회 시스템 — 통합 포털",
       "status": "running",
       "progress": 100,
-      "next": "매일 05:30 자동 백업 운영 중",
-      "tasks": []
+      "next": "포털 가동: localhost:4000/portal.html (통합검색·현황). 백업/브리지 고장 수리 완료(7/4)",
+      "tasks": [
+        {
+          "name": "통합 포털 구축 (교인·설교·말씀 통합검색)",
+          "done": true
+        },
+        {
+          "name": "백업 스케줄러 수리 (python→py, 7/2 이후 공백 복구)",
+          "done": true
+        },
+        {
+          "name": "브리지 서버 수리",
+          "done": true
+        }
+      ]
     },
     {
       "id": "treasure-camp",
@@ -239,6 +252,11 @@
   },
   "schedulers": [
     {
+      "time": "30분마다",
+      "name": "JARVIS_Heartbeat — 시스템 상태 관제탑 보고",
+      "station": "JARVIS"
+    },
+    {
       "time": "매시간",
       "name": "MusicUpload — 새 음원 자동 유튜브 업로드",
       "station": "MINT"
@@ -247,11 +265,6 @@
       "time": "시작 시",
       "name": "DongsanChurch_BridgeServer / MainServer",
       "station": "SHEPHERD"
-    },
-    {
-      "time": "05:00",
-      "name": "LighthouseMedia_DailyVideo",
-      "station": "FORGE"
     },
     {
       "time": "05:30",
@@ -293,6 +306,10 @@
     {
       "name": "🛒 스토어",
       "url": "/shop.html"
+    },
+    {
+      "name": "⛪ 교회 포털 (교회PC)",
+      "url": "http://localhost:4000/portal.html"
     },
     {
       "name": "📋 주문 관리",

@@ -9,25 +9,28 @@ HOME = os.path.expanduser("~")
 TOWER = "https://lighthouse-media.onrender.com/api/heartbeat"
 
 TASKS = [
-    "LighthouseMedia_MusicUpload", "LighthouseMedia_DailyVideo",
+    "LighthouseMedia_MusicUpload", "LighthouseMedia_BibleCard", "LighthouseMedia_DailyReels",
+    "LighthouseMedia_Premium", "LighthouseMedia_AutoEngage",
     "DongsanChurch_DailyBackup", "DongsanChurch_BridgeServer", "DongsanChurch_MainServer",
 ]
 
 def task_status(name):
+    """PowerShell Get-ScheduledTaskInfo — 로케일 무관, 신뢰 가능"""
     try:
-        out = subprocess.run(["schtasks", "/query", "/tn", name, "/fo", "csv", "/v"],
-                             capture_output=True, text=True, encoding="cp949", errors="ignore")
-        if out.returncode != 0: return {"name": name, "ok": False, "note": "없음"}
-        lines = out.stdout.strip().splitlines()
-        if len(lines) < 2: return {"name": name, "ok": False, "note": "?"}
-        import csv as _csv
-        rows = list(_csv.reader(lines))
-        hdr, val = rows[0], rows[1]
-        d = dict(zip(hdr, val))
-        last_run = d.get("마지막 실행 시간") or d.get("Last Run Time") or ""
-        result = d.get("마지막 결과") or d.get("Last Result") or ""
-        ok = result.strip() in ("0", "267009", "267014")  # 0=성공, 26700x=실행중/대기
-        return {"name": name, "ok": ok, "last": last_run.strip(), "code": result.strip()}
+        ps = (f"Get-ScheduledTask -TaskName '{name}' | Get-ScheduledTaskInfo | "
+              f"Select-Object LastRunTime,LastTaskResult | ConvertTo-Json")
+        out = subprocess.run(["powershell", "-NoProfile", "-Command", ps],
+                             capture_output=True, text=True, timeout=30)
+        if out.returncode != 0 or not out.stdout.strip():
+            return {"name": name, "ok": False, "note": "작업 없음"}
+        d = json.loads(out.stdout)
+        code = int(d.get("LastTaskResult", -1))
+        # 0=성공, 267009=실행중, 267011=아직 미실행, 267014=중지됨(수동)
+        ok = code in (0, 267009, 267011)
+        lr = d.get("LastRunTime") or ""
+        if isinstance(lr, str) and lr.startswith("/Date("):
+            ms = int(lr[6:-2]); lr = datetime.datetime.fromtimestamp(ms/1000).strftime("%m/%d %H:%M")
+        return {"name": name, "ok": ok, "last": str(lr), "code": str(code)}
     except Exception as e:
         return {"name": name, "ok": False, "note": str(e)[:40]}
 
