@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-02",
+  "updated": "2026-07-03",
   "goal": {
     "monthly": 5000000,
     "label": "월 500만원"
@@ -52,8 +52,8 @@
       "station": "MINT",
       "name": "Lighthouse Worship — EP01 「Rest / 안식」",
       "status": "active",
-      "progress": 85,
-      "next": "DistroKid 제출 (목사님) — 10곡 WAV + 커버 준비 완료, AI 고지 체크 필수. 제출하면 2주 후 스포티파이/애플뮤직/멜론 발매",
+      "progress": 90,
+      "next": "DistroKid 제출 (목사님·20분) — 이것만 하면 스포티파이/애플뮤직/멜론 발매",
       "tasks": [
         {
           "name": "가사 10곡 (EN 6 + KR 4)",
@@ -69,6 +69,14 @@
         },
         {
           "name": "YouTube 전곡 발매 (커버+가사자막 영상 11개)",
+          "done": true
+        },
+        {
+          "name": "믹스 2종 (전곡 연속·2시간) + 재생목록 + 검색 최적화",
+          "done": true
+        },
+        {
+          "name": "쇼츠 11개 발행 (후렴 하이라이트+가사)",
           "done": true
         },
         {
