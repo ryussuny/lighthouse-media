@@ -11,8 +11,8 @@ TOWER = "https://lighthouse-media.onrender.com/api/heartbeat"
 TASKS = [
     "LighthouseMedia_MusicUpload", "LighthouseMedia_BibleCard", "LighthouseMedia_DailyReels",
     "LighthouseMedia_Premium", "LighthouseMedia_AutoEngage",
-    "DongsanChurch_DailyBackup", "DongsanChurch_BridgeServer", "DongsanChurch_MainServer",
-]
+    "DongsanChurch_DailyBackup",
+]  # 서버형(Bridge/Main)은 작업코드 대신 실제 포트로 확인
 
 def task_status(name):
     """PowerShell Get-ScheduledTaskInfo — 로케일 무관, 신뢰 가능"""
@@ -43,12 +43,20 @@ def latest_backup():
     except Exception:
         return None
 
-def church_server():
+def port_up(url):
     try:
-        with urllib.request.urlopen("http://localhost:4000/api/server-info", timeout=3) as r:
-            return r.status == 200
+        with urllib.request.urlopen(url, timeout=3) as r:
+            return True
+    except urllib.error.HTTPError:
+        return True  # 응답 자체가 오면 살아있는 것 (404 포함)
     except Exception:
         return False
+
+def church_server():
+    return port_up("http://localhost:4000/api/server-info")
+
+def bridge_server():
+    return port_up("http://localhost:5555/")
 
 def today_output():
     today = datetime.date.today().strftime("%Y-%m-%d")
@@ -64,6 +72,7 @@ def main():
         "schedulers": [task_status(t) for t in TASKS],
         "church_backup_last": latest_backup(),
         "church_server_up": church_server(),
+        "bridge_up": bridge_server(),
         "today_output_files": today_output(),
     }
     req = urllib.request.Request(TOWER, data=json.dumps(payload).encode(),

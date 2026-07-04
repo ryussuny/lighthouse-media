@@ -212,6 +212,7 @@ async function load() {
       const dot = ok => `<span style="color:${ok?'#6fe58f':'#F56262'};">${ok?'●':'●'}</span>`;
       let html = '';
       html += `<div>${dot(hb.church_server_up)} 동산교회 서버 <b>${hb.church_server_up?'정상':'중단'}</b></div>`;
+      html += `<div>${dot(hb.bridge_up)} AI 브리지 서버 <b>${hb.bridge_up?'정상':'중단'}</b></div>`;
       html += `<div>${dot(!!hb.church_backup_last)} 교회 백업 <b>${hb.church_backup_last||'기록 없음'}</b></div>`;
       html += `<div>${dot(true)} 오늘 생성 콘텐츠 <b>${hb.today_output_files}개</b></div>`;
       (hb.schedulers||[]).forEach(s => {
