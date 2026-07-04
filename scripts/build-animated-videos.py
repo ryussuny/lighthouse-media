@@ -94,16 +94,23 @@ def yt_client():
         with open(TOKEN, "w") as f: f.write(creds.to_json())
     return build("youtube", "v3", credentials=creds)
 
+TITLE_SLUG = {1:"bestill",2:"anchorformysoul",3:"restinyou",4:"quietwaters",
+              5:"morninglight",6:"carrymehome",7:"잠잠하라",8:"잔잔한물가",
+              9:"다시일어나",10:"평온",0:"quietbeforeyou"}
+
 def wav_for(no):
     import re
+    cands = []
     for f in os.listdir(AUDIO):
         b, ext = os.path.splitext(f)
         if ext.lower() not in (".wav", ".mp3"): continue
         m = re.match(r"^\s*(\d{1,2})[.\s\-_]", b)
         if m and int(m.group(1)) == no: return os.path.join(AUDIO, f)
-    if no == 0:
-        p = os.path.join(AUDIO, "quiet-before-you.wav")
-        if os.path.exists(p): return p
+        cands.append((b, f))
+    slug = TITLE_SLUG.get(no, "")
+    for b, f in cands:
+        nb = re.sub(r"[^0-9a-z가-힣]", "", b.lower())
+        if slug and (nb == slug or slug in nb): return os.path.join(AUDIO, f)
     return None
 
 def encode_with_audio(loop_mp4, audio_in, out, dur=None, ass_name=None):
@@ -190,6 +197,26 @@ def main():
             print("   인코딩…")
             encode_with_audio(loop, ["-i", wav], final, ass_name=ass if ass_ok else None)
             new_id = swap_video(yt, t["youtube"], final, key, state)
+            if new_id is None:
+                # 구영상 소실 → 검색최적화 메타로 신규 업로드
+                from googleapiclient.http import MediaFileUpload
+                spec2 = importlib.util.spec_from_file_location("umm", os.path.join(HERE, "update-music-metadata.py"))
+                umm = importlib.util.module_from_spec(spec2); spec2.loader.exec_module(umm)
+                title2, mood_kr, mood_en = umm.META[no]
+                body = {"snippet": {"title": title2[:100],
+                                    "description": umm.build_desc(no, t["title"], mood_kr, mood_en)[:4900],
+                                    "tags": ["worship","ccm","찬양","묵상음악","lighthouse worship"],
+                                    "categoryId": "10", "defaultLanguage": "ko"},
+                        "status": {"privacyStatus": "public", "selfDeclaredMadeForKids": False}}
+                media = MediaFileUpload(final, mimetype="video/mp4", resumable=True, chunksize=8*1024*1024)
+                req = yt.videos().insert(part="snippet,status", body=body, media_body=media)
+                resp = None
+                while resp is None: _, resp = req.next_chunk()
+                new_id = resp["id"]
+                yt.playlistItems().insert(part="snippet", body={"snippet": {
+                    "playlistId": PLAYLIST_ID, "resourceId": {"kind": "youtube#video", "videoId": new_id}}}).execute()
+                state[key] = new_id; save_state(state)
+                print(f"   ✅ 신규 업로드: https://youtu.be/{new_id}")
             if new_id:
                 t["youtube"] = new_id
                 json.dump(board, open(BOARD, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
