@@ -52,30 +52,24 @@
       "station": "MINT",
       "name": "Lighthouse Worship — EP01 「Rest / 안식」",
       "status": "active",
-      "progress": 30,
-      "next": "Suno Pro에서 10곡 생성 (목사님·suno-ready.md 복붙) → 저장 후 JARVIS가 MP4 변환+유튜브 업로드 자동 실행",
+      "progress": 85,
+      "next": "DistroKid 제출 (목사님) — 10곡 WAV + 커버 준비 완료, AI 고지 체크 필수. 제출하면 2주 후 스포티파이/애플뮤직/멜론 발매",
       "tasks": [
         {
           "name": "가사 10곡 (EN 6 + KR 4)",
           "done": true
         },
         {
-          "name": "앨범 커버 (3000×3000)",
-          "done": true
-        },
-        {
-          "name": "Suno 프롬프트 (suno-ready.md)",
+          "name": "앨범 커버 + 곡별 커버 11종",
           "done": true
         },
         {
           "name": "Suno 음원 생성 10곡",
-          "done": false,
-          "owner": "목사님"
+          "done": true
         },
         {
-          "name": "MP4 변환 + YouTube 업로드 (자동화 준비됨)",
-          "done": false,
-          "owner": "JARVIS"
+          "name": "YouTube 전곡 발매 (커버+가사자막 영상 11개)",
+          "done": true
         },
         {
           "name": "DistroKid 제출 (스포티파이/멜론 유통)",
