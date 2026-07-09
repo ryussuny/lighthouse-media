@@ -91,24 +91,24 @@
       "station": "MINT",
       "name": "실버 정보 애드센스 (시니어 콘텐츠 수익화)",
       "status": "active",
-      "progress": 20,
-      "next": "목사님: 티스토리 블로그 개설(5분) → JARVIS가 글 20개 발행 → 애드센스 심사",
+      "progress": 35,
+      "next": "목사님: HTML 3편 티스토리에 붙여넣기 발행(각 3분) → 계속 글 생성해 20편 채우기",
       "tasks": [
         {
           "name": "전략 분석·정책위반 제거·시스템 설계",
           "done": true
         },
         {
-          "name": "글 생성 프롬프트 + 키워드 30 + 첫 글(기초연금)",
+          "name": "프롬프트 + 키워드30 + 검증된 글 3편(HTML)",
           "done": true
         },
         {
-          "name": "티스토리 개설",
+          "name": "HTML 3편 티스토리 발행",
           "done": false,
           "owner": "목사님"
         },
         {
-          "name": "글 20개 발행",
+          "name": "20편까지 글 생성",
           "done": false,
           "owner": "JARVIS"
         },
