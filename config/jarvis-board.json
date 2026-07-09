@@ -87,6 +87,39 @@
       ]
     },
     {
+      "id": "silver-adsense",
+      "station": "MINT",
+      "name": "실버 정보 애드센스 (시니어 콘텐츠 수익화)",
+      "status": "active",
+      "progress": 20,
+      "next": "목사님: 티스토리 블로그 개설(5분) → JARVIS가 글 20개 발행 → 애드센스 심사",
+      "tasks": [
+        {
+          "name": "전략 분석·정책위반 제거·시스템 설계",
+          "done": true
+        },
+        {
+          "name": "글 생성 프롬프트 + 키워드 30 + 첫 글(기초연금)",
+          "done": true
+        },
+        {
+          "name": "티스토리 개설",
+          "done": false,
+          "owner": "목사님"
+        },
+        {
+          "name": "글 20개 발행",
+          "done": false,
+          "owner": "JARVIS"
+        },
+        {
+          "name": "애드센스 가입·심사",
+          "done": false,
+          "owner": "목사님"
+        }
+      ]
+    },
+    {
       "id": "forge-daily",
       "station": "FORGE",
       "name": "말씀카드·영상·SNS 데일리 자동화",
