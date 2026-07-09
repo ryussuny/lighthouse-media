@@ -91,28 +91,28 @@
       "station": "MINT",
       "name": "실버 정보 애드센스 (시니어 콘텐츠 수익화)",
       "status": "active",
-      "progress": 45,
-      "next": "JARVIS가 17편 더 생성 → 20편 도달 시 애드센스 심사 신청",
+      "progress": 70,
+      "next": "목사님: 나머지 17편 티스토리 발행(HTML모드+이미지) → 20편 도달 시 애드센스 심사 신청",
       "tasks": [
         {
-          "name": "전략 분석·정책위반 제거·시스템 설계",
+          "name": "전략·시스템 설계",
           "done": true
         },
         {
-          "name": "프롬프트+키워드30+검증글",
+          "name": "검증된 글 20편 + 썸네일 20장 완성",
           "done": true
         },
         {
-          "name": "블로그 개설(infobox0509) + 첫 3편 발행(썸네일 포함)",
+          "name": "첫 3편 발행(완료)",
           "done": true
         },
         {
-          "name": "20편까지 글 생성(현재 3/20)",
+          "name": "나머지 17편 발행",
           "done": false,
-          "owner": "JARVIS"
+          "owner": "목사님"
         },
         {
-          "name": "애드센스 가입·심사",
+          "name": "애드센스 가입·심사 신청",
           "done": false,
           "owner": "목사님"
         }
