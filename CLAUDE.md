@@ -12,15 +12,17 @@
 
 ---
 
-## 매일 자동 실행
+## 매일 자동 실행 (스케줄러 8개)
 
 ```
- 06:00  ☀️  말씀카드 8장 + 영상 + SNS 게시    daily-bible-card.bat
-        🤝  SNS 자동 참여                      auto-engage.bat
+ 05:00  🎬  유튜브 영상 생성                    daily-video.bat
+ 06:00  ☀️  말씀카드 8장 + 영상 + SNS 게시      daily-bible-card.bat
         🔍  글로벌 채널 조사                    daily-research.bat
-        🎬  유튜브 영상 생성                    daily-video.bat
-        ⭐  프리미엄 콘텐츠                     daily-premium.bat
- 12:00  📱  인스타 릴스 자동 생성+게시          daily-ig-reels.bat
+ 12:00  📱  인스타 릴스 자동 생성+게시           daily-ig-reels.bat
+ 19:00  ⭐  프리미엄 콘텐츠                     daily-premium.bat
+ 반복   🤝  SNS 자동 참여 (30분 간격)           auto-engage.bat
+        🔄  IG 게시 실패 시 재시도              retry-ig-global.bat
+        🔑  토큰 만료 자동 점검                 check-token.bat
 ```
 
 ---
@@ -29,10 +31,12 @@
 
 ```
 lighthouse-media/
-├── scripts/          ← Python 스크립트 (~47개) — 핵심 엔진
+├── scripts/          ← Python 스크립트 (43개) — 핵심 엔진
 ├── config/
 │   ├── bible-schedule.json   ← 성경 읽기 일정 (127개, ~8/27)
+│   ├── company.json          ← 회사 정보
 │   └── tokens.json           ← SNS 토큰 (Instagram/Facebook/YouTube)
+├── *.bat             ← 실행 배치 파일 (15개)
 ├── output/           ← 생성된 카드/영상
 ├── logs/             ← 실행 로그
 ├── dashboard/        ← 웹 대시보드
@@ -78,18 +82,20 @@ lighthouse-media/
 
 ```
 [제작]
-"오늘 말씀카드 만들어줘"
-"릴스 스크립트 작성해줘"
-"유튜브 영상 기획해줘"
+"오늘 말씀카드 만들어줘"          → daily-bible-card.bat 수동 실행
+"릴스 스크립트 작성해줘"          → 릴스 기획+제작
+"유튜브 영상 기획해줘"            → 영상 콘텐츠 기획
+"프리미엄 콘텐츠 만들어줘"        → daily-premium.bat
 
 [점검]
-"오늘 로그 확인해줘"
-"스케줄러 잘 돌았어?"
-"토큰 만료 확인해줘"
+"오늘 로그 확인해줘"              → logs/ 디렉토리 확인
+"스케줄러 잘 돌았어?"             → 전체 8개 스케줄러 상태 확인
+"토큰 만료 확인해줘"              → config/tokens.json 점검
 
 [설정]
-"성경 일정 다음 구절 확인해줘"
-"새 SNS 채널 추가해줘"
+"성경 일정 다음 구절 확인해줘"    → bible-schedule.json
+"새 SNS 채널 추가해줘"            → tokens.json + 스크립트 수정
+"새 스크립트 추가해줘"            → scripts/ + bat 파일 생성
 ```
 
 ---
@@ -99,7 +105,8 @@ lighthouse-media/
 | 항목 | 값 |
 |------|-----|
 | Python | 3.14.3 |
-| 모델 | claude-sonnet-4-20250514 |
+| Node.js | v24.14.1 |
+| 모델 | claude-sonnet-4-6 |
 | 패키지 | anthropic, requests, python-dotenv, pillow, pyautogui |
 | GitHub | ryussuny/lighthouse-media |
 
@@ -109,6 +116,6 @@ lighthouse-media/
 
 | 코드네임 | 디렉토리 | 한마디 |
 |----------|----------|--------|
-| **JARVIS** | `C:\Users\ryuss\` | 총사령부 — 전체 기획 |
+| **JARVIS** | `C:\Users\ryuss\` | 총사령부 — 전체 총괄 |
 | **SHEPHERD** | `D:\동산교회\` | 목회 시스템 |
 | **MINT** | `C:\Users\ryuss\lighthouse-biz\` | 수익 전략 |

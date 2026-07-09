@@ -43,8 +43,13 @@ reply_templates = {
 }
 
 def auto_engage_hashtags():
-    """유사 계정 게시물에 댓글 달기"""
+    """유사 계정 게시물에 댓글 달기 — 2시간 간격, 연속 실패 시 자동 스킵"""
     engaged = load_json(ENGAGED_FILE)
+
+    # engaged 목록 500개로 제한 (오래된 것 제거)
+    if len(engaged) > 500:
+        engaged = engaged[-500:]
+
     tags = [
         '직장인힐링', '마음관리', '번아웃극복', '자기계발', '동기부여', '직장인공감', '힐링', '멘탈케어',
         '마음챙김', '감정일기', '자존감', '일상기록', '오늘의명언', '위로', '공감글', '하루한줄',
@@ -53,12 +58,19 @@ def auto_engage_hashtags():
     ]
     random.shuffle(tags)
     new_count = 0
+    api_fail = 0  # 연속 API 실패 카운터
 
     for tag in tags[:3]:  # 매번 3개 태그만 (속도 제한 방지)
         try:
             r = requests.get(f'https://graph.facebook.com/v21.0/ig_hashtag_search?q={tag}&user_id={IG_ID}&access_token={TOKEN}')
             data = r.json().get('data',[])
-            if not data: continue
+            if not data:
+                api_fail += 1
+                if api_fail >= 3:
+                    print(f"  IG 해시태그 API 응답 없음 — 이번 회차 스킵")
+                    break  # 3번 연속 실패 시 나머지 건너뜀
+                continue
+            api_fail = 0
             tag_id = data[0]['id']
 
             r2 = requests.get(f'https://graph.facebook.com/v21.0/{tag_id}/recent_media?user_id={IG_ID}&fields=id&limit=5&access_token={TOKEN}')

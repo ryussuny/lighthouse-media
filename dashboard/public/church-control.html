@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>동산감리교회 — 자동화 관리</title>
+<style>
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Pretendard',sans-serif;background:#FAF8F3;color:#2a2a2a;min-height:100vh}
+.header{background:linear-gradient(135deg,#2a2520,#3a3530);color:#fff;padding:20px 24px;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:18px;font-weight:700;display:flex;align-items:center;gap:10px}
+.cross{color:#BA9A5A;font-size:22px}
+.header-right{display:flex;gap:10px}
+.header-right a{color:#BA9A5A;text-decoration:none;font-size:13px;padding:6px 12px;border:1px solid rgba(186,154,90,0.3);border-radius:6px}
+.header-right a:hover{background:rgba(186,154,90,0.1)}
+.container{max-width:900px;margin:0 auto;padding:30px 20px}
+
+.status-bar{background:#fff;border-radius:12px;padding:20px;margin-bottom:24px;box-shadow:0 2px 8px rgba(0,0,0,0.04);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.status-item{text-align:center}
+.status-num{font-size:28px;font-weight:800;color:#BA9A5A}
+.status-label{font-size:11px;color:#999;margin-top:4px}
+
+.section-title{font-size:14px;font-weight:700;color:#BA9A5A;margin:24px 0 12px;text-transform:uppercase;letter-spacing:1px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:all 0.2s;text-decoration:none;color:inherit;display:block}
+.card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+.card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px}
+.card h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.card p{font-size:12px;color:#888;line-height:1.5}
+.card-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:4px;margin-top:8px;font-weight:600}
+
+.schedule-list{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04)}
+.schedule-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f5f3ee}
+.schedule-item:last-child{border:none}
+.schedule-time{font-size:14px;font-weight:700;color:#BA9A5A;width:60px}
+.schedule-name{font-size:14px;color:#2a2a2a}
+.schedule-desc{font-size:11px;color:#aaa}
+.schedule-status{font-size:10px;padding:2px 8px;border-radius:10px;background:#e8f5e9;color:#4caf50;font-weight:600}
+
+.footer{text-align:center;padding:30px;font-size:12px;color:#ccc}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="cross">✟</span> 동산감리교회 자동화 관리</h1>
+  <div class="header-right">
+    <a href="/home.html">Lighthouse Media</a>
+    <a href="/control.html">LM 관리자</a>
+  </div>
+</div>
+
+<div class="container">
+  <div class="status-bar" id="statusBar">
+    <div class="status-item"><div class="status-num" id="igFollowers">-</div><div class="status-label">인스타 팔로워</div></div>
+    <div class="status-item"><div class="status-num" id="igPosts">-</div><div class="status-label">게시물</div></div>
+    <div class="status-item"><div class="status-num" id="fbFans">-</div><div class="status-label">페이스북 팬</div></div>
+    <div class="status-item"><div class="status-num" id="sermonCount">62</div><div class="status-label">전체 설교</div></div>
+    <div class="status-item"><div class="status-num" id="completedCount">9</div><div class="status-label">작성 완료</div></div>
+  </div>
+
+  <div class="section-title">자동화 현황</div>
+  <div class="schedule-list">
+    <div class="schedule-item">
+      <div class="schedule-time">06:00</div>
+      <div style="flex:1"><div class="schedule-name">말씀 카드 8장 자동 게시</div><div class="schedule-desc">사무엘하 새벽 강해 일정에 따라 @garden___church + FB 동산감리교회</div></div>
+      <div class="schedule-status">자동</div>
+    </div>
+    <div class="schedule-item">
+      <div class="schedule-time">06:00</div>
+      <div style="flex:1"><div class="schedule-name">오늘의 말씀 txt 저장</div><div class="schedule-desc">Documents/오늘의말씀/ + 바탕화면/오늘의말씀/</div></div>
+      <div class="schedule-status">자동</div>
+    </div>
+    <div class="schedule-item">
+      <div class="schedule-time">06:30</div>
+      <div style="flex:1"><div class="schedule-name">카카오톡 말씀 발송</div><div class="schedule-desc">카카오톡 PC 자동 조작</div></div>
+      <div class="schedule-status">자동</div>
+    </div>
+    <div class="schedule-item">
+      <div class="schedule-time">30분</div>
+      <div style="flex:1"><div class="schedule-name">댓글 자동 답변</div><div class="schedule-desc">인스타/페이스북 새 댓글에 자동 답변</div></div>
+      <div class="schedule-status">자동</div>
+    </div>
+  </div>
+
+  <div class="section-title">관리 도구</div>
+  <div class="grid">
+    <a href="https://www.instagram.com/garden___church/" target="_blank" class="card">
+      <div class="card-icon" style="background:rgba(225,48,108,0.08);color:#e1306c">IG</div>
+      <h3>인스타그램</h3>
+      <p>@garden___church — 말씀 카드, 묵상, 기도</p>
+      <span class="card-tag" style="background:#fce4ec;color:#e1306c">바로가기</span>
+    </a>
+    <a href="https://www.facebook.com/1135203513001227" target="_blank" class="card">
+      <div class="card-icon" style="background:rgba(24,119,242,0.08);color:#1877f2">FB</div>
+      <h3>페이스북 페이지</h3>
+      <p>동산감리교회 — 말씀, 소식</p>
+      <span class="card-tag" style="background:#e3f2fd;color:#1877f2">바로가기</span>
+    </a>
+    <a href="file:///D:/동산교회/church-home.html" class="card">
+      <div class="card-icon" style="background:rgba(186,154,90,0.08);color:#BA9A5A">HP</div>
+      <h3>교회 홈페이지</h3>
+      <p>동산감리교회 웹사이트 (로컬)</p>
+      <span class="card-tag" style="background:#fff8e1;color:#BA9A5A">로컬</span>
+    </a>
+    <a href="file:///D:/동산교회/church-app.html" class="card">
+      <div class="card-icon" style="background:rgba(76,175,80,0.08);color:#4caf50">APP</div>
+      <h3>교인 앱</h3>
+      <p>교인 정보, 심방, 재정 관리</p>
+      <span class="card-tag" style="background:#e8f5e9;color:#4caf50">로컬</span>
+    </a>
+  </div>
+
+  <div class="section-title">사무엘하 새벽 강해 진행</div>
+  <div class="schedule-list" id="sermonProgress">
+    <div class="schedule-item">
+      <div class="schedule-time">4/23</div>
+      <div style="flex:1"><div class="schedule-name">삼하 1:1-10 — 당신의 손에 들린 것은 무엇입니까</div></div>
+      <div class="schedule-status">완료</div>
+    </div>
+    <div class="schedule-item">
+      <div class="schedule-time">4/24</div>
+      <div style="flex:1"><div class="schedule-name">삼하 1:11-16 — 하나님의 마음으로 슬퍼하라</div></div>
+      <div class="schedule-status">완료</div>
+    </div>
+    <div class="schedule-item">
+      <div class="schedule-time">4/25</div>
+      <div style="flex:1"><div class="schedule-name">삼하 1:17-27 — 다윗의 애가</div></div>
+      <div class="schedule-status" style="background:#fff3e0;color:#ff9800">미작성</div>
+    </div>
+    <div class="schedule-item">
+      <div class="schedule-time">4/26</div>
+      <div style="flex:1"><div class="schedule-name">삼하 2:1-7 — 하나님께 먼저 묻는 사람</div></div>
+      <div class="schedule-status" style="background:#fff3e0;color:#ff9800">미작성</div>
+    </div>
+    <div class="schedule-item">
+      <div class="schedule-time">4/27</div>
+      <div style="flex:1"><div class="schedule-name">삼하 2:8-17 — 누가 이 전쟁을 시작했는가</div></div>
+      <div class="schedule-status">완료</div>
+    </div>
+    <div class="schedule-item">
+      <div class="schedule-time">4/28</div>
+      <div style="flex:1"><div class="schedule-name">삼하 2:18-32 — 멈출 수 있는 용기</div></div>
+      <div class="schedule-status">완료</div>
+    </div>
+    <div class="schedule-item">
+      <div class="schedule-time">4/29</div>
+      <div style="flex:1"><div class="schedule-name">삼하 3:1-21 — 하나님이 기울이시는 저울</div></div>
+      <div class="schedule-status">완료</div>
+    </div>
+    <div class="schedule-item">
+      <div class="schedule-time">4/30</div>
+      <div style="flex:1"><div class="schedule-name">삼하 3:22-39 — 다윗이 울었다, 요압이 죽였다</div></div>
+      <div class="schedule-status">완료</div>
+    </div>
+    <div class="schedule-item">
+      <div class="schedule-time">5/1~</div>
+      <div style="flex:1"><div class="schedule-name">삼하 4장 ~ 24장 (53편 남음)</div><div class="schedule-desc">6월 23일까지 총 62편</div></div>
+      <div class="schedule-status" style="background:#e8eaf6;color:#3f51b5">예정</div>
+    </div>
+  </div>
+
+  <div class="section-title">파일 위치</div>
+  <div class="grid">
+    <div class="card">
+      <h3>오늘의 말씀</h3>
+      <p>C:\Users\ryuss\Documents\오늘의말씀\<br>바탕화면\오늘의말씀\</p>
+    </div>
+    <div class="card">
+      <h3>설교 개요</h3>
+      <p>C:\Users\ryuss\Downloads\사무엘하_새벽강해_전체개요.txt</p>
+    </div>
+    <div class="card">
+      <h3>교회 파일</h3>
+      <p>D:\동산교회\</p>
+    </div>
+    <div class="card">
+      <h3>브랜드 이미지</h3>
+      <p>바탕화면\Lighthouse_브랜드이미지\church\</p>
+    </div>
+  </div>
+</div>
+
+<div class="footer">동산감리교회 | 하나님과 함께, 이웃과 함께</div>
+
+<script>
+// 실시간 데이터 로드
+async function loadData() {
+  try {
+    const r = await fetch('/api/channels');
+    const d = await r.json();
+    if (d.instagram) {
+      document.getElementById('igFollowers').textContent = d.instagram.followers || 0;
+      document.getElementById('igPosts').textContent = d.instagram.media_count || 0;
+    }
+    if (d.facebook) {
+      document.getElementById('fbFans').textContent = d.facebook.fans || 0;
+    }
+  } catch(e) {}
+}
+loadData();
+setInterval(loadData, 60000);
+</script>
+</body>
+</html>

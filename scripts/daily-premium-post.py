@@ -105,12 +105,15 @@ def claude(prompt, retries=3):
         try:
             r = requests.post("https://api.anthropic.com/v1/messages", headers={
                 "x-api-key": API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json",
-            }, json={"model": "claude-sonnet-4-6", "max_tokens": 2000, "messages": [{"role":"user","content":prompt}]}, timeout=60)
-            data = r.json()
-            if "content" in data:
-                return clean_surrogates(data["content"][0]["text"])
-            err_msg = data.get("error", {}).get("message", str(data))
-            print(f"  API error (attempt {attempt+1}/{retries}): {err_msg}")
+            }, json={"model": "claude-sonnet-4-6", "max_tokens": 1500, "messages": [{"role":"user","content":prompt}]}, timeout=60)
+            if r.status_code != 200:
+                print(f"  API HTTP {r.status_code} (attempt {attempt+1}/{retries}): {r.text[:200]}")
+            else:
+                data = r.json()
+                if "content" in data:
+                    return clean_surrogates(data["content"][0]["text"])
+                err_msg = data.get("error", {}).get("message", str(data)[:200])
+                print(f"  API error (attempt {attempt+1}/{retries}): {err_msg}")
         except Exception as e:
             print(f"  API exception (attempt {attempt+1}/{retries}): {e}")
         if attempt < retries - 1:
@@ -266,8 +269,9 @@ frameworks = [
 ]
 today_framework = frameworks[day_hash % len(frameworks)]
 
-content_raw = claude(
-    f"당신은 Lighthouse Media의 수석 콘텐츠 디렉터입니다.\n"
+try:
+    content_raw = claude(
+        f"당신은 Lighthouse Media의 수석 콘텐츠 디렉터입니다.\n"
     f"오늘 날짜: {DATE_STR}\n"
     f"오늘의 주제: {today_theme}\n"
     f"오늘의 심리학 렌즈: {today_framework}\n\n"
@@ -333,8 +337,17 @@ content_raw = claude(
     "- 과장/선동/클릭베이트 절대 금지\n"
     "- 종교 용어 금지 (기도, 하나님, 은혜, 축복 등 직접 표현 금지)\n"
     "- 한 장면 텍스트 최대 10자 (영상 카드용)\n"
-    "- 캡션은 미니 에세이 수준 (500-700자)"
-)
+    "- 캡션은 미니 에세이 수준 (500-700자)\n\n"
+    "=== 출력 규칙 (필수) ===\n"
+    "- 순수 JSON만 출력. 코드블록(```json) 절대 금지.\n"
+    "- 문자열 안의 줄바꿈은 반드시 \\n으로 escape.\n"
+    "- 작은따옴표 금지, 큰따옴표만 사용.\n"
+    "- JSON 외 다른 텍스트(설명, 인사 등) 출력 금지."
+    )
+except RuntimeError as e:
+    print(f"\n  FATAL: {e}")
+    print(f"  Premium content skipped for {DATE_STR}. Will retry next run.")
+    sys.exit(1)
 
 start = content_raw.find("{")
 end = content_raw.rfind("}") + 1
@@ -351,8 +364,9 @@ except json.JSONDecodeError:
     except json.JSONDecodeError:
         print("  JSON parse failed, retrying with Claude...")
         fix_raw = claude(
-            f"아래 JSON에 문법 오류가 있어. 수정해서 올바른 JSON만 출력해줘.\n"
-            f"```json\n{content_raw[start:end]}\n```"
+            f"아래 JSON의 문법 오류를 수정해서 올바른 JSON만 출력해줘. "
+            f"코드블록 없이 순수 JSON만. 문자열 안 줄바꿈은 \\n으로 escape.\n\n"
+            f"{content_raw[start:end]}"
         )
         fs = fix_raw.find("{")
         fe = fix_raw.rfind("}") + 1
