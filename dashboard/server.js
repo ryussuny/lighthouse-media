@@ -36,12 +36,32 @@ const io = new Server(server);
 
 app.use(express.json());
 
-// 유료 전자책 직접 접근 차단 → 스토어로 (구매 후 이메일 발송)
+// 구매 즉시 열람 토큰 (주문 시 발급 → /read?t= 로만 열람 가능)
+const readTokens = new Map();
+
+// 유료 전자책 직접 접근 차단 → 스토어로 (URL 알아도 못 봄)
 app.use((req, res, next) => {
   if (/^\/ebooks\/[^/]+\/paid-.*\.html$/i.test(req.path)) {
     return res.redirect("/home.html#store");
   }
   next();
+});
+
+// 구매 후 즉시 열람: 유효한 토큰이면 유료책 HTML 제공
+app.get("/read", (req, res) => {
+  const tok = readTokens.get(req.query.t);
+  if (!tok) return res.redirect("/home.html#store");
+  if (Date.now() - tok.created > 30 * 24 * 60 * 60 * 1000) { // 30일 유효
+    readTokens.delete(req.query.t);
+    return res.redirect("/home.html#store");
+  }
+  const rel = (tok.url || "").replace(/^\//, "");
+  const file = join(__dirname, "public", rel);
+  if (!/ebooks[\\/][^\\/]+[\\/]paid-.*\.html$/i.test(file) || !existsSync(file)) {
+    return res.redirect("/home.html#store");
+  }
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(readFileSync(file, "utf-8"));
 });
 
 app.use(express.static(join(__dirname, "public")));
@@ -406,12 +426,19 @@ app.post("/api/order", (req, res) => {
     ].join("\n")
   );
 
-  // 유료 전자책은 입금 확인 후 이메일로 발송 (선열람 토큰 발급 안 함)
   io.emit("sale", { amount: order.amount, product: order.product, name: order.name });
   io.emit("metrics-update", getRealMetrics());
   io.emit("order-new", order);
   onNewOrder(order);
-  res.json({ success: true, orderId: order.id });
+
+  // 즉시 열람: 책 URL이 있으면 열람 토큰 발급 (계좌이체 신뢰 방식)
+  let readUrl = null;
+  if (order.bookUrl && /paid-.*\.html$/i.test(order.bookUrl)) {
+    const token = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    readTokens.set(token, { url: order.bookUrl, email: order.email, orderId: order.id, created: Date.now() });
+    readUrl = `/read?t=${token}`;
+  }
+  res.json({ success: true, orderId: order.id, readUrl });
 });
 
 // 주기적 메트릭 브로드캐스트 (30초)
