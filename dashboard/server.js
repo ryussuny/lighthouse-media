@@ -130,6 +130,18 @@ app.post("/api/heartbeat", (req, res) => {
   res.json({ ok: true });
 });
 
+// 오늘의 한 마디 (날짜 기반 자동 변경, 미리 만든 문구 풀에서)
+app.get("/api/daily-message", (req, res) => {
+  const file = join(__dirname, "public", "daily-messages.json");
+  let msgs = [];
+  try { msgs = JSON.parse(readFileSync(file, "utf-8")).messages || []; } catch {}
+  if (!msgs.length) return res.json({ message: "오늘 하루도 수고 많으셨습니다." });
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const day = Math.floor((now - start) / 86400000); // 올해 몇 번째 날
+  res.json({ message: msgs[day % msgs.length], date: now.toISOString().slice(0, 10) });
+});
+
 // JARVIS 관제탑: 프로젝트 보드 + 실시간 지표 통합
 app.get("/api/jarvis", (req, res) => {
   const boardFile = join(__dirname, "..", "config", "jarvis-board.json");

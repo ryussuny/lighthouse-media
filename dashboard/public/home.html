@@ -986,6 +986,15 @@
     </div>
   </section>
 
+  <!-- ═══════ 오늘의 한 마디 ═══════ -->
+  <section style="padding:28px 24px;background:#0f1830;border-top:1px solid #1e2740;border-bottom:1px solid #1e2740;">
+    <div style="max-width:720px;margin:0 auto;text-align:center;">
+      <div style="font-size:12px;font-weight:800;letter-spacing:2px;color:#F5C562;margin-bottom:10px;">☀️ 오늘의 한 마디</div>
+      <p id="dailyMessage" style="font-size:21px;font-weight:600;color:#eef2f9;line-height:1.6;">오늘 하루도 수고 많으셨습니다.</p>
+      <div id="dailyDate2" style="font-size:12px;color:#5a6785;margin-top:8px;"></div>
+    </div>
+  </section>
+
   <!-- ═══════ STORE (통합 스토어) ═══════ -->
   <section id="store" style="padding:72px 24px 80px;background:linear-gradient(135deg,#16223f,#2C3E6B);">
     <div style="max-width:880px;margin:0 auto;">
@@ -1103,6 +1112,14 @@
       } catch(e){}
     }
     fillStoreGrid();
+    /* 오늘의 한 마디 */
+    (async function(){
+      try {
+        const d = await (await fetch('/api/daily-message')).json();
+        if (d.message) document.getElementById('dailyMessage').textContent = '"' + d.message + '"';
+        if (d.date) document.getElementById('dailyDate2').textContent = d.date.replace(/-/g,'.');
+      } catch(e){}
+    })();
   </script>
 
   <!-- ═══════ EBOOK LIBRARY ═══════ -->
