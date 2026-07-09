@@ -816,6 +816,42 @@
 </head>
 <body>
 
+  <!-- ═══════ 회원가입 게이트 ═══════ -->
+  <div id="memberGate" style="display:none;position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#101830,#1a2a52);align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#fff;color:#2a2a2a;max-width:400px;width:100%;border-radius:18px;padding:34px 28px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,0.5);">
+      <div style="width:56px;height:56px;margin:0 auto 16px;background:#2BA47A;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;">🕯️</div>
+      <h2 style="font-size:21px;font-weight:800;color:#16223f;margin-bottom:8px;">Lighthouse에 오신 것을 환영합니다</h2>
+      <p style="font-size:14px;color:#666;line-height:1.6;margin-bottom:22px;">간단한 정보만 남기시면<br>모든 콘텐츠를 무료로 보실 수 있습니다.</p>
+      <input id="gateName" type="text" placeholder="이름 (또는 별명)" style="width:100%;padding:13px;border:1px solid #ddd;border-radius:10px;font-size:15px;margin-bottom:10px;box-sizing:border-box;">
+      <input id="gateEmail" type="email" placeholder="이메일" style="width:100%;padding:13px;border:1px solid #ddd;border-radius:10px;font-size:15px;margin-bottom:14px;box-sizing:border-box;">
+      <button id="gateBtn" onclick="joinMember()" style="width:100%;background:#2BA47A;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;padding:14px;cursor:pointer;">무료로 시작하기</button>
+      <p id="gateErr" style="color:#e05555;font-size:12.5px;height:16px;margin-top:8px;"></p>
+      <p style="font-size:11px;color:#aaa;margin-top:4px;line-height:1.5;">입력하신 이메일로 새 전자책·소식을 보내드립니다.<br>언제든 수신 거부하실 수 있습니다.</p>
+    </div>
+  </div>
+  <script>
+    (function(){
+      if (localStorage.getItem('lh_member') === 'yes') return;
+      document.getElementById('memberGate').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    })();
+    function joinMember(){
+      var name = document.getElementById('gateName').value.trim();
+      var email = document.getElementById('gateEmail').value.trim();
+      var err = document.getElementById('gateErr');
+      if (!name || !email || email.indexOf('@') < 0) { err.textContent = '이름과 올바른 이메일을 입력해 주세요.'; return; }
+      var btn = document.getElementById('gateBtn'); btn.textContent = '처리 중…'; btn.disabled = true;
+      fetch('/api/lead', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ name: name, email: email, source: '홈 회원가입' }) })
+        .finally(function(){
+          localStorage.setItem('lh_member','yes');
+          localStorage.setItem('lh_member_name', name);
+          document.getElementById('memberGate').style.display = 'none';
+          document.body.style.overflow = '';
+        });
+    }
+  </script>
+
   <!-- ═══════ PWA INSTALL BANNER ═══════ -->
   <div id="installBanner">
     <div class="install-icon">
