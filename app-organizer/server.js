@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import Anthropic from "@anthropic-ai/sdk";
 import { config } from "dotenv";
+import { ruleCategorize } from "./categorize.js";
 
 config();
 
@@ -77,10 +78,11 @@ app.post("/api/organize", async (req, res) => {
   if (apps.length === 0) {
     return res.status(400).json({ error: "앱 이름을 하나 이상 입력하세요." });
   }
+
+  // API 키가 없으면 규칙 기반 분류로 즉시 응답
   if (!client) {
-    return res.status(503).json({
-      error: "ANTHROPIC_API_KEY가 설정되지 않았습니다. .env에 키를 추가한 뒤 다시 시도하세요.",
-    });
+    const folders = ruleCategorize(apps);
+    return res.json({ folders, total: apps.length, engine: "rules" });
   }
 
   try {
@@ -99,18 +101,14 @@ app.post("/api/organize", async (req, res) => {
     const text = message.content.find((b) => b.type === "text")?.text || "";
     // 혹시 모를 코드블록/잡텍스트 제거 후 JSON 파싱
     const jsonStr = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
-    let parsed;
-    try {
-      parsed = JSON.parse(jsonStr);
-    } catch {
-      return res.status(502).json({ error: "AI 응답을 해석하지 못했습니다. 다시 시도해주세요.", raw: text });
-    }
-
+    const parsed = JSON.parse(jsonStr); // 실패 시 아래 catch에서 규칙 분류로 폴백
     const folders = reconcile(parsed.folders, apps);
-    res.json({ folders, total: apps.length, model: MODEL });
+    res.json({ folders, total: apps.length, engine: "ai", model: MODEL });
   } catch (err) {
-    console.error("organize error:", err.message);
-    res.status(500).json({ error: `AI 분류 중 오류: ${err.message}` });
+    // AI 호출/파싱 실패 시에도 규칙 기반으로 폴백하여 항상 결과를 반환
+    console.error("organize AI 실패, 규칙 분류로 폴백:", err.message);
+    const folders = ruleCategorize(apps);
+    res.json({ folders, total: apps.length, engine: "rules", fallback: true });
   }
 });
 

@@ -186,7 +186,9 @@
       if (!r.ok) { setStatus(data.error || "오류가 발생했습니다.", true); return; }
       lastFolders = data.folders;
       render(data.folders);
-      setStatus(`✅ 앱 ${data.total}개를 폴더 ${data.folders.length}개로 정리했습니다.`);
+      const engineLabel = data.engine === "ai" ? "AI 분류" : "기본 규칙 분류";
+      const note = data.fallback ? " (AI 연결 실패로 기본 규칙 사용)" : "";
+      setStatus(`✅ 앱 ${data.total}개를 폴더 ${data.folders.length}개로 정리했습니다 · ${engineLabel}${note}`);
     } catch (e) {
       setStatus("서버에 연결하지 못했습니다: " + e.message, true);
     } finally {
