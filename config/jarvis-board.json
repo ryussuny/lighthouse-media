@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-03",
+  "updated": "2026-07-10",
   "goal": {
     "monthly": 5000000,
     "label": "월 500만원"
@@ -52,8 +52,8 @@
       "station": "MINT",
       "name": "Lighthouse Worship — EP01 「Rest / 안식」",
       "status": "active",
-      "progress": 90,
-      "next": "DistroKid 제출 (목사님·20분) — 이것만 하면 스포티파이/애플뮤직/멜론 발매",
+      "progress": 92,
+      "next": "DistroKid EP 본편 10곡 제출 (목사님·20분) — 싱글 「Quiet Before You」는 7/10 제출 완료",
       "tasks": [
         {
           "name": "가사 10곡 (EN 6 + KR 4)",
@@ -80,7 +80,11 @@
           "done": true
         },
         {
-          "name": "DistroKid 제출 (스포티파이/멜론 유통)",
+          "name": "DistroKid 싱글 「Quiet Before You」 제출 (7/10)",
+          "done": true
+        },
+        {
+          "name": "DistroKid EP 본편 10곡 제출 (스포티파이/멜론 유통)",
           "done": false,
           "owner": "목사님"
         }
