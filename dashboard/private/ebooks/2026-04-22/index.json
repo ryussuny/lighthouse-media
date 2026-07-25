@@ -32,6 +32,30 @@
       "slug": "burnout-recovery-roadmap",
       "price": 5900,
       "url": "/ebooks/2026-04-22/paid-burnout-recovery-roadmap.html"
+    },
+    {
+      "type": "free",
+      "title": "아침 5분으로\n달라지는 하루",
+      "subtitle": "번아웃에서 벗어나는\n간단한 모닝 루틴",
+      "slug": "5-minute-morning-routine",
+      "price": 0,
+      "url": "/ebooks/2026-04-22/free-5-minute-morning-routine.html"
+    },
+    {
+      "type": "free",
+      "title": "감정의 무게를\n가볍게 하기",
+      "subtitle": "직장에서 마음 챙기는\n실전 감정 관리법",
+      "slug": "emotional-weight-management",
+      "price": 0,
+      "url": "/ebooks/2026-04-22/free-emotional-weight-management.html"
+    },
+    {
+      "type": "paid",
+      "title": "에너지 뱅크\n채우는 법",
+      "subtitle": "소진된 나를 다시 세우는\n30일 에너지 충전 프로그램",
+      "slug": "energy-bank-recharge",
+      "price": 7900,
+      "url": "/ebooks/2026-04-22/paid-energy-bank-recharge.html"
     }
   ]
 }
