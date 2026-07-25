@@ -94,9 +94,14 @@ app.post("/api/ebook-request", (req, res) => {
   console.log(`📚 전자책 요청! #${request.id} — ${name} / ${email} / follow:${confirmed_follow} like:${confirmed_like}`);
   io.emit("ebook-request", request);
 
-  // 팔로우+좋아요 확인되면 즉시 다운로드 URL 제공
+  // 팔로우+좋아요 확인되면 즉시 다운로드 URL 제공 (실제 존재하는 폴더에서 slug로 조회 — 오늘 날짜 가정 금지)
   if (request.status === "approved") {
-    res.json({ success: true, status: "approved", message: "팔로우와 좋아요 감사합니다! 전자책을 바로 읽을 수 있습니다.", downloadUrl: `/ebooks/${new Date().toISOString().split("T")[0]}/${ebook_slug}.html` });
+    const matched = allEbooks().find(b => b.slug === ebook_slug);
+    const downloadUrl = matched ? matched.url : null;
+    if (!downloadUrl) {
+      return res.json({ success: true, status: "pending", message: "전자책을 찾을 수 없어 확인 후 이메일로 보내드립니다." });
+    }
+    res.json({ success: true, status: "approved", message: "팔로우와 좋아요 감사합니다! 전자책을 바로 읽을 수 있습니다.", downloadUrl });
   } else {
     res.json({ success: true, status: "pending", message: "팔로우와 좋아요를 확인 후 이메일로 보내드립니다." });
   }
@@ -108,9 +113,9 @@ app.get("/api/ebook-requests", (req, res) => {
 });
 
 // 전자책 목록 API
-app.get("/api/ebooks", (req, res) => {
+function allEbooks() {
   const ebooksDir = join(__dirname, "public", "ebooks");
-  if (!existsSync(ebooksDir)) return res.json([]);
+  if (!existsSync(ebooksDir)) return [];
   const dates = readdirSync(ebooksDir).filter(d => /\d{4}-\d{2}-\d{2}/.test(d)).sort().reverse();
   const all = [];
   for (const date of dates) {
@@ -120,8 +125,10 @@ app.get("/api/ebooks", (req, res) => {
       all.push(...(data.books || []));
     }
   }
-  res.json(all);
-});
+  return all;
+}
+
+app.get("/api/ebooks", (req, res) => res.json(allEbooks()));
 
 // 로컬 시스템 하트비트 (JARVIS PC → 관제탑, 30분마다)
 let lastHeartbeat = null;

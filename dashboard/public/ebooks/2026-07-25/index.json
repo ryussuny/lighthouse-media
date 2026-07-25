@@ -1,0 +1,13 @@
+{
+  "date": "2026-07-25",
+  "books": [
+    {
+      "type": "paid",
+      "price": 7900,
+      "slug": "monday-people-secret",
+      "title": "월요일이 기다려지는\n사람들의 비밀",
+      "subtitle": "번아웃 없이 일하는 직장인의 마인드셋과 루틴",
+      "url": "/ebooks/2026-07-25/paid-monday-people-secret.html"
+    }
+  ]
+}
