@@ -7,4 +7,3 @@ node_modules/
 output/
 generate_ebooks.py
 __pycache__/
-dashboard/private/
