@@ -70,7 +70,9 @@ app.use(express.static(join(__dirname, "public")));
 app.post("/api/ebook-request", (req, res) => {
   const { name, email, instagram_handle, ebook_slug, confirmed_follow, confirmed_like } = req.body;
   if (!email) return res.status(400).json({ error: "이메일 필수" });
-  if (/^paid-/i.test(ebook_slug || "")) {
+  // slug 자체엔 "paid-" 접두어가 없다(접두어는 url 파일명에만 붙음) — type 필드로 직접 판정해야 한다(R2 리뷰 지적).
+  const requested = allEbooks().find(b => b.slug === ebook_slug);
+  if (requested && requested.type === "paid") {
     return res.status(403).json({ error: "유료 전자책은 스토어에서 구매해 주세요.", redirect: "/home.html#store" });
   }
 
@@ -96,12 +98,10 @@ app.post("/api/ebook-request", (req, res) => {
 
   // 팔로우+좋아요 확인되면 즉시 다운로드 URL 제공 (실제 존재하는 폴더에서 slug로 조회 — 오늘 날짜 가정 금지)
   if (request.status === "approved") {
-    const matched = allEbooks().find(b => b.slug === ebook_slug);
-    const downloadUrl = matched ? matched.url : null;
-    if (!downloadUrl) {
+    if (!requested || !requested.url) {
       return res.json({ success: true, status: "pending", message: "전자책을 찾을 수 없어 확인 후 이메일로 보내드립니다." });
     }
-    res.json({ success: true, status: "approved", message: "팔로우와 좋아요 감사합니다! 전자책을 바로 읽을 수 있습니다.", downloadUrl });
+    res.json({ success: true, status: "approved", message: "팔로우와 좋아요 감사합니다! 전자책을 바로 읽을 수 있습니다.", downloadUrl: requested.url });
   } else {
     res.json({ success: true, status: "pending", message: "팔로우와 좋아요를 확인 후 이메일로 보내드립니다." });
   }
