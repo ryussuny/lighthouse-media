@@ -132,7 +132,7 @@
       "name": "말씀카드·영상·SNS 데일리 자동화",
       "status": "running",
       "progress": 100,
-      "next": "무인 운영 중 (output/에 7/25까지 매일 생성 확인) — ⚠ AutoEngage·Premium 최근 강제종료(0xC000013A) 이력, 재확인 필요",
+      "next": "무인 운영 중 (output/에 7/25까지 매일 생성 확인). ✅ AutoEngage 스케줄 버그 수리(3개월간 일 1회만 돌던 걸 30분마다로 복구, 7/25)",
       "tasks": []
     },
     {
@@ -141,7 +141,7 @@
       "name": "동산교회 목회 시스템 — 통합 포털",
       "status": "running",
       "progress": 100,
-      "next": "포털 가동: localhost:4000/portal.html (통합검색·현황). ⚠ MainServer·SermonSync 최근 실행 exit 1 실패 — 로그 확인 필요",
+      "next": "포털 가동: localhost:4000/portal.html. ✅ 7/25 포털·브리지 다운 발견→재기동 완료, sermon-sync 배치파일 인코딩 손상 원인 수리 완료(정상화 확인)",
       "tasks": [
         {
           "name": "통합 포털 구축 (교인·설교·말씀 통합검색)",
@@ -153,6 +153,14 @@
         },
         {
           "name": "브리지 서버 수리",
+          "done": true
+        },
+        {
+          "name": "포털·브리지 서버 다운 발견 및 재기동 (7/25)",
+          "done": true
+        },
+        {
+          "name": "sermon-sync.bat 인코딩 손상 수리 — 매시간 동기화 정상화 (7/25)",
           "done": true
         }
       ]
