@@ -361,6 +361,10 @@
   ],
   "links": [
     {
+      "name": "🧭 기능 지도",
+      "url": "/capabilities.html"
+    },
+    {
       "name": "🛒 스토어",
       "url": "/home.html#store"
     },

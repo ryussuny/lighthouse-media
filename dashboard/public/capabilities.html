@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JARVIS 기능 지도 — Lighthouse</title>
+<meta name="theme-color" content="#0d1220">
+<style>
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Pretendard',-apple-system,sans-serif; background:#0d1220; color:#e8ecf5; line-height:1.6; padding-bottom:60px; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 16px; }
+
+  header { padding:28px 0 20px; border-bottom:1px solid #1e2740; margin-bottom:24px; }
+  header .wrap { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+  h1 { font-size:22px; font-weight:800; letter-spacing:-0.5px; }
+  h1 span { color:#F5C562; }
+  .sub { font-size:12px; color:#5a6785; }
+  .back { color:#8fa0bf; text-decoration:none; font-size:13px; font-weight:600; }
+  .back:hover { color:#F5C562; }
+
+  h2 { font-size:15px; font-weight:800; color:#8fa0bf; letter-spacing:1.2px; text-transform:uppercase; margin:30px 0 12px; display:flex; align-items:center; gap:8px; }
+  h2 .count { background:#1e2740; color:#F5C562; font-size:11px; padding:2px 9px; border-radius:999px; letter-spacing:0; text-transform:none; font-weight:700; }
+
+  .stationbar { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-bottom:8px; }
+  .stat { background:linear-gradient(135deg,#16223f,#1a2a4f); border:1px solid #263659; border-radius:14px; padding:16px 18px; }
+  .stat .n { font-size:26px; font-weight:800; color:#F5C562; }
+  .stat .l { font-size:12px; color:#8fa0bf; margin-top:2px; }
+
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+  .card { background:#131a2e; border:1px solid #1e2740; border-radius:14px; padding:18px; }
+  .card .top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .station { font-size:10px; font-weight:800; letter-spacing:1px; padding:3px 9px; border-radius:999px; flex-shrink:0; white-space:nowrap; }
+  .st-JARVIS { background:#241a3d; color:#c69bf5; }
+  .st-MINT { background:#3d2e10; color:#F5C562; }
+  .st-FORGE { background:#10303d; color:#62cdf5; }
+  .st-SHEPHERD { background:#12351c; color:#6fe58f; }
+  .st-SKILL { background:#1e2740; color:#8fa0bf; }
+  .card h3 { font-size:15px; font-weight:700; margin:8px 0 6px; }
+  .card p { font-size:12.5px; color:#8fa0bf; }
+  .card ul { margin-top:8px; padding-left:0; }
+  .card li { list-style:none; font-size:12px; color:#8fa0bf; padding:2px 0; }
+  .card li b { color:#e8ecf5; font-weight:600; }
+  .tag-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .tag { background:#1a2340; color:#8fa0bf; font-size:11px; padding:3px 9px; border-radius:999px; }
+
+  .flat { background:#131a2e; border:1px solid #1e2740; border-radius:14px; padding:16px 18px; }
+  .flat .row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #1a2340; font-size:13px; }
+  .flat .row:last-child { border-bottom:none; }
+  .flat .row b { color:#e8ecf5; }
+  .flat .row span { color:#8fa0bf; font-size:12px; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+  .dot.ok { background:#6fe58f; }
+  .dot.warn { background:#F5C562; }
+  .dot.down { background:#F56262; }
+
+  .note { font-size:12px; color:#5a6785; margin-top:24px; padding:14px; background:#131a2e; border:1px dashed #263659; border-radius:12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>🧭 JARVIS <span>기능 지도</span></h1>
+    <a class="back" href="/jarvis.html">← 관제탑으로</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="sub" style="margin-bottom:20px;">이 시스템(JARVIS)이 지금 가진 기능을 한눈에 — 실제 코드·스케줄러·스킬 목록 기준, 2026-07-25 점검.</div>
+
+  <!-- 총괄 지표 -->
+  <div class="stationbar">
+    <div class="stat"><div class="n">4</div><div class="l">워크스페이스 (JARVIS·FORGE·SHEPHERD·MINT)</div></div>
+    <div class="stat"><div class="n">12</div><div class="l">자동 스케줄러</div></div>
+    <div class="stat"><div class="n">6+</div><div class="l">진행 중 수익화 프로젝트</div></div>
+    <div class="stat"><div class="n">400+</div><div class="l">등록된 작업 스킬(전문 도구)</div></div>
+  </div>
+
+  <!-- 워크스페이스 -->
+  <h2>워크스페이스 4국 <span class="count">4</span></h2>
+  <div class="grid">
+    <div class="card">
+      <div class="top"><h3>🗼 JARVIS — 총괄</h3><span class="station st-JARVIS">C:\Users\ryuss</span></div>
+      <p>전 워크스페이스 총괄 운영·일 배분·관제탑 대시보드·cys 멀티에이전트 마스터 노드</p>
+    </div>
+    <div class="card">
+      <div class="top"><h3>🏭 FORGE — 대장간</h3><span class="station st-FORGE">lighthouse-media</span></div>
+      <p>말씀카드·영상·SNS 콘텐츠 매일 자동 제작·배포</p>
+    </div>
+    <div class="card">
+      <div class="top"><h3>⛪ SHEPHERD — 목자</h3><span class="station st-SHEPHERD">D:\동산교회</span></div>
+      <p>목회 시스템, 설교 283편 아카이브, 통합 포털, 백업</p>
+    </div>
+    <div class="card">
+      <div class="top"><h3>🪙 MINT — 조폐국</h3><span class="station st-MINT">lighthouse-biz</span></div>
+      <p>수익화 — 전자책·AI 음원·애드센스·블로그, 월 500만원 목표</p>
+    </div>
+  </div>
+
+  <!-- 자동 스케줄러 -->
+  <h2>자동 스케줄러 <span class="count">12개 · 오늘 점검 완료</span></h2>
+  <div class="flat">
+    <div class="row"><b><span class="dot ok"></span>매시간</b><span>MusicUpload — 새 음원 자동 유튜브 업로드</span></div>
+    <div class="row"><b><span class="dot ok"></span>매시간</b><span>SermonSync — 설교 동기화 (7/25 배치 인코딩 버그 수리 완료)</span></div>
+    <div class="row"><b><span class="dot ok"></span>30분마다</b><span>AutoEngage — SNS 자동 참여 (7/25 스케줄 버그 수리 완료)</span></div>
+    <div class="row"><b><span class="dot ok"></span>30분마다</b><span>JARVIS_Heartbeat — 시스템 상태 관제탑 보고</span></div>
+    <div class="row"><b><span class="dot ok"></span>05:00</b><span>DailyVideo — 유튜브 영상 생성</span></div>
+    <div class="row"><b><span class="dot ok"></span>05:30</b><span>DongsanChurch_DailyBackup</span></div>
+    <div class="row"><b><span class="dot ok"></span>06:00</b><span>BibleCard / DailyResearch</span></div>
+    <div class="row"><b><span class="dot ok"></span>12:00</b><span>DailyReels — 인스타 릴스 자동 생성·게시</span></div>
+    <div class="row"><b><span class="dot ok"></span>19:00</b><span>Premium — 프리미엄 콘텐츠</span></div>
+    <div class="row"><b><span class="dot ok"></span>실패 시</b><span>RetryIG — IG 게시 재시도</span></div>
+    <div class="row"><b><span class="dot ok"></span>주 1회</b><span>TokenCheck — SNS 토큰 만료 점검</span></div>
+    <div class="row"><b><span class="dot ok"></span>시작 시</b><span>BridgeServer / MainServer — 교회 서버 (7/25 다운 발견·재기동)</span></div>
+  </div>
+
+  <!-- 수익화 프로젝트 -->
+  <h2>수익화 프로젝트</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="top"><h3>📖 전자책</h3><span class="station st-MINT">90%</span></div>
+      <p>「월요일이 기다려지는 사람들의 비밀」 31쪽 — 스토어·이메일알림 완성, 유통 등록 대기</p>
+    </div>
+    <div class="card">
+      <div class="top"><h3>🎵 Lighthouse Worship</h3><span class="station st-MINT">92%</span></div>
+      <p>AI CCM 음원 EP01 「Rest / 안식」 10곡 — 가사·Suno·유튜브·쇼츠 전부 완성, DistroKid 제출만 대기</p>
+    </div>
+    <div class="card">
+      <div class="top"><h3>👴 실버 애드센스</h3><span class="station st-MINT">80%</span></div>
+      <p>시니어 콘텐츠 티스토리 — 83편 생성 완료, 실제 발행·애드센스 심사 진행 필요</p>
+    </div>
+    <div class="card">
+      <div class="top"><h3>🛍️ 브랜드커넥트 / 쇼핑쇼츠</h3><span class="station st-MINT">가동</span></div>
+      <p>네이버 제휴 블로그 자동생성 + 쿠팡파트너스 15초 쇼츠 세트 자동화</p>
+    </div>
+  </div>
+
+  <!-- 목회 지원 전문 스킬 -->
+  <h2>목회 지원 전문 스킬 (설교 작성 코칭) <span class="count">20종</span></h2>
+  <div class="grid">
+    <div class="card">
+      <h3>📜 큐티·묵상 자동 생성</h3>
+      <p>본문 입력 → 원어(헬라어/히브리어) 분석 기반 큐티·설교문 자동 완성 (예화 서론+3대지+적용+기도)</p>
+      <div class="tag-row"><span class="tag">sermon-qt-original-text-based</span></div>
+    </div>
+    <div class="card">
+      <h3>🎓 신학자별 코칭</h3>
+      <p>어거스틴·칼빈(기독교강요)·바빙크·로이드존스·루터 스타일로 설교 원고 코칭·검토</p>
+      <div class="tag-row"><span class="tag">×5</span></div>
+    </div>
+    <div class="card">
+      <h3>📚 본문 연구 도구</h3>
+      <p>원문 비평·헬라어 문법(메이첸)·성경사전·역사문화지리 배경·여러 역본 비교·다학제 주제연구</p>
+      <div class="tag-row"><span class="tag">×7</span></div>
+    </div>
+    <div class="card">
+      <h3>🗓️ 설교 기획·피드백</h3>
+      <p>52주 설교 계획표, 교리적 설교 기획, 청중 반응 시뮬레이션, 감성적 글쓰기 코칭</p>
+      <div class="tag-row"><span class="tag">×4</span></div>
+    </div>
+  </div>
+
+  <!-- 비전코칭 스킬 -->
+  <h2>비전코칭·상담 스킬 <span class="count">25종</span></h2>
+  <div class="grid">
+    <div class="card">
+      <h3>🧭 자기이해 도구</h3>
+      <p>MBTI·에니어그램·다중지능·강점(SMART5)으로 성향 분석 후 비전코딩</p>
+    </div>
+    <div class="card">
+      <h3>🔭 미래예측 도구</h3>
+      <p>시나리오 플래닝·와일드카드·환경스캐닝·퓨처스 휠·타임라인맵으로 미래 조망</p>
+    </div>
+    <div class="card">
+      <h3>💰 진로·재무 코칭</h3>
+      <p>진로추천·학과정보·재무 3방패/3창 모델·목표 재구성·후속습관 코칭</p>
+    </div>
+  </div>
+
+  <!-- 콘텐츠 제작 파이프라인 -->
+  <h2>영상·콘텐츠 자동 제작 파이프라인</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>🎬 유튜브 영상 풀파이프라인</h3>
+      <p>주제 한 문장 → 대본(리서치+구조+팩트체크) → 음성복제(ElevenLabs) → 아바타(HeyGen) → 생성형 B-roll(fal.ai) → 합성·자막 → 시각검증까지 8단계 자동</p>
+    </div>
+    <div class="card">
+      <h3>🖼️ 생성형 비주얼</h3>
+      <p>이미지 생성·참조편집·이미지→영상(Kling/Seedance)·업스케일·유튜브 썸네일</p>
+    </div>
+    <div class="card">
+      <h3>🎧 오디오 포스트</h3>
+      <p>배경음악 선곡/생성 + 나레이션 덕킹·라우드니스 정규화(-14 LUFS)</p>
+    </div>
+  </div>
+
+  <!-- 마케팅/SEO 전문 도구군 -->
+  <h2>마케팅·SEO 전문 스킬군 <span class="count">150+종</span></h2>
+  <div class="grid">
+    <div class="card">
+      <h3>🔍 SEO 전 영역</h3>
+      <p>키워드리서치·콘텐츠전략·백링크·코어웹바이탈·스키마마크업·크롤러최적화·AI검색(GEO) 등</p>
+    </div>
+    <div class="card">
+      <h3>📄 페이지 생성기</h3>
+      <p>홈·소개·가격·FAQ·비교표·대안페이지·체험담·소개페이지 등 60여종 표준 페이지 설계</p>
+    </div>
+    <div class="card">
+      <h3>📢 광고·카피라이팅</h3>
+      <p>구글/메타/틱톡/링크드인 광고, 카피라이팅, 전환최적화(CRO), 이메일마케팅</p>
+    </div>
+    <div class="card">
+      <h3>🎨 브랜딩·비주얼</h3>
+      <p>브랜드 전략·스토리텔링 + 타이포/컬러/디자인시스템 정의</p>
+    </div>
+  </div>
+
+  <!-- 한국 생활정보 검색 도구 -->
+  <h2>한국 생활정보 검색 도구(k-skill) <span class="count">90+종</span></h2>
+  <div class="grid">
+    <div class="card">
+      <h3>🚗 교통·이동</h3>
+      <p>KTX/SRT/고속버스 예매, 지하철 실시간 도착, 따릉이, 톨게이트 영수증</p>
+    </div>
+    <div class="card">
+      <h3>🏠 부동산·중고거래</h3>
+      <p>당근마켓(부동산·중고·구인), 법원경매공고, 부동산 실거래 검색</p>
+    </div>
+    <div class="card">
+      <h3>🛒 쇼핑·가격비교</h3>
+      <p>쿠팡·다이소·마켓컬리·올리브영·다나와 가격 검색</p>
+    </div>
+    <div class="card">
+      <h3>📋 행정·법률·복지</h3>
+      <p>국세청 사업자등록·특허·장학금·LH/SH 공고·법률 검색</p>
+    </div>
+    <div class="card">
+      <h3>⚽ 생활·스포츠·날씨</h3>
+      <p>KBO/K리그/KBL 결과, 날씨·미세먼지, 응급실 병상, 도서관 장서</p>
+    </div>
+  </div>
+
+  <!-- 개발/운영 도구 -->
+  <h2>개발·운영 하네스</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>🛠️ 소프트웨어 개발</h3>
+      <p>TDD·체계적 디버깅·브레인스토밍·코드리뷰·워크트리 병렬 작업·서브에이전트 오케스트레이션</p>
+    </div>
+    <div class="card">
+      <h3>🤖 cys 멀티에이전트 운영체계</h3>
+      <p>master(지휘) + CSO(자원감독) + worker(구현) + reviewer×2(검증) 4노드 체계 — 현재 프로세스 등록됨, 생존 체크 일부 미해결</p>
+    </div>
+    <div class="card">
+      <h3>🔌 MCP 연동</h3>
+      <p>NotebookLM(리서치 노트북), wmux(브라우저 자동화·터미널 제어·에이전트 간 통신)</p>
+    </div>
+  </div>
+
+  <div class="note">
+    ⓘ 이 페이지는 정적 요약본입니다 — 스킬 목록·스케줄러 상태가 바뀌면 수동으로 갱신이 필요합니다. 실시간 프로젝트 진행률·수익 지표는 <a href="/jarvis.html" style="color:#F5C562;">관제탑</a>에서 확인하세요.
+  </div>
+
+</div>
+</body>
+</html>
