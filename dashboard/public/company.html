@@ -47,6 +47,28 @@
   .howto { background:#131a2e; border:1px solid #1e2740; border-radius:14px; padding:16px 18px; font-size:13px; color:#8fa0bf; margin-top:20px; }
   .howto b { color:#F5C562; }
   .howto div { margin:4px 0; }
+
+  /* 업무 지시 */
+  .directive-form { background:linear-gradient(135deg,#16223f,#1a2a4f); border:1px solid #263659; border-radius:14px; padding:18px 20px; margin-bottom:10px; }
+  .directive-form select, .directive-form textarea {
+    width:100%; background:#0d1220; border:1px solid #263659; border-radius:10px; color:#e8ecf5;
+    padding:10px 12px; font-family:inherit; font-size:13.5px; margin-top:8px;
+  }
+  .directive-form textarea { resize:vertical; min-height:60px; }
+  .directive-form button {
+    margin-top:10px; background:#F5C562; color:#0d1220; border:none; border-radius:10px;
+    padding:10px 20px; font-weight:700; font-size:13.5px; cursor:pointer;
+  }
+  .directive-form button:hover { background:#f7d488; }
+  .directive-form .label { font-size:11px; color:#8fa0bf; letter-spacing:0.5px; text-transform:uppercase; }
+  .directive-list { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .directive-item { background:#131a2e; border:1px solid #1e2740; border-radius:10px; padding:10px 14px; font-size:12.5px; display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+  .directive-item .dept-tag { color:#F5C562; font-weight:700; white-space:nowrap; }
+  .directive-item .txt { color:#e8ecf5; flex:1; }
+  .directive-item .meta { color:#5a6785; font-size:11px; white-space:nowrap; }
+  .status-pending { color:#F5C562; }
+  .status-done { color:#6fe58f; }
+  .empty-directive { color:#4a5a78; font-size:12.5px; padding:6px 2px; }
 </style>
 </head>
 <body>
@@ -75,6 +97,28 @@
     <div class="stat"><div class="n">6+</div><div class="l">진행 프로젝트</div></div>
     <div class="stat"><div class="n">100%</div><div class="l">실제 자동화 매핑</div></div>
   </div>
+
+  <h2>업무 지시 <span class="count">여기서 부서를 골라 바로 지시</span></h2>
+  <div class="directive-form">
+    <div class="label">부서 선택</div>
+    <select id="deptSelect">
+      <option>경영전략실</option>
+      <option>콘텐츠제작본부(FORGE)</option>
+      <option>음악사업부(Lighthouse Worship)</option>
+      <option>출판사업부(전자책)</option>
+      <option>콘텐츠마케팅사업부(실버애드센스/브랜드커넥트)</option>
+      <option>커머스사업부(쇼핑쇼츠)</option>
+      <option>성장마케팅본부</option>
+      <option>기술운영본부</option>
+      <option>재무회계본부</option>
+      <option>비서실(JARVIS)</option>
+    </select>
+    <div class="label" style="margin-top:10px;">지시 내용</div>
+    <textarea id="instructionInput" placeholder="예: 다음 전자책 표지 시안 3개 만들어줘"></textarea>
+    <button onclick="submitDirective()">지시 제출</button>
+  </div>
+  <div class="sub" style="margin-bottom:12px;">제출한 지시는 아래 목록에 쌓이고, JARVIS가 다음 대화 시작 시 pending 항목을 확인해 처리합니다.</div>
+  <div class="directive-list" id="directiveList"><div class="empty-directive">불러오는 중…</div></div>
 
   <h2>부서 조직도 <span class="count">10개 부서 · 클릭해서 펼치기</span></h2>
 
@@ -251,5 +295,40 @@
   </div>
 
 </div>
+
+<script>
+async function loadDirectives() {
+  try {
+    const list = await (await fetch('/api/directives')).json();
+    const el = document.getElementById('directiveList');
+    if (!list.length) { el.innerHTML = '<div class="empty-directive">아직 제출된 지시가 없습니다</div>'; return; }
+    el.innerHTML = list.slice().reverse().map(d => `
+      <div class="directive-item">
+        <span class="dept-tag">${d.department}</span>
+        <span class="txt">${d.instruction}${d.result ? `<br><small style="color:#5a6785;">→ ${d.result}</small>` : ''}</span>
+        <span class="meta">
+          <span class="${d.status === 'done' ? 'status-done' : 'status-pending'}">${d.status === 'done' ? '✓ 완료' : '⏳ 대기'}</span><br>
+          ${(d.created || '').slice(0,16).replace('T',' ')}
+        </span>
+      </div>`).join('');
+  } catch (e) { console.error(e); }
+}
+
+async function submitDirective() {
+  const department = document.getElementById('deptSelect').value;
+  const instruction = document.getElementById('instructionInput').value.trim();
+  if (!instruction) return;
+  await fetch('/api/directives', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ department, instruction }),
+  });
+  document.getElementById('instructionInput').value = '';
+  loadDirectives();
+}
+
+loadDirectives();
+setInterval(loadDirectives, 30000);
+</script>
 </body>
 </html>

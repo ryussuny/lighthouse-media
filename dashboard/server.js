@@ -161,6 +161,7 @@ const dataDir = join(__dirname, "..", "data");
 const ordersFile = join(dataDir, "orders.json");
 const leadsFile = join(dataDir, "leads.json");
 const metricsFile = join(dataDir, "metrics.json");
+const directivesFile = join(dataDir, "directives.json");
 
 function ensureDir() { if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true }); }
 function load(file) { return existsSync(file) ? JSON.parse(readFileSync(file, "utf-8")) : []; }
@@ -170,6 +171,8 @@ function getOrders() { return load(ordersFile); }
 function saveOrders(o) { save(ordersFile, o); }
 function getLeads() { return load(leadsFile); }
 function saveLeads(l) { save(leadsFile, l); }
+function getDirectives() { return load(directivesFile); }
+function saveDirectives(d) { save(directivesFile, d); }
 
 function getRealMetrics() {
   const orders = getOrders();
@@ -206,6 +209,39 @@ app.put("/api/orders/:id", (req, res) => {
 
 app.get("/api/leads", (req, res) => res.json(getLeads()));
 app.get("/api/stats", (req, res) => res.json(getRealMetrics()));
+
+// 부서별 업무 지시 — 라이트하우스 그룹 조직도(company.html)에서 제출, JARVIS가 대화 시작 시 pending 항목을 확인·처리
+app.get("/api/directives", (req, res) => res.json(getDirectives()));
+
+app.post("/api/directives", (req, res) => {
+  const { department, instruction } = req.body || {};
+  if (!department || !instruction) return res.status(400).json({ error: "department, instruction 필요" });
+  const directives = getDirectives();
+  const item = {
+    id: (directives.at(-1)?.id || 0) + 1,
+    department,
+    instruction,
+    status: "pending",
+    created: new Date().toISOString(),
+  };
+  directives.push(item);
+  saveDirectives(directives);
+  io.emit("directive-new", item);
+  console.log(`📋 업무 지시 접수 [${department}] ${instruction}`);
+  res.json(item);
+});
+
+app.put("/api/directives/:id", (req, res) => {
+  const directives = getDirectives();
+  const item = directives.find(d => d.id === parseInt(req.params.id));
+  if (!item) return res.status(404).json({ error: "not found" });
+  item.status = req.body.status || item.status;
+  if (req.body.result) item.result = req.body.result;
+  item.updated = new Date().toISOString();
+  saveDirectives(directives);
+  io.emit("directive-update", item);
+  res.json(item);
+});
 
 // 채널 실시간 데이터 API (YouTube + Instagram + Facebook)
 app.get("/api/channels", async (req, res) => {
