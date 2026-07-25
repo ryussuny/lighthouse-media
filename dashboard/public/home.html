@@ -1051,7 +1051,7 @@
             <span style="font-size:30px;font-weight:800;color:#F5C562;margin-left:8px;">7,900원</span>
             <span style="font-size:13px;color:#C48220;font-weight:700;margin-left:6px;">런칭 특가</span>
           </div>
-          <button onclick="openBuy('월요일이 기다려지는 사람들의 비밀', 7900, '/ebooks/2026-07-25/paid-monday-people-secret.html')" style="background:#C48220;color:#fff;font-size:17px;font-weight:800;border:none;cursor:pointer;padding:16px 44px;border-radius:12px;">지금 구매하기</button>
+          <button onclick="openBuy('월요일이 기다려지는 사람들의 비밀', 7900, 'monday-people-secret')" style="background:#C48220;color:#fff;font-size:17px;font-weight:800;border:none;cursor:pointer;padding:16px 44px;border-radius:12px;">지금 구매하기</button>
           <p style="font-size:12.5px;color:#8FA0BF;margin-top:12px;">💳 계좌이체 · 입금 확인 후 이메일로 PDF 발송 · <b style="color:#C9D3E6;">7일 이내 100% 환불 보장</b></p>
         </div>
       </div>
@@ -1088,11 +1088,11 @@
     </div>
   </div>
   <script>
-    let buyProduct = '월요일이 기다려지는 사람들의 비밀', buyAmount = 7900, buyUrl = '/ebooks/2026-07-25/paid-monday-people-secret.html';
-    function openBuy(product, amount, url){
+    let buyProduct = '월요일이 기다려지는 사람들의 비밀', buyAmount = 7900, buySlug = 'monday-people-secret';
+    function openBuy(product, amount, slug){
       if (product) buyProduct = product;
       if (amount) buyAmount = amount;
-      buyUrl = url || '';
+      buySlug = slug || '';
       document.getElementById('byProduct').innerHTML = '<b>「' + buyProduct + '」</b>';
       document.getElementById('byAmount').textContent = buyAmount.toLocaleString() + '원';
       const b = document.getElementById('byBtn');
@@ -1110,7 +1110,7 @@
       b.textContent='처리 중…'; b.disabled=true;
       fetch('/api/order', { method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ name, email, phone: document.getElementById('byPhone').value.trim(),
-          amount: buyAmount, product: buyProduct, bookUrl: buyUrl })
+          amount: buyAmount, product: buyProduct, bookSlug: buySlug })
       }).then(r=>r.json()).then(d => {
         const box = document.getElementById('byResult');
         box.style.display='block';
@@ -1141,7 +1141,7 @@
             <div style="color:#C9D3E6;font-size:12.5px;margin:6px 0 14px;">${(b.subtitle||'').replace(/\n/g,' ')}</div>
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <b style="color:#F5C562;font-size:19px;">${price.toLocaleString()}원</b>
-              <button onclick="openBuy('${t.replace(/'/g,'')}', ${price}, '${b.url||''}')" style="background:#C48220;color:#fff;border:none;border-radius:9px;padding:9px 18px;font-weight:700;cursor:pointer;font-size:13.5px;">구매하기</button>
+              <button onclick="openBuy('${t.replace(/'/g,'')}', ${price}, '${b.slug||''}')" style="background:#C48220;color:#fff;border:none;border-radius:9px;padding:9px 18px;font-weight:700;cursor:pointer;font-size:13.5px;">구매하기</button>
             </div>
           </div>`;
         }).join('') || '<p style="color:#8FA0BF;font-size:13.5px;">준비 중입니다.</p>';
@@ -1591,7 +1591,7 @@
               <div class="book-actions">
                 ${isFree
                   ? `<a href="${b.url || '#'}" target="_blank" rel="noopener" class="book-dl-btn ${badgeClass}">${btnText}</a>`
-                  : `<a href="#" onclick="openBuy('${titleClean.replace(/'/g,'')}', ${b.price || 7900}, '${b.url||''}'); return false;" class="book-dl-btn ${badgeClass}">${btnText}</a>`}
+                  : `<a href="#" onclick="openBuy('${titleClean.replace(/'/g,'')}', ${b.price || 7900}, '${b.slug||''}'); return false;" class="book-dl-btn ${badgeClass}">${btnText}</a>`}
               </div>
             </div>
           </div>

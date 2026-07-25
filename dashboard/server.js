@@ -37,17 +37,20 @@ const io = new Server(server);
 app.use(express.json());
 
 // 구매 즉시 열람 토큰 (주문 시 발급 → /read?t= 로만 열람 가능)
+// 유료 전자책 HTML은 public/(정적 서빙 루트) 밖의 private/에만 존재한다 — 경로 정규식 가드는
+// URL 인코딩·이중슬래시 등으로 우회 가능해(R3 리뷰 실측 확인) 전량 폐기하고 물리적 분리로 대체.
 const readTokens = new Map();
+const privateEbooksDir = join(__dirname, "private", "ebooks");
 
-// 유료 전자책 직접 접근 차단 → 스토어로 (URL 알아도 못 봄)
-app.use((req, res, next) => {
-  if (/^\/ebooks\/[^/]+\/paid-.*\.html$/i.test(req.path)) {
-    return res.redirect("/home.html#store");
-  }
-  next();
-});
+function resolvePaidFile(slug) {
+  const entry = allEbooks().find(b => b.slug === slug && b.type === "paid");
+  if (!entry || !entry.url) return null;
+  const file = join(privateEbooksDir, entry.url.replace(/^\/ebooks\//, ""));
+  if (!/ebooks[\\/][^\\/]+[\\/]paid-.*\.html$/i.test(file) || !existsSync(file)) return null;
+  return file;
+}
 
-// 구매 후 즉시 열람: 유효한 토큰이면 유료책 HTML 제공
+// 구매 후 즉시 열람: 유효한 토큰이면 유료책 HTML 제공 (토큰은 slug만 들고 있고, 실제 파일 경로는 매번 서버가 재해석)
 app.get("/read", (req, res) => {
   const tok = readTokens.get(req.query.t);
   if (!tok) return res.redirect("/home.html#store");
@@ -55,11 +58,8 @@ app.get("/read", (req, res) => {
     readTokens.delete(req.query.t);
     return res.redirect("/home.html#store");
   }
-  const rel = (tok.url || "").replace(/^\//, "");
-  const file = join(__dirname, "public", rel);
-  if (!/ebooks[\\/][^\\/]+[\\/]paid-.*\.html$/i.test(file) || !existsSync(file)) {
-    return res.redirect("/home.html#store");
-  }
+  const file = resolvePaidFile(tok.slug);
+  if (!file) return res.redirect("/home.html#store");
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(readFileSync(file, "utf-8"));
 });
@@ -128,7 +128,10 @@ function allEbooks() {
   return all;
 }
 
-app.get("/api/ebooks", (req, res) => res.json(allEbooks()));
+// 클라이언트에는 유료책의 실제 파일 경로(url)를 절대 노출하지 않는다 — 구매 전에는 slug만 안다.
+app.get("/api/ebooks", (req, res) => {
+  res.json(allEbooks().map(b => b.type === "paid" ? { ...b, url: undefined } : b));
+});
 
 // 로컬 시스템 하트비트 (JARVIS PC → 관제탑, 30분마다)
 let lastHeartbeat = null;
@@ -486,11 +489,12 @@ app.post("/api/order", (req, res) => {
   io.emit("order-new", order);
   onNewOrder(order);
 
-  // 즉시 열람: 책 URL이 있으면 열람 토큰 발급 (계좌이체 신뢰 방식)
+  // 즉시 열람: 주문에 적힌 bookSlug가 실제 유료책과 일치할 때만 열람 토큰 발급 (계좌이체 신뢰 방식)
+  // 클라이언트가 보낸 경로 문자열은 신뢰하지 않는다 — slug로 서버가 직접 재조회한다(R3 리뷰 지적 반영).
   let readUrl = null;
-  if (order.bookUrl && /paid-.*\.html$/i.test(order.bookUrl)) {
+  if (order.bookSlug && resolvePaidFile(order.bookSlug)) {
     const token = Date.now().toString(36) + Math.random().toString(36).slice(2);
-    readTokens.set(token, { url: order.bookUrl, email: order.email, orderId: order.id, created: Date.now() });
+    readTokens.set(token, { slug: order.bookSlug, email: order.email, orderId: order.id, created: Date.now() });
     readUrl = `/read?t=${token}`;
   }
   res.json({ success: true, orderId: order.id, readUrl });
