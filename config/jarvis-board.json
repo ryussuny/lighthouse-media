@@ -48,6 +48,10 @@
           "done": true
         },
         {
+          "name": "⚠ 리뷰 R5·R6: ebook-library 유료책 직접열람 방지 + index.json 노출 근본수리(정규식가드 실수 재정정, 물리이동으로 대체)",
+          "done": true
+        },
+        {
           "name": "열람본을 4/21 제작된 고품질 디자인 버전으로 교체(표지·목차·PDF저장 기능 포함)",
           "done": true
         },
