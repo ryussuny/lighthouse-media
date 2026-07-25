@@ -64,9 +64,6 @@ app.get("/read", (req, res) => {
   res.send(readFileSync(file, "utf-8"));
 });
 
-// index.json 원본은 유료책 url을 그대로 담고 있어 정적 서빙으로 직접 받으면 /api/ebooks의
-// url 은폐가 무의미해진다(R5 리뷰 지적) — 클라이언트는 반드시 /api/ebooks로만 목록을 받게 한다.
-app.use(/^\/ebooks\/[^/]+\/index\.json$/i, (req, res) => res.status(404).end());
 app.use(express.static(join(__dirname, "public")));
 
 // 전자책 다운로드 요청 (팔로우+좋아요 확인 후 발송)
@@ -115,14 +112,14 @@ app.get("/api/ebook-requests", (req, res) => {
   res.json(existsSync(requestsFile) ? JSON.parse(readFileSync(requestsFile, "utf-8")) : []);
 });
 
-// 전자책 목록 API
+// 전자책 목록 API — index.json은 유료책 url을 그대로 담고 있어 public(정적서빙 루트) 밖의
+// private에서만 fs로 읽는다(R6 리뷰: 경로 정규식 가드는 인코딩 우회에 뚫려 물리분리로 대체).
 function allEbooks() {
-  const ebooksDir = join(__dirname, "public", "ebooks");
-  if (!existsSync(ebooksDir)) return [];
-  const dates = readdirSync(ebooksDir).filter(d => /\d{4}-\d{2}-\d{2}/.test(d)).sort().reverse();
+  if (!existsSync(privateEbooksDir)) return [];
+  const dates = readdirSync(privateEbooksDir).filter(d => /\d{4}-\d{2}-\d{2}/.test(d)).sort().reverse();
   const all = [];
   for (const date of dates) {
-    const indexFile = join(ebooksDir, date, "index.json");
+    const indexFile = join(privateEbooksDir, date, "index.json");
     if (existsSync(indexFile)) {
       const data = JSON.parse(readFileSync(indexFile, "utf-8"));
       all.push(...(data.books || []));
