@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>라이트하우스 그룹 — 조직도</title>
+<meta name="theme-color" content="#0d1220">
+<style>
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Pretendard',-apple-system,sans-serif; background:#0d1220; color:#e8ecf5; line-height:1.6; padding-bottom:60px; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 16px; }
+
+  header { padding:28px 0 20px; border-bottom:1px solid #1e2740; margin-bottom:24px; }
+  header .wrap { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+  h1 { font-size:22px; font-weight:800; letter-spacing:-0.5px; }
+  h1 span { color:#F5C562; }
+  .back { color:#8fa0bf; text-decoration:none; font-size:13px; font-weight:600; }
+  .back:hover { color:#F5C562; }
+  .sub { font-size:12px; color:#5a6785; margin-bottom:20px; }
+
+  .hq { background:linear-gradient(135deg,#16223f,#1a2a4f); border:1px solid #263659; border-radius:14px; padding:18px 20px; margin-bottom:24px; }
+  .hq .row { display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:13px; color:#8fa0bf; }
+  .hq b { color:#e8ecf5; }
+  .hq .goal { color:#F5C562; font-weight:700; }
+
+  h2 { font-size:15px; font-weight:800; color:#8fa0bf; letter-spacing:1.2px; text-transform:uppercase; margin:26px 0 10px; display:flex; align-items:center; gap:8px; }
+  h2 .count { background:#1e2740; color:#F5C562; font-size:11px; padding:2px 9px; border-radius:999px; letter-spacing:0; text-transform:none; font-weight:700; }
+
+  .dept { background:#131a2e; border:1px solid #1e2740; border-radius:14px; overflow:hidden; margin-bottom:14px; }
+  .dept summary { padding:14px 18px; cursor:pointer; font-size:14px; font-weight:700; display:flex; justify-content:space-between; align-items:center; list-style:none; }
+  .dept summary::-webkit-details-marker { display:none; }
+  .dept summary .arrow { color:#5a6785; font-size:12px; transition:transform .2s; }
+  .dept[open] summary .arrow { transform:rotate(90deg); }
+  .dept table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  .dept th, .dept td { padding:8px 18px; text-align:left; border-top:1px solid #1a2340; }
+  .dept th { background:#161f38; color:#8fa0bf; font-size:10.5px; letter-spacing:0.6px; text-transform:uppercase; }
+  .dept td.role { color:#F5C562; font-weight:600; white-space:nowrap; }
+  .dept td.map { color:#8fa0bf; font-family:ui-monospace,monospace; font-size:11.5px; }
+
+  .stationbar { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:20px 0; }
+  .stat { background:#131a2e; border:1px solid #1e2740; border-radius:12px; padding:12px 14px; text-align:center; }
+  .stat .n { font-size:22px; font-weight:800; color:#F5C562; }
+  .stat .l { font-size:11px; color:#8fa0bf; margin-top:2px; }
+
+  .note { font-size:12px; color:#5a6785; margin-top:24px; padding:14px; background:#131a2e; border:1px dashed #263659; border-radius:12px; }
+  .howto { background:#131a2e; border:1px solid #1e2740; border-radius:14px; padding:16px 18px; font-size:13px; color:#8fa0bf; margin-top:20px; }
+  .howto b { color:#F5C562; }
+  .howto div { margin:4px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>🏢 라이트하우스 <span>그룹</span></h1>
+    <a class="back" href="/jarvis.html">← 관제탑으로</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="sub">FORGE(콘텐츠 제작) + MINT(수익화)를 통합한 가상 조직도 — 교회 업무 제외, 수익 창출 전용. 2026-07-25 설계.</div>
+
+  <div class="hq">
+    <div class="row">
+      <span>CEO <b>류선희</b></span>
+      <span>COO(총괄비서) <b>JARVIS</b></span>
+      <span>월 매출 목표 <span class="goal">₩5,000,000</span></span>
+    </div>
+  </div>
+
+  <div class="stationbar">
+    <div class="stat"><div class="n">10</div><div class="l">본부/사업부</div></div>
+    <div class="stat"><div class="n">~98</div><div class="l">직책(역할)</div></div>
+    <div class="stat"><div class="n">6+</div><div class="l">진행 프로젝트</div></div>
+    <div class="stat"><div class="n">100%</div><div class="l">실제 자동화 매핑</div></div>
+  </div>
+
+  <h2>부서 조직도 <span class="count">10개 부서 · 클릭해서 펼치기</span></h2>
+
+  <details class="dept" open>
+    <summary>1. 경영전략실 (Executive & Strategy) <span class="arrow">▶</span></summary>
+    <table>
+      <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
+      <tr><td class="role">실장</td><td>전사 우선순위 조율</td><td class="map">JARVIS 총괄 판단</td></tr>
+      <tr><td class="role">CFO</td><td>매출 목표·현황 관리</td><td class="map">jarvis-board.json goal/metrics</td></tr>
+      <tr><td class="role">신사업개발팀장</td><td>새 수익모델 발굴</td><td class="map">cold-start, product-hunt-launch, pmf</td></tr>
+      <tr><td class="role">데이터분석가</td><td>성과 지표 분석</td><td class="map">performance.html, dashboard.html</td></tr>
+      <tr><td class="role">법무담당</td><td>약관·개인정보·환불</td><td class="map">legal, privacy, terms, refund</td></tr>
+      <tr><td class="role">PR/홍보담당</td><td>언론·커뮤니티 노출</td><td class="map">public-relations, press-coverage</td></tr>
+      <tr><td class="role">브랜드전략가</td><td>브랜드 스토리·톤</td><td class="map">branding, brand-visual</td></tr>
+      <tr><td class="role">인사/스킬관리자</td><td>신규 자동화 도구 도입</td><td class="map">스킬 카탈로그 검토</td></tr>
+      <tr><td class="role">리스크관리자</td><td>보안·안정성</td><td class="map">preflight, skillscan</td></tr>
+      <tr><td class="role">비서실 보좌</td><td>일정·문서 정리</td><td class="map">MEMORY.md</td></tr>
+    </table>
+  </details>
+
+  <details class="dept">
+    <summary>2. 콘텐츠제작본부 — FORGE Production <span class="arrow">▶</span></summary>
+    <table>
+      <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
+      <tr><td class="role">본부장</td><td>콘텐츠 파이프라인 총괄</td><td class="map">전체 스케줄러</td></tr>
+      <tr><td class="role">말씀카드 디자이너</td><td>카드뉴스 8장</td><td class="map">daily-bible-card.bat (06:00)</td></tr>
+      <tr><td class="role">스크립트 작가</td><td>영상 대본</td><td class="map">script-writer</td></tr>
+      <tr><td class="role">리서치 담당</td><td>소재 조사</td><td class="map">daily-research.bat</td></tr>
+      <tr><td class="role">팩트체커</td><td>단정 검증</td><td class="map">script-writer-factcheck</td></tr>
+      <tr><td class="role">성우/음성디렉터</td><td>나레이션 합성</td><td class="map">voice-clone-elevenlabs</td></tr>
+      <tr><td class="role">아바타 연출가</td><td>아바타 영상</td><td class="map">heygen-avatar-render</td></tr>
+      <tr><td class="role">비주얼 아티스트</td><td>이미지·B-roll·썸네일</td><td class="map">media-gen</td></tr>
+      <tr><td class="role">영상편집자</td><td>합성·자막</td><td class="map">video-stitch</td></tr>
+      <tr><td class="role">품질검수관</td><td>업로드 전 검증</td><td class="map">video-verify</td></tr>
+      <tr><td class="role">SNS운영매니저</td><td>자동참여·릴스</td><td class="map">auto-engage.bat, daily-ig-reels.bat</td></tr>
+      <tr><td class="role">채널그로스해커</td><td>프리미엄 콘텐츠</td><td class="map">daily-premium.bat (19:00)</td></tr>
+    </table>
+  </details>
+
+  <details class="dept">
+    <summary>3. 음악사업부 — Lighthouse Worship <span class="arrow">▶</span></summary>
+    <table>
+      <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
+      <tr><td class="role">사업부장</td><td>EP 기획·발매</td><td class="map">lighthouse-biz/music</td></tr>
+      <tr><td class="role">작사가</td><td>가사(EN/KR)</td><td class="map">music 폴더</td></tr>
+      <tr><td class="role">작곡/프로듀서</td><td>음원 생성</td><td class="map">Suno 파이프라인</td></tr>
+      <tr><td class="role">앨범아트 디자이너</td><td>커버 11종</td><td class="map">media-gen-image</td></tr>
+      <tr><td class="role">유튜브채널 매니저</td><td>발매·재생목록</td><td class="map">upload-music-youtube.py (매시간)</td></tr>
+      <tr><td class="role">유통매니저</td><td>DistroKid 제출</td><td class="map">목사님 액션</td></tr>
+      <tr><td class="role">쇼츠 편집자</td><td>하이라이트 쇼츠</td><td class="map">video-stitch</td></tr>
+      <tr><td class="role">마케팅 담당</td><td>스트리밍 그로스</td><td class="map">integrated-marketing</td></tr>
+    </table>
+  </details>
+
+  <details class="dept">
+    <summary>4. 출판사업부 — 전자책 <span class="arrow">▶</span></summary>
+    <table>
+      <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
+      <tr><td class="role">사업부장</td><td>시리즈 로드맵</td><td class="map">lighthouse-biz/ebooks</td></tr>
+      <tr><td class="role">집필/편집자</td><td>원고 작성</td><td class="map">daily-ebooks.bat, article</td></tr>
+      <tr><td class="role">표지디자이너</td><td>커버 디자인</td><td class="map">media-gen-image</td></tr>
+      <tr><td class="role">가격전략가</td><td>가격·런칭 전략</td><td class="map">pricing-strategy</td></tr>
+      <tr><td class="role">유통매니저</td><td>교보/예스24/알라딘/크몽/부크크</td><td class="map">목사님 액션</td></tr>
+      <tr><td class="role">마케팅 담당</td><td>출간 홍보</td><td class="map">copywriting, landing-page</td></tr>
+      <tr><td class="role">고객지원</td><td>주문·이메일 알림</td><td class="map">dashboard/server.js</td></tr>
+      <tr><td class="role">리뷰관리자</td><td>독자 피드백</td><td class="map">testimonials</td></tr>
+    </table>
+  </details>
+
+  <details class="dept">
+    <summary>5. 콘텐츠마케팅사업부 — 실버 애드센스 / 브랜드커넥트 <span class="arrow">▶</span></summary>
+    <table>
+      <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
+      <tr><td class="role">사업부장</td><td>시니어·제휴 전략</td><td class="map">silver-info, brandconnect</td></tr>
+      <tr><td class="role">주제 리서처</td><td>생활정보 소재</td><td class="map">k-skill 90여종</td></tr>
+      <tr><td class="role">카피라이터</td><td>본문 작성</td><td class="map">copywriting, article</td></tr>
+      <tr><td class="role">SEO 전문가</td><td>키워드·구조 최적화</td><td class="map">keyword-research</td></tr>
+      <tr><td class="role">썸네일 디자이너</td><td>글머리 이미지</td><td class="map">make_thumbnails*.py</td></tr>
+      <tr><td class="role">발행 매니저</td><td>티스토리 실발행</td><td class="map">infobox0509.tistory.com</td></tr>
+      <tr><td class="role">애드센스 담당</td><td>심사·수익 관리</td><td class="map">adsense-가입가이드.md</td></tr>
+      <tr><td class="role">제휴마케팅 담당</td><td>브랜드커넥트 협찬</td><td class="map">affiliate-marketing</td></tr>
+      <tr><td class="role">성과분석가</td><td>트래픽·수익 분석</td><td class="map">ai-traffic, google-search-console</td></tr>
+      <tr><td class="role">콘텐츠품질검수관</td><td>팩트체크</td><td class="map">hallucination-guard</td></tr>
+    </table>
+  </details>
+
+  <details class="dept">
+    <summary>6. 커머스사업부 — 쇼핑쇼츠 <span class="arrow">▶</span></summary>
+    <table>
+      <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
+      <tr><td class="role">사업부장</td><td>커머스 콘텐츠 전략</td><td class="map">쇼핑쇼츠 프로젝트</td></tr>
+      <tr><td class="role">제품 리서처</td><td>제품 소싱</td><td class="map">coupang-product-search, danawa-price-search</td></tr>
+      <tr><td class="role">쇼츠 제작자</td><td>15초 쇼츠 7종</td><td class="map">video-stitch, media-gen-video</td></tr>
+      <tr><td class="role">파트너스 운영담당</td><td>쿠팡파트너스</td><td class="map">affiliate-program</td></tr>
+      <tr><td class="role">카피라이터</td><td>후킹 카피</td><td class="map">copywriting</td></tr>
+      <tr><td class="role">성과분석가</td><td>전환·클릭 분석</td><td class="map">conversion, traffic</td></tr>
+    </table>
+  </details>
+
+  <details class="dept">
+    <summary>7. 성장마케팅본부 (전사 지원) <span class="arrow">▶</span></summary>
+    <table>
+      <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
+      <tr><td class="role">본부장</td><td>전사 마케팅 전략</td><td class="map">integrated-marketing, gtm</td></tr>
+      <tr><td class="role">SEO 전략가</td><td>키워드/전략/백링크</td><td class="map">content-strategy, link-building</td></tr>
+      <tr><td class="role">광고운영자</td><td>유료광고 집행</td><td class="map">google-ads, meta-ads, tiktok-ads</td></tr>
+      <tr><td class="role">카피라이터</td><td>전사 카피 지원</td><td class="map">copywriting</td></tr>
+      <tr><td class="role">전환최적화 담당</td><td>A/B테스트·퍼널</td><td class="map">conversion, growth-funnel</td></tr>
+      <tr><td class="role">이메일마케팅 담당</td><td>뉴스레터·리텐션</td><td class="map">email-marketing</td></tr>
+      <tr><td class="role">소셜전략가</td><td>채널별 SNS 전략</td><td class="map">x, linkedin, reddit, tiktok</td></tr>
+      <tr><td class="role">브랜드디자이너</td><td>비주얼 아이덴티티</td><td class="map">brand-visual, logo</td></tr>
+      <tr><td class="role">랜딩페이지 기획자</td><td>페이지 설계</td><td class="map">landing-page, hero</td></tr>
+      <tr><td class="role">콘텐츠캘린더 관리자</td><td>발행 일정</td><td class="map">content-marketing</td></tr>
+      <tr><td class="role">인플루언서마케팅 담당</td><td>협업 섭외</td><td class="map">influencer-marketing</td></tr>
+      <tr><td class="role">PR담당</td><td>보도자료·미디어</td><td class="map">public-relations</td></tr>
+    </table>
+  </details>
+
+  <details class="dept">
+    <summary>8. 기술운영본부 (IT/인프라) <span class="arrow">▶</span></summary>
+    <table>
+      <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
+      <tr><td class="role">본부장</td><td>전산 인프라 총괄</td><td class="map">JARVIS 시스템 점검</td></tr>
+      <tr><td class="role">서버운영담당</td><td>서버·프로세스 관리</td><td class="map">node/python 프로세스 점검</td></tr>
+      <tr><td class="role">DevOps 엔지니어</td><td>스케줄러·배치 수리</td><td class="map">Task Scheduler, .bat</td></tr>
+      <tr><td class="role">QA/테스트담당</td><td>기능 검증</td><td class="map">verify, qa</td></tr>
+      <tr><td class="role">보안담당</td><td>스킬/코드 보안</td><td class="map">skillscan, preflight</td></tr>
+      <tr><td class="role">데이터베이스관리자</td><td>데이터 정합성</td><td class="map">jarvis-board.json</td></tr>
+      <tr><td class="role">API/MCP연동담당</td><td>외부 서비스 연동</td><td class="map">notebooklm-mcp, wmux</td></tr>
+      <tr><td class="role">대시보드 개발자</td><td>관제탑·기능지도</td><td class="map">jarvis.html, capabilities.html</td></tr>
+      <tr><td class="role">백업담당</td><td>데이터 백업</td><td class="map">백업 스케줄러</td></tr>
+      <tr><td class="role">자동화엔지니어</td><td>신규 자동화 구축</td><td class="map">scaffold-exercises</td></tr>
+    </table>
+  </details>
+
+  <details class="dept">
+    <summary>9. 재무회계본부 <span class="arrow">▶</span></summary>
+    <table>
+      <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
+      <tr><td class="role">본부장</td><td>재무 총괄</td><td class="map">jarvis-board.json goal/metrics</td></tr>
+      <tr><td class="role">매출관리자</td><td>매출 실시간 트래킹</td><td class="map">/api/stats, /api/orders</td></tr>
+      <tr><td class="role">비용관리자</td><td>API/광고비 관리</td><td class="map">cost-preview-confirm</td></tr>
+      <tr><td class="role">정산담당</td><td>플랫폼별 정산</td><td class="map">각 사업부 유통매니저 연동</td></tr>
+      <tr><td class="role">리포팅담당</td><td>월간 리포트</td><td class="map">관제탑 보드 갱신</td></tr>
+      <tr><td class="role">세무담당</td><td>사업자등록·세무</td><td class="map">nts-business-registration</td></tr>
+    </table>
+  </details>
+
+  <details class="dept">
+    <summary>10. 비서실 — JARVIS 오퍼레이션 <span class="arrow">▶</span></summary>
+    <table>
+      <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
+      <tr><td class="role">마스터(총괄비서)</td><td>전 부서 지휘</td><td class="map">cys master(JARVIS)</td></tr>
+      <tr><td class="role">CSO</td><td>자원·시스템 감독</td><td class="map">cys cso 노드</td></tr>
+      <tr><td class="role">워커</td><td>구현 실행</td><td class="map">cys worker 노드</td></tr>
+      <tr><td class="role">리뷰어 ×2</td><td>결과 검증</td><td class="map">cys reviewer-claude-1/2</td></tr>
+      <tr><td class="role">스케줄러</td><td>정시 자동 실행</td><td class="map">Task Scheduler 12종</td></tr>
+      <tr><td class="role">메모리매니저</td><td>기억·의사결정 기록</td><td class="map">MEMORY.md</td></tr>
+      <tr><td class="role">커뮤니케이션담당</td><td>보고</td><td class="map">채팅 출력</td></tr>
+    </table>
+  </details>
+
+  <div class="howto">
+    <b>사용 방법</b>
+    <div>어느 패널에서든 이렇게 말하면 됩니다:</div>
+    <div>· "출판사업부장, 다음 전자책 표지 시안 만들어줘"</div>
+    <div>· "콘텐츠마케팅사업부, 애드센스 심사 준비해줘"</div>
+    <div>· "기술운영본부, 서버 상태 점검해줘"</div>
+    <div>JARVIS가 위 매핑표를 참조해 해당 스킬·스크립트·스케줄러를 실행합니다.</div>
+  </div>
+
+  <div class="note">
+    ⓘ 원본 문서: <code>lighthouse-biz/COMPANY.md</code>. 새 사업이 생기면 그 문서와 이 페이지에 부서/역할을 추가하면 됩니다. 실제 인원이 아닌 역할 체계이며, 모든 실행은 JARVIS(master)와 기존 자동화가 수행합니다.
+  </div>
+
+</div>
+</body>
+</html>

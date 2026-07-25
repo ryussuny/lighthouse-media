@@ -356,6 +356,10 @@
   ],
   "links": [
     {
+      "name": "🏢 회사 조직도",
+      "url": "/company.html"
+    },
+    {
       "name": "🧭 기능 지도",
       "url": "/capabilities.html"
     },
