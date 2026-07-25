@@ -828,8 +828,9 @@
 
       // Production team
       document.getElementById('prod-ebooks').textContent = ebooks.length + '권 제작';
-      const freeBooks = ebooks.filter(e => e.type === 'free' || (e.slug && e.slug.startsWith('free'))).length;
-      const paidBooks = ebooks.filter(e => e.type === 'paid' || (e.slug && e.slug.startsWith('paid'))).length;
+      // slug에는 free-/paid- 접두어가 없다(접두어는 url 파일명에만) — type 필드로만 판정한다
+      const freeBooks = ebooks.filter(e => e.type === 'free').length;
+      const paidBooks = ebooks.filter(e => e.type === 'paid').length;
       document.getElementById('prod-videos').textContent = '0편 완료';
       document.getElementById('prod-cards').textContent = Math.ceil(ebooks.length / 3) + '세트 완료';
 

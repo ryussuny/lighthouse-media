@@ -569,7 +569,16 @@ function doDownload() {
     }).catch(function(){});
   }
 
+  // 유료책은 파일을 직접 열지 않는다 — 결제 플로우(스토어)로 보낸다.
+  // 유료 url은 /api/ebooks에서 내려오지 않으므로 여기서 열면 빈 탭이 되고, 내려온다 해도 결제 없이 열람이 뚫린다.
+  if (currentBookType === 'paid') {
+    closeModal();
+    window.location.href = '/home.html#store';
+    return;
+  }
+
   // Open ebook in new tab
+  if (!currentUrl) { closeModal(); return; }
   window.open(currentUrl, '_blank');
   closeModal();
 }

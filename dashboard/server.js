@@ -64,6 +64,9 @@ app.get("/read", (req, res) => {
   res.send(readFileSync(file, "utf-8"));
 });
 
+// index.json 원본은 유료책 url을 그대로 담고 있어 정적 서빙으로 직접 받으면 /api/ebooks의
+// url 은폐가 무의미해진다(R5 리뷰 지적) — 클라이언트는 반드시 /api/ebooks로만 목록을 받게 한다.
+app.use(/^\/ebooks\/[^/]+\/index\.json$/i, (req, res) => res.status(404).end());
 app.use(express.static(join(__dirname, "public")));
 
 // 전자책 다운로드 요청 (팔로우+좋아요 확인 후 발송)
