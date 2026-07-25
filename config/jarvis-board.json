@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-10",
+  "updated": "2026-07-25",
   "goal": {
     "monthly": 5000000,
     "label": "월 500만원"
@@ -95,8 +95,8 @@
       "station": "MINT",
       "name": "실버 정보 애드센스 (시니어 콘텐츠 수익화)",
       "status": "active",
-      "progress": 70,
-      "next": "목사님: 나머지 17편 티스토리 발행(HTML모드+이미지) → 20편 도달 시 애드센스 심사 신청",
+      "progress": 80,
+      "next": "⚠ 콘텐츠는 83편까지 생성 완료(당초 목표 20편 초과) — 실제 티스토리 발행 편수 확인 필요. 목사님: 나머지 발행(HTML모드+이미지) → 20편 발행 도달 시 애드센스 심사 신청",
       "tasks": [
         {
           "name": "전략·시스템 설계",
@@ -111,7 +111,11 @@
           "done": true
         },
         {
-          "name": "나머지 17편 발행",
+          "name": "콘텐츠 83편 생성 완료(2026-07-25 확인)",
+          "done": true
+        },
+        {
+          "name": "나머지 발행 (실제 발행 편수 재확인 필요)",
           "done": false,
           "owner": "목사님"
         },
@@ -128,7 +132,7 @@
       "name": "말씀카드·영상·SNS 데일리 자동화",
       "status": "running",
       "progress": 100,
-      "next": "무인 운영 중 — 이상 시 JARVIS가 보고",
+      "next": "무인 운영 중 (output/에 7/25까지 매일 생성 확인) — ⚠ AutoEngage·Premium 최근 강제종료(0xC000013A) 이력, 재확인 필요",
       "tasks": []
     },
     {
@@ -137,7 +141,7 @@
       "name": "동산교회 목회 시스템 — 통합 포털",
       "status": "running",
       "progress": 100,
-      "next": "포털 가동: localhost:4000/portal.html (통합검색·현황). 백업/브리지 고장 수리 완료(7/4)",
+      "next": "포털 가동: localhost:4000/portal.html (통합검색·현황). ⚠ MainServer·SermonSync 최근 실행 exit 1 실패 — 로그 확인 필요",
       "tasks": [
         {
           "name": "통합 포털 구축 (교인·설교·말씀 통합검색)",
@@ -156,11 +160,20 @@
     {
       "id": "treasure-camp",
       "station": "SHEPHERD",
-      "name": "보물캠프 어린이 1일 캠프 (7/18)",
-      "status": "active",
-      "progress": 70,
-      "next": "신청서+QR 완성 — 홍보 배포 및 신청 접수 확인",
-      "tasks": []
+      "name": "보물캠프 어린이 1일 캠프",
+      "status": "done",
+      "progress": 100,
+      "next": "행사 진행 사진 확인됨(7/20~22) — 후기 콘텐츠화 여부만 확인 필요",
+      "tasks": [
+        {
+          "name": "신청서+QR 제작",
+          "done": true
+        },
+        {
+          "name": "캠프 진행 (사진 다수 확인)",
+          "done": true
+        }
+      ]
     }
   ],
   "music": {
