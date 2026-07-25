@@ -10,8 +10,8 @@
       "station": "MINT",
       "name": "전자책 「월요일이 기다려지는 사람들의 비밀」 발사",
       "status": "active",
-      "progress": 92,
-      "next": "① Render 환경변수 3개 붙여넣기만 하면 됨(목사님·2분, 값은 채팅에 준비됨) ② 프로필 링크만 https://lighthouse-media.onrender.com/home.html#store 로 교체(목사님·10초, 게시물은 이미 올라감)",
+      "progress": 95,
+      "next": "프로필 링크만 https://lighthouse-media.onrender.com/home.html#store 로 교체하면 즉시 판매 가능 상태(목사님·10초)",
       "tasks": [
         {
           "name": "31쪽 PDF + 표지 + 가격전략",
@@ -31,9 +31,8 @@
           "result": "https://www.instagram.com/p/DbNZNMsF9X_/"
         },
         {
-          "name": "Render 환경변수 붙여넣기",
-          "done": false,
-          "owner": "목사님"
+          "name": "Render 환경변수 설정 (7/25 확인)",
+          "done": true
         },
         {
           "name": "프로필 링크 교체",
