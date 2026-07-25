@@ -10,8 +10,8 @@
       "station": "MINT",
       "name": "전자책 「월요일이 기다려지는 사람들의 비밀」 발사",
       "status": "active",
-      "progress": 95,
-      "next": "프로필 링크만 https://lighthouse-media.onrender.com/home.html#store 로 교체하면 즉시 판매 가능 상태(목사님·10초)",
+      "progress": 90,
+      "next": "⚠ 리뷰 검증에서 구매 파이프라인 결함 발견·핵심 3건 수리 완료(7/25) — 잔여: 프로필 링크 교체(목사님·10초), Render 영구디스크 설정 여부 확인 필요",
       "tasks": [
         {
           "name": "31쪽 PDF + 표지 + 가격전략",
@@ -33,6 +33,20 @@
         {
           "name": "Render 환경변수 설정 (7/25 확인)",
           "done": true
+        },
+        {
+          "name": "⚠ 리뷰 발견: 구매 즉시열람 안 되던 버그 수리 (bookUrl 인자 누락 + 열람 HTML 부재)",
+          "done": true,
+          "result": "PDF→HTML 변환·히어로버튼 수정, 7/25"
+        },
+        {
+          "name": "⚠ 리뷰 발견: 무료전자책 다운로드 URL 날짜 하드코딩 버그 수리",
+          "done": true
+        },
+        {
+          "name": "미해결: orders.json 등 데이터 영속성 (Render 영구디스크 설정 여부 확인 필요)",
+          "done": false,
+          "owner": "목사님"
         },
         {
           "name": "프로필 링크 교체",
