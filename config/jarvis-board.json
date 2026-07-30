@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-25",
+  "updated": "2026-07-31",
   "goal": {
     "monthly": 5000000,
     "label": "월 500만원"
@@ -163,6 +163,36 @@
       "progress": 100,
       "next": "무인 운영 중 (output/에 7/25까지 매일 생성 확인). ✅ AutoEngage 스케줄 버그 수리(3개월간 일 1회만 돌던 걸 30분마다로 복구) + 정체불명 중복 서버(포트3300) 정리, 7/25",
       "tasks": []
+    },
+    {
+      "id": "dashboard-ux-202607",
+      "station": "FORGE",
+      "name": "관제탑 UX 개선 — company.html 카드뷰 + jarvis.html 연결",
+      "status": "done",
+      "progress": 100,
+      "next": "reviewer 검증 대기 (worker 자체선언 아님) — company.html: 부서 카드뷰+검색/필터+현재담당업무, jarvis.html: 조직도 연결 링크+섹션 앵커",
+      "tasks": [
+        {
+          "name": "company.html: 10개 부서를 아코디언→카드그리드로 전환(펼치면 전체폭)",
+          "done": true
+        },
+        {
+          "name": "company.html: 부서명·직책·업무 검색/필터 입력창",
+          "done": true
+        },
+        {
+          "name": "company.html: 부서별 '현재 담당업무' 표시(대기중인 지시 실시간 반영)",
+          "done": true
+        },
+        {
+          "name": "jarvis.html: 헤더에 조직도 이동 링크 + 섹션 앵커(revenue/projects/sysstatus/sched)",
+          "done": true
+        },
+        {
+          "name": "company.html↔jarvis.html 상호 링크 헤드리스 렌더 검증(스크린샷·검색 동작 확인)",
+          "done": true
+        }
+      ]
     },
     {
       "id": "shepherd-church",
