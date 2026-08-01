@@ -69,6 +69,20 @@
   .status-pending { color:#F5C562; }
   .status-done { color:#6fe58f; }
   .empty-directive { color:#4a5a78; font-size:12.5px; padding:6px 2px; }
+
+  /* 부서 카드뷰 */
+  .dept-search { width:100%; background:#131a2e; border:1px solid #1e2740; border-radius:10px; color:#e8ecf5; padding:11px 14px; font-family:inherit; font-size:13.5px; margin-bottom:14px; }
+  .dept-search::placeholder { color:#5a6785; }
+  .dept-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; align-items:start; }
+  .dept-grid .dept { margin-bottom:0; }
+  .dept-grid .dept[open] { grid-column:1 / -1; }
+  .dept-meta { padding:0 18px 12px; }
+  .dept-mission { font-size:12px; color:#8fa0bf; }
+  .dept-current { font-size:11.5px; color:#7fb3e8; margin-top:8px; padding:7px 10px; background:#101a30; border-radius:8px; }
+  .dept-current b { color:#F5C562; }
+  .dept-jump { display:inline-block; margin-top:8px; font-size:11.5px; color:#5a6785; text-decoration:none; }
+  .dept-jump:hover { color:#F5C562; }
+  .dept-hidden { display:none !important; }
 </style>
 </head>
 <body>
@@ -81,7 +95,7 @@
 </header>
 
 <div class="wrap">
-  <div class="sub">FORGE(콘텐츠 제작) + MINT(수익화)를 통합한 가상 조직도 — 교회 업무 제외, 수익 창출 전용. 2026-07-25 설계.</div>
+  <div class="sub">FORGE(콘텐츠 제작) + MINT(수익화)를 통합한 가상 조직도 — 교회 업무 제외, 수익 창출 전용. 2026-07-25 설계, 2026-08-01 100명 규모로 확장.</div>
 
   <div class="hq">
     <div class="row">
@@ -93,7 +107,7 @@
 
   <div class="stationbar">
     <div class="stat"><div class="n">10</div><div class="l">본부/사업부</div></div>
-    <div class="stat"><div class="n">~98</div><div class="l">직책(역할)</div></div>
+    <div class="stat"><div class="n">100</div><div class="l">직책(역할)</div></div>
     <div class="stat"><div class="n">6+</div><div class="l">진행 프로젝트</div></div>
     <div class="stat"><div class="n">100%</div><div class="l">실제 자동화 매핑</div></div>
   </div>
@@ -121,9 +135,16 @@
   <div class="directive-list" id="directiveList"><div class="empty-directive">불러오는 중…</div></div>
 
   <h2>부서 조직도 <span class="count">10개 부서 · 클릭해서 펼치기</span></h2>
+  <input class="dept-search" id="deptSearch" type="text" placeholder="부서명·직책·업무로 검색…" oninput="filterDepts()">
 
-  <details class="dept" open>
+  <div class="dept-grid" id="deptGrid">
+  <details class="dept" open data-dept="경영전략실">
     <summary>1. 경영전략실 (Executive & Strategy) <span class="arrow">▶</span></summary>
+    <div class="dept-meta">
+      <div class="dept-mission">전사 우선순위·매출목표·리스크를 총괄 조율</div>
+      <div class="dept-current" id="cur-경영전략실">현재 대기 중(지시 없음)</div>
+      <a class="dept-jump" href="/jarvis.html#sec-revenue">관제탑에서 현황 보기 →</a>
+    </div>
     <table>
       <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
       <tr><td class="role">실장</td><td>전사 우선순위 조율</td><td class="map">JARVIS 총괄 판단</td></tr>
@@ -139,8 +160,13 @@
     </table>
   </details>
 
-  <details class="dept">
+  <details class="dept" data-dept="콘텐츠제작본부(FORGE)">
     <summary>2. 콘텐츠제작본부 — FORGE Production <span class="arrow">▶</span></summary>
+    <div class="dept-meta">
+      <div class="dept-mission">말씀카드부터 프리미엄 영상까지 콘텐츠 파이프라인 전체 운영</div>
+      <div class="dept-current" id="cur-콘텐츠제작본부(FORGE)">현재 대기 중(지시 없음)</div>
+      <a class="dept-jump" href="/jarvis.html#sec-projects">관제탑에서 현황 보기 →</a>
+    </div>
     <table>
       <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
       <tr><td class="role">본부장</td><td>콘텐츠 파이프라인 총괄</td><td class="map">전체 스케줄러</td></tr>
@@ -155,16 +181,23 @@
       <tr><td class="role">품질검수관</td><td>업로드 전 검증</td><td class="map">video-verify</td></tr>
       <tr><td class="role">SNS운영매니저</td><td>자동참여·릴스</td><td class="map">auto-engage.bat, daily-ig-reels.bat</td></tr>
       <tr><td class="role">채널그로스해커</td><td>프리미엄 콘텐츠</td><td class="map">daily-premium.bat (19:00)</td></tr>
+      <tr><td class="role">쇼츠전문PD</td><td>숏폼 포맷 전용 기획·편집</td><td class="map">video-stitch-broll, video-stitch-captions</td></tr>
     </table>
   </details>
 
-  <details class="dept">
+  <details class="dept" data-dept="음악사업부(Lighthouse Worship)">
     <summary>3. 음악사업부 — Lighthouse Worship <span class="arrow">▶</span></summary>
+    <div class="dept-meta">
+      <div class="dept-mission">EP 기획부터 유튜브 발매까지 음원 사업 총괄</div>
+      <div class="dept-current" id="cur-음악사업부(Lighthouse Worship)">현재 대기 중(지시 없음)</div>
+      <a class="dept-jump" href="/jarvis.html#sec-projects">관제탑에서 현황 보기 →</a>
+    </div>
     <table>
       <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
       <tr><td class="role">사업부장</td><td>EP 기획·발매</td><td class="map">lighthouse-biz/music</td></tr>
       <tr><td class="role">작사가</td><td>가사(EN/KR)</td><td class="map">music 폴더</td></tr>
       <tr><td class="role">작곡/프로듀서</td><td>음원 생성</td><td class="map">Suno 파이프라인</td></tr>
+      <tr><td class="role">믹싱/마스터링 엔지니어</td><td>음질·라우드니스 최종화</td><td class="map">audio-post-mix</td></tr>
       <tr><td class="role">앨범아트 디자이너</td><td>커버 11종</td><td class="map">media-gen-image</td></tr>
       <tr><td class="role">유튜브채널 매니저</td><td>발매·재생목록</td><td class="map">upload-music-youtube.py (매시간)</td></tr>
       <tr><td class="role">유통매니저</td><td>DistroKid 제출</td><td class="map">목사님 액션</td></tr>
@@ -173,8 +206,13 @@
     </table>
   </details>
 
-  <details class="dept">
+  <details class="dept" data-dept="출판사업부(전자책)">
     <summary>4. 출판사업부 — 전자책 <span class="arrow">▶</span></summary>
+    <div class="dept-meta">
+      <div class="dept-mission">전자책 집필·표지·유통·매출까지 시리즈 로드맵 운영</div>
+      <div class="dept-current" id="cur-출판사업부(전자책)">현재 대기 중(지시 없음)</div>
+      <a class="dept-jump" href="/jarvis.html#sec-projects">관제탑에서 현황 보기 →</a>
+    </div>
     <table>
       <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
       <tr><td class="role">사업부장</td><td>시리즈 로드맵</td><td class="map">lighthouse-biz/ebooks</td></tr>
@@ -185,11 +223,17 @@
       <tr><td class="role">마케팅 담당</td><td>출간 홍보</td><td class="map">copywriting, landing-page</td></tr>
       <tr><td class="role">고객지원</td><td>주문·이메일 알림</td><td class="map">dashboard/server.js</td></tr>
       <tr><td class="role">리뷰관리자</td><td>독자 피드백</td><td class="map">testimonials</td></tr>
+      <tr><td class="role">번역담당(영문판)</td><td>글로벌 시장용 영문 번역</td><td class="map">translation</td></tr>
     </table>
   </details>
 
-  <details class="dept">
+  <details class="dept" data-dept="콘텐츠마케팅사업부(실버애드센스/브랜드커넥트)">
     <summary>5. 콘텐츠마케팅사업부 — 실버 애드센스 / 브랜드커넥트 <span class="arrow">▶</span></summary>
+    <div class="dept-meta">
+      <div class="dept-mission">시니어 대상 생활정보 콘텐츠와 애드센스·제휴 수익화</div>
+      <div class="dept-current" id="cur-콘텐츠마케팅사업부(실버애드센스/브랜드커넥트)">현재 대기 중(지시 없음)</div>
+      <a class="dept-jump" href="/jarvis.html#sec-projects">관제탑에서 현황 보기 →</a>
+    </div>
     <table>
       <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
       <tr><td class="role">사업부장</td><td>시니어·제휴 전략</td><td class="map">silver-info, brandconnect</td></tr>
@@ -202,11 +246,17 @@
       <tr><td class="role">제휴마케팅 담당</td><td>브랜드커넥트 협찬</td><td class="map">affiliate-marketing</td></tr>
       <tr><td class="role">성과분석가</td><td>트래픽·수익 분석</td><td class="map">ai-traffic, google-search-console</td></tr>
       <tr><td class="role">콘텐츠품질검수관</td><td>팩트체크</td><td class="map">hallucination-guard</td></tr>
+      <tr><td class="role">커뮤니티매니저</td><td>댓글·구독자 소통</td><td class="map">community-forum</td></tr>
     </table>
   </details>
 
-  <details class="dept">
+  <details class="dept" data-dept="커머스사업부(쇼핑쇼츠)">
     <summary>6. 커머스사업부 — 쇼핑쇼츠 <span class="arrow">▶</span></summary>
+    <div class="dept-meta">
+      <div class="dept-mission">제품 소싱부터 쇼핑쇼츠 제작·파트너스 전환까지 커머스 콘텐츠</div>
+      <div class="dept-current" id="cur-커머스사업부(쇼핑쇼츠)">현재 대기 중(지시 없음)</div>
+      <a class="dept-jump" href="/jarvis.html#sec-projects">관제탑에서 현황 보기 →</a>
+    </div>
     <table>
       <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
       <tr><td class="role">사업부장</td><td>커머스 콘텐츠 전략</td><td class="map">쇼핑쇼츠 프로젝트</td></tr>
@@ -215,11 +265,18 @@
       <tr><td class="role">파트너스 운영담당</td><td>쿠팡파트너스</td><td class="map">affiliate-program</td></tr>
       <tr><td class="role">카피라이터</td><td>후킹 카피</td><td class="map">copywriting</td></tr>
       <tr><td class="role">성과분석가</td><td>전환·클릭 분석</td><td class="map">conversion, traffic</td></tr>
+      <tr><td class="role">리뷰관리담당</td><td>구매후기·평점 관리</td><td class="map">testimonials</td></tr>
+      <tr><td class="role">CS담당</td><td>문의·클레임 대응</td><td class="map">feedback</td></tr>
     </table>
   </details>
 
-  <details class="dept">
+  <details class="dept" data-dept="성장마케팅본부">
     <summary>7. 성장마케팅본부 (전사 지원) <span class="arrow">▶</span></summary>
+    <div class="dept-meta">
+      <div class="dept-mission">전사 SEO·광고·전환·소셜 전략으로 그로스 지원</div>
+      <div class="dept-current" id="cur-성장마케팅본부">현재 대기 중(지시 없음)</div>
+      <a class="dept-jump" href="/jarvis.html#sec-projects">관제탑에서 현황 보기 →</a>
+    </div>
     <table>
       <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
       <tr><td class="role">본부장</td><td>전사 마케팅 전략</td><td class="map">integrated-marketing, gtm</td></tr>
@@ -234,11 +291,17 @@
       <tr><td class="role">콘텐츠캘린더 관리자</td><td>발행 일정</td><td class="map">content-marketing</td></tr>
       <tr><td class="role">인플루언서마케팅 담당</td><td>협업 섭외</td><td class="map">influencer-marketing</td></tr>
       <tr><td class="role">PR담당</td><td>보도자료·미디어</td><td class="map">public-relations</td></tr>
+      <tr><td class="role">그로스해킹 담당</td><td>실험·바이럴 루프 설계</td><td class="map">growth-funnel, referral-program</td></tr>
     </table>
   </details>
 
-  <details class="dept">
+  <details class="dept" data-dept="기술운영본부">
     <summary>8. 기술운영본부 (IT/인프라) <span class="arrow">▶</span></summary>
+    <div class="dept-meta">
+      <div class="dept-mission">서버·스케줄러·보안·백업 등 전산 인프라 안정 운영</div>
+      <div class="dept-current" id="cur-기술운영본부">현재 대기 중(지시 없음)</div>
+      <a class="dept-jump" href="/jarvis.html#sec-sysstatus">관제탑에서 현황 보기 →</a>
+    </div>
     <table>
       <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
       <tr><td class="role">본부장</td><td>전산 인프라 총괄</td><td class="map">JARVIS 시스템 점검</td></tr>
@@ -251,11 +314,17 @@
       <tr><td class="role">대시보드 개발자</td><td>관제탑·기능지도</td><td class="map">jarvis.html, capabilities.html</td></tr>
       <tr><td class="role">백업담당</td><td>데이터 백업</td><td class="map">백업 스케줄러</td></tr>
       <tr><td class="role">자동화엔지니어</td><td>신규 자동화 구축</td><td class="map">scaffold-exercises</td></tr>
+      <tr><td class="role">모니터링담당</td><td>실시간 에러·헬스체크 감시</td><td class="map">health-rules, watchdog</td></tr>
     </table>
   </details>
 
-  <details class="dept">
+  <details class="dept" data-dept="재무회계본부">
     <summary>9. 재무회계본부 <span class="arrow">▶</span></summary>
+    <div class="dept-meta">
+      <div class="dept-mission">매출·비용·정산·세무 등 재무 전반 관리</div>
+      <div class="dept-current" id="cur-재무회계본부">현재 대기 중(지시 없음)</div>
+      <a class="dept-jump" href="/jarvis.html#sec-revenue">관제탑에서 현황 보기 →</a>
+    </div>
     <table>
       <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
       <tr><td class="role">본부장</td><td>재무 총괄</td><td class="map">jarvis-board.json goal/metrics</td></tr>
@@ -264,11 +333,17 @@
       <tr><td class="role">정산담당</td><td>플랫폼별 정산</td><td class="map">각 사업부 유통매니저 연동</td></tr>
       <tr><td class="role">리포팅담당</td><td>월간 리포트</td><td class="map">관제탑 보드 갱신</td></tr>
       <tr><td class="role">세무담당</td><td>사업자등록·세무</td><td class="map">nts-business-registration</td></tr>
+      <tr><td class="role">투자/자금담당</td><td>재투자 우선순위·현금흐름 관리</td><td class="map">pricing-strategy 연계</td></tr>
     </table>
   </details>
 
-  <details class="dept">
+  <details class="dept" data-dept="비서실(JARVIS)">
     <summary>10. 비서실 — JARVIS 오퍼레이션 <span class="arrow">▶</span></summary>
+    <div class="dept-meta">
+      <div class="dept-mission">master·워커·리뷰어 노드 지휘와 스케줄러 운영</div>
+      <div class="dept-current" id="cur-비서실(JARVIS)">현재 대기 중(지시 없음)</div>
+      <a class="dept-jump" href="/jarvis.html#sec-sched">관제탑에서 현황 보기 →</a>
+    </div>
     <table>
       <tr><th>직책</th><th>담당 업무</th><th>실행 매핑</th></tr>
       <tr><td class="role">마스터(총괄비서)</td><td>전 부서 지휘</td><td class="map">cys master(JARVIS)</td></tr>
@@ -278,8 +353,10 @@
       <tr><td class="role">스케줄러</td><td>정시 자동 실행</td><td class="map">Task Scheduler 12종</td></tr>
       <tr><td class="role">메모리매니저</td><td>기억·의사결정 기록</td><td class="map">MEMORY.md</td></tr>
       <tr><td class="role">커뮤니케이션담당</td><td>보고</td><td class="map">채팅 출력</td></tr>
+      <tr><td class="role">온보딩/문서화담당</td><td>신규 역할·스킬 온보딩 문서 관리</td><td class="map">COMPANY.md, COMMANDS.md</td></tr>
     </table>
   </details>
+  </div>
 
   <div class="howto">
     <b>사용 방법</b>
@@ -311,7 +388,29 @@ async function loadDirectives() {
           ${(d.created || '').slice(0,16).replace('T',' ')}
         </span>
       </div>`).join('');
+    updateCurrentTasks(list);
   } catch (e) { console.error(e); }
+}
+
+function updateCurrentTasks(list) {
+  // 부서별 최신 pending 지시를 '현재 담당업무' 칸에 반영 (없으면 기본 문구 유지)
+  const latestPending = {};
+  list.forEach(d => {
+    if (d.status !== 'done') latestPending[d.department] = d;
+  });
+  document.querySelectorAll('.dept-current').forEach(elm => {
+    const dept = elm.closest('.dept').dataset.dept;
+    const d = latestPending[dept];
+    elm.innerHTML = d ? `<b>진행중</b> ${d.instruction}` : '현재 대기 중(지시 없음)';
+  });
+}
+
+function filterDepts() {
+  const q = document.getElementById('deptSearch').value.trim().toLowerCase();
+  document.querySelectorAll('#deptGrid .dept').forEach(dept => {
+    const hit = !q || dept.textContent.toLowerCase().includes(q);
+    dept.classList.toggle('dept-hidden', !hit);
+  });
 }
 
 async function submitDirective() {
