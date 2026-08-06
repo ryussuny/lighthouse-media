@@ -87,6 +87,30 @@
 </head>
 <body>
 
+<!-- PIN 잠금 (jarvis.html과 동일 게이트 — 값도 localStorage 키 jarvisPin 공유) -->
+<div id="pinGate" style="display:none;position:fixed;inset:0;background:#0d1220;z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:18px;">
+  <div style="font-size:40px;">🗼</div>
+  <div style="font-size:16px;font-weight:700;color:#8fa0bf;">라이트하우스 그룹 — PIN 입력</div>
+  <input id="pinInput" type="password" inputmode="numeric" maxlength="4" style="width:160px;font-size:28px;text-align:center;letter-spacing:12px;background:#131a2e;border:1px solid #263659;border-radius:12px;color:#F5C562;padding:14px;outline:none;">
+  <div id="pinErr" style="color:#F56262;font-size:13px;height:18px;"></div>
+</div>
+<script>
+(function(){
+  const PIN = '1216';
+  if (localStorage.getItem('jarvisPin') === PIN) return;
+  const gate = document.getElementById('pinGate');
+  gate.style.display = 'flex';
+  const inp = document.getElementById('pinInput');
+  setTimeout(()=>inp.focus(), 100);
+  inp.addEventListener('input', () => {
+    if (inp.value.length === 4) {
+      if (inp.value === PIN) { localStorage.setItem('jarvisPin', PIN); gate.style.display='none'; }
+      else { document.getElementById('pinErr').textContent = 'PIN이 올바르지 않습니다'; inp.value=''; }
+    }
+  });
+})();
+</script>
+
 <header>
   <div class="wrap">
     <h1>🏢 라이트하우스 <span>그룹</span></h1>
@@ -374,6 +398,11 @@
 </div>
 
 <script>
+// 외부·사용자 입력이 innerHTML로 들어가는 모든 지점에 적용(저장형 XSS 차단, R-2026-08-06).
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
 async function loadDirectives() {
   try {
     const list = await (await fetch('/api/directives')).json();
@@ -381,11 +410,11 @@ async function loadDirectives() {
     if (!list.length) { el.innerHTML = '<div class="empty-directive">아직 제출된 지시가 없습니다</div>'; return; }
     el.innerHTML = list.slice().reverse().map(d => `
       <div class="directive-item">
-        <span class="dept-tag">${d.department}</span>
-        <span class="txt">${d.instruction}${d.result ? `<br><small style="color:#5a6785;">→ ${d.result}</small>` : ''}</span>
+        <span class="dept-tag">${escapeHtml(d.department)}</span>
+        <span class="txt">${escapeHtml(d.instruction)}${d.result ? `<br><small style="color:#5a6785;">→ ${escapeHtml(d.result)}</small>` : ''}</span>
         <span class="meta">
           <span class="${d.status === 'done' ? 'status-done' : 'status-pending'}">${d.status === 'done' ? '✓ 완료' : '⏳ 대기'}</span><br>
-          ${(d.created || '').slice(0,16).replace('T',' ')}
+          ${escapeHtml((d.created || '').slice(0,16).replace('T',' '))}
         </span>
       </div>`).join('');
     updateCurrentTasks(list);
@@ -401,7 +430,7 @@ function updateCurrentTasks(list) {
   document.querySelectorAll('.dept-current').forEach(elm => {
     const dept = elm.closest('.dept').dataset.dept;
     const d = latestPending[dept];
-    elm.innerHTML = d ? `<b>진행중</b> ${d.instruction}` : '현재 대기 중(지시 없음)';
+    elm.innerHTML = d ? `<b>진행중</b> ${escapeHtml(d.instruction)}` : '현재 대기 중(지시 없음)';
   });
 }
 
@@ -417,11 +446,16 @@ async function submitDirective() {
   const department = document.getElementById('deptSelect').value;
   const instruction = document.getElementById('instructionInput').value.trim();
   if (!instruction) return;
-  await fetch('/api/directives', {
+  const res = await fetch('/api/directives', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-dashboard-pin': localStorage.getItem('jarvisPin') || '' },
     body: JSON.stringify({ department, instruction }),
   });
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    alert('지시 제출 실패: ' + (errBody.error || res.status));
+    return;
+  }
   document.getElementById('instructionInput').value = '';
   loadDirectives();
 }

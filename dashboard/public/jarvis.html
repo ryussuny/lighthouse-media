@@ -165,6 +165,16 @@
 
 <script>
 const won = n => '₩' + (n||0).toLocaleString();
+// 외부·사용자 입력이 innerHTML/속성으로 들어가는 모든 지점에 적용(저장형 XSS 차단, R-2026-08-06).
+// board.json 유래 필드(내부 설정)까지 포함해 전체 조립 지점에 방어적으로 건다.
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+// href 속성은 이스케이프만으론 javascript: 스킴 주입을 못 막는다 — 화이트리스트로 스킴을 제한한다.
+function safeHref(url) {
+  const u = String(url || '');
+  return (u.startsWith('/') || u.startsWith('http://') || u.startsWith('https://')) ? u : '#';
+}
 
 async function load() {
   try {
@@ -186,14 +196,14 @@ async function load() {
     document.getElementById('projects').innerHTML = d.board.projects.map(p => `
       <div class="card">
         <div class="top">
-          <h3>${p.name}</h3>
-          <span class="station st-${p.station}">${p.station}</span>
+          <h3>${escapeHtml(p.name)}</h3>
+          <span class="station st-${escapeHtml(p.station)}">${escapeHtml(p.station)}</span>
         </div>
-        <div class="next"><b>다음 →</b> ${p.next}</div>
+        <div class="next"><b>다음 →</b> ${escapeHtml(p.next)}</div>
         ${p.tasks.length ? `<ul class="tasks">${p.tasks.map(t =>
-          `<li class="${t.done?'done':''}">${t.done?'✅':'⬜'} ${t.name}${t.owner&&!t.done?`<span class="owner">${t.owner}</span>`:''}</li>`).join('')}</ul>` : ''}
-        <div class="mini-bar"><div style="width:${p.progress}%;background:${p.progress>=100?'#6fe58f':'linear-gradient(90deg,#C48220,#F5C562)'}"></div></div>
-        <div class="pct">${p.progress}%</div>
+          `<li class="${t.done?'done':''}">${t.done?'✅':'⬜'} ${escapeHtml(t.name)}${t.owner&&!t.done?`<span class="owner">${escapeHtml(t.owner)}</span>`:''}</li>`).join('')}</ul>` : ''}
+        <div class="mini-bar"><div style="width:${Number(p.progress)||0}%;background:${p.progress>=100?'#6fe58f':'linear-gradient(90deg,#C48220,#F5C562)'}"></div></div>
+        <div class="pct">${Number(p.progress)||0}%</div>
       </div>`).join('');
 
     /* 음원 */
@@ -201,15 +211,15 @@ async function load() {
     const chip = v => `<span class="chip ${v?'ok':'no'}">${v?'✓':'·'}</span>`;
     document.getElementById('tracks').innerHTML = d.board.music.tracks.map(t => `
       <tr>
-        <td>${t.no||'★'}</td><td><b>${t.title}</b></td><td>${t.lang}</td>
+        <td>${escapeHtml(t.no||'★')}</td><td><b>${escapeHtml(t.title)}</b></td><td>${escapeHtml(t.lang)}</td>
         <td>${chip(t.lyrics)}</td><td>${chip(t.suno)}</td><td>${chip(t.wav)}</td><td>${chip(t.mp4)}</td>
-        <td>${t.youtube ? `<a class="yt-link" href="https://youtu.be/${t.youtube}" target="_blank">▶ 보기</a>` : chip(false)}</td>
+        <td>${t.youtube ? `<a class="yt-link" href="${safeHref('https://youtu.be/' + encodeURIComponent(t.youtube))}" target="_blank">▶ 보기</a>` : chip(false)}</td>
       </tr>`).join('');
 
     /* 주문 */
     if (d.orders && d.orders.length) {
       document.getElementById('orders').innerHTML = d.orders.slice(-5).reverse().map(o => `
-        <li><span>#${o.id} ${o.name} <small style="color:#5a6785">${(o.created||'').slice(0,16).replace('T',' ')}</small></span>
+        <li><span>#${escapeHtml(o.id)} ${escapeHtml(o.name)} <small style="color:#5a6785">${escapeHtml((o.created||'').slice(0,16).replace('T',' '))}</small></span>
         <span><span class="amt">${won(o.amount)}</span> <small style="color:${o.status==='confirmed'?'#6fe58f':'#F5C562'}">${o.status==='confirmed'?'입금확인':'대기'}</small></span></li>`).join('');
     }
 
@@ -222,21 +232,21 @@ async function load() {
       let html = '';
       html += `<div>${dot(hb.church_server_up)} 동산교회 서버 <b>${hb.church_server_up?'정상':'중단'}</b></div>`;
       html += `<div>${dot(hb.bridge_up)} AI 브리지 서버 <b>${hb.bridge_up?'정상':'중단'}</b></div>`;
-      html += `<div>${dot(!!hb.church_backup_last)} 교회 백업 <b>${hb.church_backup_last||'기록 없음'}</b></div>`;
-      html += `<div>${dot(true)} 오늘 생성 콘텐츠 <b>${hb.today_output_files}개</b></div>`;
+      html += `<div>${dot(!!hb.church_backup_last)} 교회 백업 <b>${escapeHtml(hb.church_backup_last||'기록 없음')}</b></div>`;
+      html += `<div>${dot(true)} 오늘 생성 콘텐츠 <b>${escapeHtml(hb.today_output_files)}개</b></div>`;
       (hb.schedulers||[]).forEach(s => {
-        html += `<div>${dot(s.ok)} ${s.name.replace('LighthouseMedia_','LH_').replace('DongsanChurch_','교회_')} <b>${s.ok?'정상':'점검필요'}</b></div>`;
+        html += `<div>${dot(s.ok)} ${escapeHtml(String(s.name||'').replace('LighthouseMedia_','LH_').replace('DongsanChurch_','교회_'))} <b>${s.ok?'정상':'점검필요'}</b></div>`;
       });
       document.getElementById('sysStatus').innerHTML = html;
     }
 
     /* 스케줄러 */
     document.getElementById('sched').innerHTML = d.board.schedulers.map(s =>
-      `<div><b>${s.time}</b> · ${s.name}</div>`).join('');
+      `<div><b>${escapeHtml(s.time)}</b> · ${escapeHtml(s.name)}</div>`).join('');
 
     /* 링크 */
     document.getElementById('links').innerHTML = d.board.links.map(l =>
-      `<a href="${l.url}" target="${l.url.startsWith('http')?'_blank':'_self'}">${l.name}</a>`).join('');
+      `<a href="${escapeHtml(safeHref(l.url))}" target="${String(l.url||'').startsWith('http')?'_blank':'_self'}">${escapeHtml(l.name)}</a>`).join('');
 
   } catch(e) { console.error(e); }
 }

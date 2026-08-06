@@ -223,9 +223,38 @@ app.get("/api/stats", (req, res) => res.json(getRealMetrics()));
 // 부서별 업무 지시 — 라이트하우스 그룹 조직도(company.html)에서 제출, JARVIS가 대화 시작 시 pending 항목을 확인·처리
 app.get("/api/directives", (req, res) => res.json(getDirectives()));
 
-app.post("/api/directives", (req, res) => {
+// 최소 쓰기인증: company.html PIN 게이트와 동일 값을 헤더로 요구한다(공유시크릿 방식).
+// 내부 전용 관리 폼(company.html)에서만 제출되는 엔드포인트라 여기만 건다 — 공개 상점 체크아웃(POST /api/order,
+// home.html에서 실고객이 호출)은 인증 대상이 아니다(대상 오인 시 실주문이 전부 막힘, R-2026-08-06 확인).
+// 배포 환경에선 반드시 DASHBOARD_PIN을 별도 값으로 설정할 것 — 미설정 시 기존 클라 PIN(1216)으로만 폴백된다.
+const DASHBOARD_PIN = process.env.DASHBOARD_PIN || "1216";
+function requireDashboardPin(req, res, next) {
+  if (req.get("x-dashboard-pin") !== DASHBOARD_PIN) return res.status(401).json({ error: "인증 필요(PIN)" });
+  next();
+}
+
+// company.html <select id="deptSelect"> 옵션과 반드시 동기화할 것 — 하나만 바뀌면 위조로 임의 부서 주입 가능.
+const DEPARTMENTS = [
+  "경영전략실",
+  "콘텐츠제작본부(FORGE)",
+  "음악사업부(Lighthouse Worship)",
+  "출판사업부(전자책)",
+  "콘텐츠마케팅사업부(실버애드센스/브랜드커넥트)",
+  "커머스사업부(쇼핑쇼츠)",
+  "성장마케팅본부",
+  "기술운영본부",
+  "재무회계본부",
+  "비서실(JARVIS)",
+];
+const MAX_INSTRUCTION_LEN = 2000;
+
+app.post("/api/directives", requireDashboardPin, (req, res) => {
   const { department, instruction } = req.body || {};
   if (!department || !instruction) return res.status(400).json({ error: "department, instruction 필요" });
+  if (!DEPARTMENTS.includes(department)) return res.status(400).json({ error: "알 수 없는 department" });
+  if (typeof instruction !== "string" || instruction.length > MAX_INSTRUCTION_LEN) {
+    return res.status(400).json({ error: `instruction은 ${MAX_INSTRUCTION_LEN}자 이하 문자열이어야 함` });
+  }
   const directives = getDirectives();
   const item = {
     id: (directives.at(-1)?.id || 0) + 1,
@@ -241,12 +270,17 @@ app.post("/api/directives", (req, res) => {
   res.json(item);
 });
 
-app.put("/api/directives/:id", (req, res) => {
+const DIRECTIVE_STATUSES = ["pending", "done"];
+
+app.put("/api/directives/:id", requireDashboardPin, (req, res) => {
   const directives = getDirectives();
   const item = directives.find(d => d.id === parseInt(req.params.id));
   if (!item) return res.status(404).json({ error: "not found" });
-  item.status = req.body.status || item.status;
-  if (req.body.result) item.result = req.body.result;
+  if (req.body.status !== undefined) {
+    if (!DIRECTIVE_STATUSES.includes(req.body.status)) return res.status(400).json({ error: "status는 pending/done만 허용" });
+    item.status = req.body.status;
+  }
+  if (req.body.result) item.result = String(req.body.result).slice(0, MAX_INSTRUCTION_LEN);
   item.updated = new Date().toISOString();
   saveDirectives(directives);
   io.emit("directive-update", item);
@@ -459,10 +493,26 @@ app.post("/api/lead", (req, res) => {
   res.json({ success: true, leadId: lead.id, downloadUrl: `/ebook-free.html?token=${token}` });
 });
 
+// 주문 필드 화이트리스트 — req.body 전체 스프레드 금지(임의 필드 주입·저장형 XSS 벡터 차단, R-2026-08-06).
+// 여기 없는 필드는 전부 버려진다. 실제 코드에서 참조하는 필드(order.name/email/phone/product/amount/bookSlug)만 유지.
+const MAX_FIELD_LEN = 500;
+function clampStr(v, max = MAX_FIELD_LEN) { return typeof v === "string" ? v.slice(0, max) : ""; }
+function sanitizeOrderInput(body) {
+  body = body || {};
+  return {
+    name: clampStr(body.name),
+    email: clampStr(body.email),
+    phone: clampStr(body.phone, 50),
+    product: clampStr(body.product),
+    amount: Number.isFinite(Number(body.amount)) ? Number(body.amount) : 0,
+    bookSlug: clampStr(body.bookSlug, 200),
+  };
+}
+
 // 유료 전자책: 주문 후 다운로드 토큰 발급
 app.post("/api/order", (req, res) => {
   const orders = getOrders();
-  const order = { id: orders.length + 1, ...req.body, status: "pending", created: new Date().toISOString() };
+  const order = { id: orders.length + 1, ...sanitizeOrderInput(req.body), status: "pending", created: new Date().toISOString() };
   orders.push(order);
   saveOrders(orders);
   console.log(`\n💰 새 주문! #${order.id} — ${order.name} / ${order.email} / ${order.amount?.toLocaleString()}원`);
