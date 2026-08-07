@@ -307,14 +307,22 @@ function computeRiskFlag(title, body) {
   return RISK_KEYWORDS.some(k => text.includes(k.toLowerCase()));
 }
 
-app.get("/api/jarvis-updates", async (req, res) => {
+// GitHub fetch 타임아웃 — 10초. GitHub가 응답을 지연/무응답하면 이 요청 핸들러가 무기한 붙잡히는 걸
+// 막는다(reviewer-claude-2 REVISE, 2026-08-07). 값을 바꿔야 하면 아래 두 fetch 모두 같이 바꿀 것.
+const JARVIS_UPDATES_FETCH_TIMEOUT_MS = 10000;
+
+// 최소 쓰기인증과 같은 PIN을 여기도 요구한다 — 이 엔드포인트는 쓰기는 안 하지만, 무인증으로 공개하면
+// 누구나 반복 호출해 GitHub API 무인증 rate limit(시간당 60회)을 이 서버 전체가 공유하는 IP에서
+// 소진시킬 수 있다(자기서비스거부, reviewer-claude-2 REVISE 지적). requireDashboardPin은 POST/PUT
+// /api/directives와 동일 미들웨어를 그대로 재사용한다(신규 인증경로 아님).
+app.get("/api/jarvis-updates", requireDashboardPin, async (req, res) => {
   try {
     const headers = { "Accept": "application/vnd.github+json", "User-Agent": "lighthouse-jarvis-dashboard" };
     if (process.env.GITHUB_TOKEN) headers["Authorization"] = `Bearer ${process.env.GITHUB_TOKEN}`;
 
     const [issuesResp, pullsResp] = await Promise.all([
-      fetch(`https://api.github.com/repos/${JARVIS_UPDATES_REPO}/issues?state=open&per_page=100`, { headers }),
-      fetch(`https://api.github.com/repos/${JARVIS_UPDATES_REPO}/pulls?state=open&per_page=100`, { headers }),
+      fetch(`https://api.github.com/repos/${JARVIS_UPDATES_REPO}/issues?state=open&per_page=100`, { headers, signal: AbortSignal.timeout(JARVIS_UPDATES_FETCH_TIMEOUT_MS) }),
+      fetch(`https://api.github.com/repos/${JARVIS_UPDATES_REPO}/pulls?state=open&per_page=100`, { headers, signal: AbortSignal.timeout(JARVIS_UPDATES_FETCH_TIMEOUT_MS) }),
     ]);
     if (!issuesResp.ok || !pullsResp.ok) {
       return res.status(502).json({ error: `GitHub API 오류(issues:${issuesResp.status}, pulls:${pullsResp.status})` });
@@ -339,6 +347,13 @@ app.get("/api/jarvis-updates", async (req, res) => {
 
     res.json(merged);
   } catch (e) {
+    // AbortSignal.timeout()이 fetch를 중단시키면 DOMException(name="TimeoutError")이 던져진다(Node
+    // v24 실측 확인) — 다른 네트워크 오류와 구분해서 로그를 남긴다(원인 진단 용이).
+    if (e.name === "TimeoutError") {
+      console.error(`⏱️ /api/jarvis-updates: GitHub API 응답 ${JARVIS_UPDATES_FETCH_TIMEOUT_MS / 1000}초 초과로 타임아웃`);
+      return res.status(502).json({ error: `GitHub API 응답 시간 초과(${JARVIS_UPDATES_FETCH_TIMEOUT_MS / 1000}초)` });
+    }
+    console.error("/api/jarvis-updates 실패:", e.message);
     res.status(502).json({ error: "GitHub API 호출 실패: " + e.message });
   }
 });

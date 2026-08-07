@@ -289,7 +289,9 @@ async function openJarvisUpdates() {
   const listEl = document.getElementById('updatesList');
   listEl.innerHTML = '불러오는 중…';
   try {
-    const res = await fetch('/api/jarvis-updates');
+    // GET /api/jarvis-updates도 이제 PIN 인증을 요구한다(reviewer-claude-2 REVISE, 2026-08-07) —
+    // requestApply()와 동일하게 localStorage jarvisPin을 헤더로 첨부한다(신규 인증경로 아님).
+    const res = await fetch('/api/jarvis-updates', { headers: { 'x-dashboard-pin': localStorage.getItem('jarvisPin') || '' } });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       listEl.innerHTML = `<div class="empty">불러오기 실패: ${escapeHtml(err.error || res.status)}</div>`;
