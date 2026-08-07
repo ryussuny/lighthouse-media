@@ -233,7 +233,9 @@ function requireDashboardPin(req, res, next) {
   next();
 }
 
-// company.html <select id="deptSelect"> 옵션과 반드시 동기화할 것 — 하나만 바뀌면 위조로 임의 부서 주입 가능.
+// company.html <select id="deptSelect"> 옵션(10개) + "CI/CD/PR"(jarvis.html 자비스 업데이트 적용요청 전용,
+// CLAUDE.md 운영원칙6의 "CI/CD/PR 전담부서" 개념과 일치 — company.html select엔 없음, jarvis.html에서만
+// 하드코딩 발신) 반드시 동기화할 것 — 하나만 바뀌면 위조로 임의 부서 주입 가능.
 const DEPARTMENTS = [
   "경영전략실",
   "콘텐츠제작본부(FORGE)",
@@ -245,6 +247,7 @@ const DEPARTMENTS = [
   "기술운영본부",
   "재무회계본부",
   "비서실(JARVIS)",
+  "CI/CD/PR",
 ];
 const MAX_INSTRUCTION_LEN = 2000;
 
@@ -285,6 +288,57 @@ app.put("/api/directives/:id", requireDashboardPin, (req, res) => {
   saveDirectives(directives);
   io.emit("directive-update", item);
   res.json(item);
+});
+
+// 자비스 업데이트 — idoforgod/cys-terminal 저장소의 open 이슈+PR을 번호순으로 조회(jarvis.html 전용).
+// gh CLI 없이 GitHub REST API를 fetch로 직접 호출한다(Render엔 gh가 없음). apply(로컬 pack 패치 적용)나
+// git push는 이 엔드포인트 책임이 아니다 — "적용요청" 버튼은 기존 POST /api/directives에 큐잉만 한다.
+const JARVIS_UPDATES_REPO = "idoforgod/cys-terminal";
+
+// 위험 키워드 휴리스틱 — title+body에 아래 문자열이 하나라도 포함되면 risk_flag=true.
+// ⚠️ 이건 완전한 판정이 아니다(키워드 매칭일 뿐, 의미·문맥 분석 없음) — 과신 금지.
+// 오탐(무관한 PR이 우연히 이 단어를 언급)·미탐(설정에 영향을 주지만 이 단어를 안 쓴 PR) 둘 다 가능하다.
+// UI에도 "참고용" 문구를 반드시 함께 노출한다.
+const RISK_KEYWORDS = ["agents.json", "directives", "soul.md", "CEO_TEMPLATE", "MASTER_DIRECTIVE"];
+function computeRiskFlag(title, body) {
+  const text = `${title || ""} ${body || ""}`.toLowerCase();
+  return RISK_KEYWORDS.some(k => text.includes(k.toLowerCase()));
+}
+
+app.get("/api/jarvis-updates", async (req, res) => {
+  try {
+    const headers = { "Accept": "application/vnd.github+json", "User-Agent": "lighthouse-jarvis-dashboard" };
+    if (process.env.GITHUB_TOKEN) headers["Authorization"] = `Bearer ${process.env.GITHUB_TOKEN}`;
+
+    const [issuesResp, pullsResp] = await Promise.all([
+      fetch(`https://api.github.com/repos/${JARVIS_UPDATES_REPO}/issues?state=open&per_page=100`, { headers }),
+      fetch(`https://api.github.com/repos/${JARVIS_UPDATES_REPO}/pulls?state=open&per_page=100`, { headers }),
+    ]);
+    if (!issuesResp.ok || !pullsResp.ok) {
+      return res.status(502).json({ error: `GitHub API 오류(issues:${issuesResp.status}, pulls:${pullsResp.status})` });
+    }
+    const issuesData = await issuesResp.json();
+    const pullsData = await pullsResp.json();
+
+    // GitHub의 /issues 엔드포인트는 PR도 함께 반환한다(PR 항목엔 pull_request 키가 붙음) — /pulls 응답과
+    // 번호가 100% 겹친다(실측 확인, 2026-08-07). 걸러내지 않으면 PR이 issue로도 중복 등재된다.
+    const pureIssues = issuesData.filter(i => !i.pull_request);
+
+    const merged = [
+      ...pureIssues.map(i => ({
+        number: i.number, type: "issue", title: i.title, state: i.state, html_url: i.html_url,
+        risk_flag: computeRiskFlag(i.title, i.body),
+      })),
+      ...pullsData.map(p => ({
+        number: p.number, type: "pr", title: p.title, state: p.state, html_url: p.html_url,
+        risk_flag: computeRiskFlag(p.title, p.body),
+      })),
+    ].sort((a, b) => a.number - b.number);
+
+    res.json(merged);
+  } catch (e) {
+    res.status(502).json({ error: "GitHub API 호출 실패: " + e.message });
+  }
 });
 
 // 채널 실시간 데이터 API (YouTube + Instagram + Facebook)
