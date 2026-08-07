@@ -233,9 +233,11 @@ function requireDashboardPin(req, res, next) {
   next();
 }
 
-// company.html <select id="deptSelect"> 옵션(10개) + "CI/CD/PR"(jarvis.html 자비스 업데이트 적용요청 전용,
-// CLAUDE.md 운영원칙6의 "CI/CD/PR 전담부서" 개념과 일치 — company.html select엔 없음, jarvis.html에서만
-// 하드코딩 발신) 반드시 동기화할 것 — 하나만 바뀌면 위조로 임의 부서 주입 가능.
+// company.html <select id="deptSelect"> 옵션(10개)과 반드시 동기화할 것 — 하나만 바뀌면 위조로 임의 부서
+// 주입 가능. 단 아래 "CI/CD/PR" 한 항목은 예외다: company.html select에는 없음 — jarvis.html 자비스
+// 업데이트 폼 전용(하드코딩 발신), CLAUDE.md 운영원칙6의 기존 "CI/CD/PR 전담부서" 개념과 정합화한 것으로
+// **의도적 비동기화**다(2026-08-07, master 승인). company.html의 10개와 개수가 안 맞는다고 버그로 오인해
+// 지우지 말 것 — 지우면 jarvis.html 적용요청 기능이 전부 400으로 막힌다.
 const DEPARTMENTS = [
   "경영전략실",
   "콘텐츠제작본부(FORGE)",
@@ -247,7 +249,7 @@ const DEPARTMENTS = [
   "기술운영본부",
   "재무회계본부",
   "비서실(JARVIS)",
-  "CI/CD/PR",
+  "CI/CD/PR", // ★company.html select엔 없음 — jarvis.html 자비스업데이트 폼 전용, 의도적 비동기화(위 주석 참고)
 ];
 const MAX_INSTRUCTION_LEN = 2000;
 
