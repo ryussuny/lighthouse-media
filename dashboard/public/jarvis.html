@@ -71,6 +71,15 @@
   .sched { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:8px; }
   .sched div { background:#131a2e; border:1px solid #1e2740; border-radius:10px; padding:10px 14px; font-size:12.5px; color:#8fa0bf; }
   .sched b { color:#e8ecf5; font-weight:700; }
+
+  /* CYS 플릿/이슈 (2026-08-12, jarvis-ui 흡수) */
+  .cys-fleet { display:flex; flex-wrap:wrap; gap:8px; }
+  .cys-node { background:#131a2e; border:1px solid #1e2740; border-radius:10px; padding:8px 12px; font-size:12px; color:#8fa0bf; display:flex; align-items:center; gap:8px; }
+  .cys-node b { color:#e8ecf5; }
+  .cys-node .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+  .defect-list { display:flex; flex-direction:column; gap:6px; }
+  .defect-list div { background:#131a2e; border:1px solid #2a1f1a; border-left:3px solid #F5C562; border-radius:8px; padding:9px 12px; font-size:12px; color:#8fa0bf; }
+  .empty-note { font-size:12px; color:#4a5a78; padding:8px 2px; }
   .links { display:flex; flex-wrap:wrap; gap:8px; }
   .links a { background:#131a2e; border:1px solid #263659; color:#e8ecf5; text-decoration:none; font-size:13px; font-weight:600; padding:10px 16px; border-radius:10px; }
   .links a:hover { border-color:#F5C562; }
@@ -180,6 +189,18 @@
   <h2 id="sec-sysstatus">🖥️ 시스템 상태 <span id="hbAge" style="font-size:11px;color:#5a6785;font-weight:400;"></span></h2>
   <div class="sched" id="sysStatus"><div>하트비트 수신 대기 중… (30분 주기)</div></div>
 
+  <!-- CYS 플릿 (jarvis-ui 흡수, 2026-08-12) -->
+  <h2>🤖 CYS 플릿</h2>
+  <div class="cys-fleet" id="cysFleet"><div class="empty-note">하트비트 수신 대기 중…</div></div>
+
+  <!-- 알려진 이슈 -->
+  <h2>⚠️ 알려진 이슈 <span style="font-size:11px;color:#5a6785;font-weight:400;">(SESSION_STATE.md ★ 항목)</span></h2>
+  <div class="defect-list" id="cysDefects"><div class="empty-note">하트비트 수신 대기 중…</div></div>
+
+  <!-- cys 내부 스케줄 -->
+  <h2>⏱️ cys 내부 스케줄 <span style="font-size:11px;color:#5a6785;font-weight:400;">(Windows 작업스케줄러와 별개)</span></h2>
+  <div class="sched" id="cysSchedule"><div class="empty-note">하트비트 수신 대기 중…</div></div>
+
   <!-- 스케줄러 -->
   <h2 id="sec-sched">자동화 스케줄러</h2>
   <div class="sched" id="sched"></div>
@@ -265,6 +286,30 @@ async function load() {
         html += `<div>${dot(s.ok)} ${escapeHtml(String(s.name||'').replace('LighthouseMedia_','LH_').replace('DongsanChurch_','교회_'))} <b>${s.ok?'정상':'점검필요'}</b></div>`;
       });
       document.getElementById('sysStatus').innerHTML = html;
+
+      /* CYS 플릿 (jarvis-ui 흡수) */
+      const fleet = hb.cys_fleet || [];
+      document.getElementById('cysFleet').innerHTML = fleet.length ? fleet.map(n => `
+        <div class="cys-node">
+          <span class="dot" style="background:${n.agent_alive?'#6fe58f':'#F56262'}"></span>
+          <b>${escapeHtml(n.role||'?')}</b> ${escapeHtml(n.agent||'')}
+          ${n.idle_secs!=null?`· idle ${escapeHtml(n.idle_secs)}s`:''}
+          ${n.pid?`· pid ${escapeHtml(n.pid)}`:''}
+        </div>`).join('') : '<div class="empty-note">노드 없음</div>';
+
+      /* 알려진 이슈 */
+      const defects = hb.cys_defects || [];
+      document.getElementById('cysDefects').innerHTML = defects.length
+        ? defects.map(d => `<div>${escapeHtml(d)}</div>`).join('')
+        : '<div class="empty-note">기록된 이슈 없음</div>';
+
+      /* cys 내부 스케줄 */
+      const csched = hb.cys_schedule || [];
+      document.getElementById('cysSchedule').innerHTML = csched.length ? csched.map(j => {
+        const every = j.every_minutes;
+        const label = every >= 1440 ? `${Math.round(every/1440)}일` : every >= 60 ? `${Math.round(every/60)}시간` : `${every}분`;
+        return `<div><b>${escapeHtml(label)}마다</b> · ${escapeHtml(j.id||'')}</div>`;
+      }).join('') : '<div class="empty-note">잡 없음</div>';
     }
 
     /* 스케줄러 */
