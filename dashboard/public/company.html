@@ -140,8 +140,8 @@
   </div>
 
   <div class="stationbar">
-    <div class="stat"><div class="n">10</div><div class="l">본부/사업부</div></div>
-    <div class="stat"><div class="n">100</div><div class="l">직책(역할)</div></div>
+    <div class="stat"><div class="n">11</div><div class="l">본부/사업부</div></div>
+    <div class="stat"><div class="n">109</div><div class="l">직책(역할)</div></div>
     <div class="stat"><div class="n">6+</div><div class="l">진행 프로젝트</div></div>
     <div class="stat"><div class="n">100%</div><div class="l">실제 자동화 매핑</div></div>
   </div>
@@ -160,6 +160,7 @@
       <option>기술운영본부</option>
       <option>재무회계본부</option>
       <option>비서실(JARVIS)</option>
+      <option>영업팀</option>
     </select>
     <div class="label" style="margin-top:10px;">지시 내용</div>
     <textarea id="instructionInput" placeholder="예: 다음 전자책 표지 시안 3개 만들어줘"></textarea>
@@ -168,7 +169,7 @@
   <div class="sub" style="margin-bottom:12px;">제출한 지시는 아래 목록에 쌓이고, JARVIS가 다음 대화 시작 시 pending 항목을 확인해 처리합니다.</div>
   <div class="directive-list" id="directiveList"><div class="empty-directive">불러오는 중…</div></div>
 
-  <h2>부서 조직도 <span class="count">10개 부서 · 클릭해서 펼치기</span></h2>
+  <h2>부서 조직도 <span class="count">11개 부서 · 클릭해서 펼치기</span></h2>
   <input class="dept-search" id="deptSearch" type="text" placeholder="부서명·직책·업무로 검색…" oninput="filterDepts()">
 
   <div class="dept-grid" id="deptGrid">
@@ -408,6 +409,29 @@
       <div class="chip"><div class="role">메모리매니저</div><div class="duty">기억·의사결정 기록</div><div class="map">MEMORY.md</div></div>
       <div class="chip"><div class="role">커뮤니케이션담당</div><div class="duty">보고</div><div class="map">채팅 출력</div></div>
       <div class="chip"><div class="role">온보딩/문서화담당</div><div class="duty">신규 역할·스킬 온보딩 문서 관리</div><div class="map">COMPANY.md, COMMANDS.md</div></div>
+    </div>
+  </details>
+
+  <details class="dept" data-dept="영업팀">
+    <summary><span class="title">11. 영업팀 (Sales)</span><span class="dept-count">9명</span><span class="arrow">▶</span></summary>
+    <div class="dept-meta">
+      <div class="dept-mission">리드 발굴부터 결제 연결까지 전자책·음원·쇼핑쇼츠·콘텐츠 서비스 전반의 잠재고객 대응</div>
+      <div class="dept-current" id="cur-영업팀">현재 대기 중(지시 없음)</div>
+      <a class="dept-jump" href="/jarvis.html#sec-revenue">관제탑에서 현황 보기 →</a>
+    </div>
+    <div class="head-band">
+      <span class="head-tag">부서장</span>
+      <div class="head-info"><div class="role">팀장</div><div class="duty">리드→주문 전환 파이프라인 총괄</div><div class="map">dashboard/server.js /api/lead + /api/order</div></div>
+    </div>
+    <div class="members">
+      <div class="chip"><div class="role">리드제너레이션 담당</div><div class="duty">무료 콘텐츠로 잠재고객 확보</div><div class="map">/api/lead, ebook-free.html</div></div>
+      <div class="chip"><div class="role">SNS전환 담당</div><div class="duty">팔로우·좋아요 조건부 리드 전환</div><div class="map">/api/ebook-request, /api/ebook-requests</div></div>
+      <div class="chip"><div class="role">전자책 영업 담당</div><div class="duty">유료 전자책 구매 상담·결제 연결</div><div class="map">ebook-library.html, /api/order</div></div>
+      <div class="chip"><div class="role">커머스·음원 영업 담당</div><div class="duty">쇼핑쇼츠·음원 잠재고객 응대</div><div class="map">shop.html, home.html#store</div></div>
+      <div class="chip"><div class="role">주문처리 담당</div><div class="duty">입금 확인·상태 갱신·PDF 발송</div><div class="map">admin.html, /api/orders/:id</div></div>
+      <div class="chip"><div class="role">고객상담 담당</div><div class="duty">문의 응대·답변 사실확인</div><div class="map">hallucination-guard</div></div>
+      <div class="chip"><div class="role">영업성과 분석가</div><div class="duty">리드→주문 전환율 추적</div><div class="map">/api/stats, jarvis-board.json</div></div>
+      <div class="chip"><div class="role">알림대응 담당</div><div class="duty">신규 리드·주문 실시간 알림 대응</div><div class="map">server.js notify()(Gmail)</div></div>
     </div>
   </details>
   </div>
