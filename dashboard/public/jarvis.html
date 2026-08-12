@@ -80,6 +80,9 @@
   .defect-list { display:flex; flex-direction:column; gap:6px; }
   .defect-list div { background:#131a2e; border:1px solid #2a1f1a; border-left:3px solid #F5C562; border-radius:8px; padding:9px 12px; font-size:12px; color:#8fa0bf; }
   .empty-note { font-size:12px; color:#4a5a78; padding:8px 2px; }
+  .link-group { margin-bottom:16px; }
+  .link-group:last-child { margin-bottom:0; }
+  .link-group-label { font-size:11px; color:#5a6785; font-weight:700; letter-spacing:0.5px; margin-bottom:8px; }
   .links { display:flex; flex-wrap:wrap; gap:8px; }
   .links a { background:#131a2e; border:1px solid #263659; color:#e8ecf5; text-decoration:none; font-size:13px; font-weight:600; padding:10px 16px; border-radius:10px; }
   .links a:hover { border-color:#F5C562; }
@@ -207,7 +210,7 @@
 
   <!-- 빠른 링크 -->
   <h2>빠른 링크</h2>
-  <div class="links" id="links"></div>
+  <div id="links"></div>
 
 </div>
 
@@ -316,9 +319,19 @@ async function load() {
     document.getElementById('sched').innerHTML = d.board.schedulers.map(s =>
       `<div><b>${escapeHtml(s.time)}</b> · ${escapeHtml(s.name)}</div>`).join('');
 
-    /* 링크 */
-    document.getElementById('links').innerHTML = d.board.links.map(l =>
-      `<a href="${escapeHtml(safeHref(l.url))}" target="${String(l.url||'').startsWith('http')?'_blank':'_self'}">${escapeHtml(l.name)}</a>`).join('');
+    /* 링크 — 카테고리별로 묶어서 표시(운영관리/시각화/공개페이지/외부서비스) */
+    const linkGroups = new Map();
+    (d.board.links || []).forEach(l => {
+      const cat = l.category || '기타';
+      if (!linkGroups.has(cat)) linkGroups.set(cat, []);
+      linkGroups.get(cat).push(l);
+    });
+    document.getElementById('links').innerHTML = Array.from(linkGroups.entries()).map(([cat, items]) => `
+      <div class="link-group">
+        <div class="link-group-label">${escapeHtml(cat)}</div>
+        <div class="links">${items.map(l =>
+          `<a href="${escapeHtml(safeHref(l.url))}" target="${String(l.url||'').startsWith('http')?'_blank':'_self'}">${escapeHtml(l.name)}</a>`).join('')}</div>
+      </div>`).join('');
 
   } catch(e) { console.error(e); }
 }

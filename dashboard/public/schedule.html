@@ -90,6 +90,7 @@ body{font-family:'Pretendard',sans-serif;background:#080810;color:#e0e0e0;min-he
 <div class="header">
   <h1><span class="live"></span>LIGHTHOUSE MEDIA 스케줄러</h1>
   <div class="nav-links">
+    <a href="/jarvis.html">관제탑</a>
     <a href="/home.html">홈</a>
     <a href="/dashboard.html">3D 대시보드</a>
     <a href="/channel-dashboard.html">채널</a>
@@ -110,6 +111,10 @@ body{font-family:'Pretendard',sans-serif;background:#080810;color:#e0e0e0;min-he
   <h2 style="font-size:16px;margin-bottom:16px;color:#fff">오늘의 스케줄</h2>
   <div class="timeline" id="timeline"></div>
 
+  <!-- 상시/조건부 작업 -->
+  <h2 style="font-size:16px;margin:24px 0 16px;color:#fff">상시 · 조건부 작업 (고정 시각 없음)</h2>
+  <div id="recurring"></div>
+
   <!-- 주간 캘린더 -->
   <div class="week-section">
     <div class="week-title">이번 주 캘린더</div>
@@ -126,18 +131,20 @@ body{font-family:'Pretendard',sans-serif;background:#080810;color:#e0e0e0;min-he
 </div>
 
 <script>
-// 스케줄 데이터
+// 스케줄 데이터 — lighthouse-media/CLAUDE.md의 실제 배치 스케줄러 기준 (2026-08-12 갱신)
 const SCHEDULES = [
-  { time: "03:00", name: "보안 백업", desc: "콘텐츠/DB 자동 백업", icon: "🔒", color: "#2c3e50", category: "system" },
-  { time: "06:00", name: "오늘의 말씀", desc: "성경 묵상 자동 생성 → txt 저장", icon: "📖", color: "#9b59b6", category: "bible" },
-  { time: "06:00", name: "글로벌 채널 조사", desc: "TOP 채널 분석 + 트렌드 + 콘텐츠 기획", icon: "🔍", color: "#1abc9c", category: "research" },
-  { time: "06:30", name: "카카오 말씀 발송", desc: "카카오톡 PC 자동 발송", icon: "💬", color: "#f1c40f", category: "bible" },
-  { time: "08:00", name: "콘텐츠 디렉터", desc: "AI 에이전트 → 주제 선정 → 스크립트 → 카피 → SEO", icon: "🎬", color: "#3498db", category: "content" },
-  { time: "10:00", name: "디자인 제작", desc: "카드뉴스/썸네일/영상 자동 생성", icon: "🎨", color: "#e67e22", category: "content" },
-  { time: "12:00", name: "인스타 포스팅", desc: "카드뉴스 + 릴스 자동 게시", icon: "📸", color: "#e1306c", category: "upload" },
-  { time: "19:00", name: "유튜브 업로드", desc: "화/목/토 롱폼 영상 업로드", icon: "▶️", color: "#ff0000", category: "youtube", days: [2,4,6] },
-  { time: "21:00", name: "자동 게시", desc: "AI 콘텐츠 → 인스타/페이스북/유튜브 숏츠 동시 게시", icon: "🚀", color: "#BA7517", category: "upload" },
-  { time: "22:00", name: "일일 리포트", desc: "전 채널 성과 분석 → CEO 리포트", icon: "📊", color: "#1D9E75", category: "research" },
+  { time: "05:00", name: "유튜브 영상 생성", desc: "daily-video.bat — 유튜브 롱폼 영상 자동 생성", icon: "🎬", color: "#ff0000", category: "content" },
+  { time: "06:00", name: "말씀카드 + SNS 게시", desc: "daily-bible-card.bat — 말씀카드 8장 + 영상 + SNS 게시", icon: "☀️", color: "#9b59b6", category: "bible" },
+  { time: "06:00", name: "글로벌 채널 조사", desc: "daily-research.bat — TOP 채널 분석 + 트렌드 + 콘텐츠 기획", icon: "🔍", color: "#1abc9c", category: "research" },
+  { time: "12:00", name: "인스타 릴스", desc: "daily-ig-reels.bat — 인스타 릴스 자동 생성 + 게시", icon: "📸", color: "#e1306c", category: "upload" },
+  { time: "19:00", name: "프리미엄 콘텐츠", desc: "daily-premium.bat — 프리미엄 콘텐츠 제작", icon: "⭐", color: "#BA7517", category: "content" },
+];
+
+// 고정 시각이 아닌 상시/조건부 작업 — 타임라인 대신 별도 카드로 표시
+const RECURRING = [
+  { name: "SNS 자동 참여", desc: "auto-engage.bat — 30분 간격 반복 실행", icon: "🤝", color: "#3498db" },
+  { name: "IG 게시 재시도", desc: "retry-ig-global.bat — 인스타 게시 실패 시 자동 재시도", icon: "🔄", color: "#e67e22" },
+  { name: "토큰 만료 점검", desc: "check-token.bat — 주 1회 SNS 토큰 만료 자동 점검", icon: "🔑", color: "#2c3e50" },
 ];
 
 const now = new Date();
@@ -182,6 +189,17 @@ function renderTimeline() {
   }).join('');
 }
 
+function renderRecurring() {
+  const el = document.getElementById('recurring');
+  el.innerHTML = RECURRING.map(r => `
+    <div class="task-card">
+      <div class="task-left">
+        <div class="task-icon" style="background:${r.color}22;color:${r.color}">${r.icon}</div>
+        <div><div class="task-name">${r.name}</div><div class="task-desc">${r.desc}</div></div>
+      </div>
+    </div>`).join('');
+}
+
 function renderWeek() {
   const grid = document.getElementById('weekGrid');
   const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
@@ -201,16 +219,12 @@ function renderWeek() {
         <div class="day-num">${d.getDate()}</div>
       </div>`;
 
-    // 매일 작업
-    html += `<div class="day-task dt-bible">06:00 말씀</div>`;
+    // 매일 작업 — daily-video/daily-bible-card/daily-research/daily-ig-reels/daily-premium은 매일 실행
+    html += `<div class="day-task dt-youtube">05:00 영상생성</div>`;
+    html += `<div class="day-task dt-bible">06:00 말씀카드</div>`;
     html += `<div class="day-task dt-research">06:00 채널조사</div>`;
-    html += `<div class="day-task dt-content">08:00 콘텐츠</div>`;
-    html += `<div class="day-task dt-upload">21:00 자동게시</div>`;
-
-    // 화/목/토 유튜브
-    if ([2, 4, 6].includes(dayNum)) {
-      html += `<div class="day-task dt-youtube">19:00 YT 업로드</div>`;
-    }
+    html += `<div class="day-task dt-upload">12:00 릴스</div>`;
+    html += `<div class="day-task dt-content">19:00 프리미엄</div>`;
 
     html += '</div>';
   }
@@ -286,17 +300,20 @@ function downloadICS() {
 function copyNotion() {
   const text = `# Lighthouse Media 일일 스케줄\n\n` +
     SCHEDULES.map(s => `| ${s.time} | ${s.icon} ${s.name} | ${s.desc} |`).join('\n') +
-    `\n\n## 주간 특별 일정\n- 화/목/토 19:00: 유튜브 롱폼 업로드\n- 일 20:00: 뉴스레터 발송`;
+    `\n\n## 상시 · 조건부 작업\n` +
+    RECURRING.map(r => `- ${r.icon} ${r.name}: ${r.desc}`).join('\n');
   navigator.clipboard.writeText(text).then(() => alert('Notion 형식으로 복사되었습니다.\nNotion에 붙여넣기 하세요.'));
 }
 
 function copyText() {
-  const text = SCHEDULES.map(s => `${s.time} ${s.name} — ${s.desc}`).join('\n');
+  const text = SCHEDULES.map(s => `${s.time} ${s.name} — ${s.desc}`).join('\n') +
+    '\n\n' + RECURRING.map(r => `${r.name} — ${r.desc}`).join('\n');
   navigator.clipboard.writeText(text).then(() => alert('텍스트로 복사되었습니다.'));
 }
 
 // 초기화
 renderTimeline();
+renderRecurring();
 renderWeek();
 updateClock();
 setInterval(updateClock, 1000);
