@@ -249,6 +249,7 @@ const DEPARTMENTS = [
   "기술운영본부",
   "재무회계본부",
   "비서실(JARVIS)",
+  "영업팀", // 2026-08-12 신설(COMPANY.md #11) — company.html select에 추가됐으나 여기 누락돼있던 버그 수리(2026-08-13)
   "CI/CD/PR", // ★company.html select엔 없음 — jarvis.html 자비스업데이트 폼 전용, 의도적 비동기화(위 주석 참고)
 ];
 const MAX_INSTRUCTION_LEN = 2000;

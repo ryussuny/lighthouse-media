@@ -162,8 +162,12 @@
       <option>비서실(JARVIS)</option>
       <option>영업팀</option>
     </select>
-    <div class="label" style="margin-top:10px;">지시 내용</div>
+    <div class="label" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+      <span>지시 내용</span>
+      <button type="button" id="micBtn" onclick="toggleVoiceInput()" title="음성으로 입력" style="background:#1a2340;border:1px solid #263659;color:#8fa0bf;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;">🎤 음성입력</button>
+    </div>
     <textarea id="instructionInput" placeholder="예: 다음 전자책 표지 시안 3개 만들어줘"></textarea>
+    <div id="voiceStatus" style="font-size:11.5px;color:#5a6785;min-height:16px;margin-top:4px;"></div>
     <button onclick="submitDirective()">지시 제출</button>
   </div>
   <div class="sub" style="margin-bottom:12px;">제출한 지시는 아래 목록에 쌓이고, JARVIS가 다음 대화 시작 시 pending 항목을 확인해 처리합니다.</div>
@@ -495,6 +499,59 @@ function filterDepts() {
     dept.classList.toggle('dept-hidden', !hit);
   });
 }
+
+// 음성 입력(STT) — 브라우저 내장 Web Speech API 사용, 서버/API 키 불필요.
+// 크로미움 계열(wmux 임베드 브라우저, 향후 Electron 앱)에서 동작. 미지원 브라우저는 버튼을 숨긴다.
+let voiceRecognition = null;
+let voiceListening = false;
+
+function initVoiceInput() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const micBtn = document.getElementById('micBtn');
+  if (!SR) { micBtn.style.display = 'none'; return; }
+
+  voiceRecognition = new SR();
+  voiceRecognition.lang = 'ko-KR';
+  voiceRecognition.continuous = true;
+  voiceRecognition.interimResults = true;
+
+  const statusEl = document.getElementById('voiceStatus');
+  const inputEl = document.getElementById('instructionInput');
+  let baseText = '';
+
+  voiceRecognition.onstart = () => {
+    voiceListening = true;
+    baseText = inputEl.value ? inputEl.value.trim() + ' ' : '';
+    micBtn.textContent = '⏹ 듣는 중...';
+    micBtn.style.color = '#F5C562';
+    statusEl.textContent = '말씀하세요 — 다시 누르면 종료';
+  };
+  voiceRecognition.onresult = (e) => {
+    let finalText = '', interim = '';
+    for (let i = 0; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) finalText += t; else interim += t;
+    }
+    inputEl.value = baseText + finalText + interim;
+  };
+  voiceRecognition.onerror = (e) => {
+    statusEl.textContent = '음성인식 오류: ' + e.error;
+  };
+  voiceRecognition.onend = () => {
+    voiceListening = false;
+    micBtn.textContent = '🎤 음성입력';
+    micBtn.style.color = '#8fa0bf';
+    statusEl.textContent = '';
+  };
+}
+
+function toggleVoiceInput() {
+  if (!voiceRecognition) return;
+  if (voiceListening) voiceRecognition.stop();
+  else voiceRecognition.start();
+}
+
+initVoiceInput();
 
 async function submitDirective() {
   const department = document.getElementById('deptSelect').value;
