@@ -420,44 +420,94 @@
   ],
   "links": [
     {
+      "name": "📋 주문 / 리드 관리",
+      "url": "/admin.html",
+      "category": "운영 관리"
+    },
+    {
+      "name": "📡 채널 대시보드",
+      "url": "/channel-dashboard.html",
+      "category": "운영 관리"
+    },
+    {
+      "name": "📊 부서별 성과",
+      "url": "/performance.html",
+      "category": "운영 관리"
+    },
+    {
+      "name": "🗓️ 스케줄러",
+      "url": "/schedule.html",
+      "category": "운영 관리"
+    },
+    {
       "name": "🏢 회사 조직도",
-      "url": "/company.html"
+      "url": "/company.html",
+      "category": "운영 관리"
     },
     {
       "name": "🧭 기능 지도",
-      "url": "/capabilities.html"
+      "url": "/capabilities.html",
+      "category": "운영 관리"
     },
     {
-      "name": "🛒 스토어",
-      "url": "/home.html#store"
+      "name": "🏙️ 3D 가상오피스",
+      "url": "/dashboard.html",
+      "category": "시각화"
     },
     {
-      "name": "⛪ 교회 포털 (교회PC)",
-      "url": "http://localhost:4000/portal.html"
+      "name": "📸 인스타 카드뉴스",
+      "url": "/insta-post.html",
+      "category": "시각화"
     },
     {
-      "name": "📋 주문 관리",
-      "url": "/admin.html"
+      "name": "📕 책 표지",
+      "url": "/covers.html",
+      "category": "시각화"
     },
     {
       "name": "🏠 홈페이지",
-      "url": "/home.html"
+      "url": "/home.html",
+      "category": "공개 페이지"
+    },
+    {
+      "name": "🛒 스토어",
+      "url": "/home.html#store",
+      "category": "공개 페이지"
+    },
+    {
+      "name": "🛍️ 전자책 판매",
+      "url": "/shop.html",
+      "category": "공개 페이지"
+    },
+    {
+      "name": "🎁 무료 PDF",
+      "url": "/free.html",
+      "category": "공개 페이지"
+    },
+    {
+      "name": "⛪ 교회 포털 (교회PC)",
+      "url": "http://localhost:4000/portal.html",
+      "category": "외부 서비스"
     },
     {
       "name": "📺 YouTube Studio",
-      "url": "https://studio.youtube.com"
+      "url": "https://studio.youtube.com",
+      "category": "외부 서비스"
     },
     {
       "name": "📸 Instagram",
-      "url": "https://www.instagram.com/lighthouse_media77/"
+      "url": "https://www.instagram.com/lighthouse_media77/",
+      "category": "외부 서비스"
     },
     {
       "name": "⚙️ Render",
-      "url": "https://dashboard.render.com"
+      "url": "https://dashboard.render.com",
+      "category": "외부 서비스"
     },
     {
       "name": "💻 GitHub",
-      "url": "https://github.com/ryussuny/lighthouse-media"
+      "url": "https://github.com/ryussuny/lighthouse-media",
+      "category": "외부 서비스"
     }
   ]
 }
