@@ -1,0 +1,33 @@
+{
+ "id": "company-jarvis-xss-api-fix-20260806",
+ "title": "company.html/jarvis.html 저장형 XSS+무인증 쓰기API 긴급수리",
+ "status": "done",
+ "why": "master 긴급 보안지시(reviewer-claude-2 BLOCK 판정 기반) — 인터넷에 열려있는 실서비스의 저장형 XSS+무인증 쓰기 API 차단",
+ "goal": "curl negative/positive case로 실제 차단·회귀없음 증명, 로컬 커밋",
+ "blocked_by": [],
+ "origin_kind": "master-delegation",
+ "origin_fingerprint": "master-2026-08-06-critical-security-ticket",
+ "owner": null,
+ "created_at": "2026-08-07T00:03:03+0900",
+ "updated_at": "2026-08-07T00:03:54+0900",
+ "evidence": {
+  "type": "evidence",
+  "text": "curl negative-case 10건(401/400 차단 확인)+positive-case 2건(정상플로우 회귀없음) 실행 로그, git commit 66e7e0e",
+  "at": "2026-08-07T00:03:54+0900",
+  "artifacts": [
+   {
+    "path": "C:\\Users\\ryuss\\.cys\\pack\\round\\evidence\\company-jarvis-xss-api-fix-20260806\\verification-log.md",
+    "size": 8686,
+    "mtime": 1786028612.595,
+    "sha256_8": "4fdb9a06",
+    "anchor": "acquired_at"
+   }
+  ]
+ },
+ "settle_overrides": [
+  {
+   "at": "2026-08-07T00:03:54+0900",
+   "reason": "소급 등록 — 실작업은 2026-08-06에 완료·검증됐고 master도 접수 확인함(diff 3파일 직접대조+curl로그+데이터정합성 재확인). 태스크 레코드 자체는 오늘(08-07) javis_task.py fcntl 수리 후 처음 생성해 idle 안착 관측이 구조적으로 불가 — 소급 제출임을 evidence 파일에도 명시함."
+  }
+ ]
+}

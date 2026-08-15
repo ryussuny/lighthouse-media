@@ -1,0 +1,33 @@
+{
+ "id": "jarvis-updates-pin-timeout-fix-20260807",
+ "title": "GET /api/jarvis-updates 보안수리 — PIN인증+fetch timeout (reviewer-claude-2 REVISE)",
+ "status": "done",
+ "why": "reviewer-claude-2가 jarvis.html 자비스업데이트 기능에서 실결함 2건(PIN누락 자기서비스거부 위험, fetch timeout없음 hang위험) 발견 — master 직접 재확인 후 위임",
+ "goal": "curl+헤드리스+타임아웃 강제발생 negative-case로 실제 차단·정상동작 증명, 로컬 커밋",
+ "blocked_by": [],
+ "origin_kind": "master-delegation",
+ "origin_fingerprint": "master-2026-08-07-reviewer-claude-2-revise",
+ "owner": null,
+ "created_at": "2026-08-07T23:09:31+0900",
+ "updated_at": "2026-08-07T23:10:08+0900",
+ "evidence": {
+  "type": "evidence",
+  "text": "curl로 PIN없음/틀린PIN 401, 정상PIN 200 확인 + 타임아웃 1ms 강제발생으로 502/TimeoutError경로 실측 증명(10000으로 원복 재확인) + Claude-in-Chrome 헤드리스로 PIN게이트→버튼→모달 성공/실패 양쪽 경로 확인. git commit 4e2c282",
+  "at": "2026-08-07T23:10:08+0900",
+  "artifacts": [
+   {
+    "path": "C:\\Users\\ryuss\\.cys\\pack\\round\\evidence\\jarvis-updates-pin-timeout-fix-20260807\\verification-log.md",
+    "size": 6049,
+    "mtime": 1786111808.719,
+    "sha256_8": "9ea4131d",
+    "anchor": "acquired_at"
+   }
+  ]
+ },
+ "settle_overrides": [
+  {
+   "at": "2026-08-07T23:10:08+0900",
+   "reason": "checkout과 완료선언이 같은 턴 — 실작업(구현+curl+타임아웃강제검증+헤드리스+커밋)은 이미 끝났고 idle 안착 관측만 구조적으로 불가(이전 두 티켓과 동일 패턴)."
+  }
+ ]
+}
