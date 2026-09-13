@@ -38,6 +38,20 @@
   .kpi strong { color:#e8ecf5; font-size:16px; margin-right:2px; }
 
   /* Project cards */
+  /* 업무 지시(company.html 폼과 동일 API·PIN 재사용, 2026-09-13) */
+  .directive-form { background:linear-gradient(135deg,#16223f,#1a2a4f); border:1px solid #263659; border-radius:14px; padding:18px 20px; margin-bottom:10px; }
+  .directive-form select, .directive-form textarea { width:100%; background:#0d1220; border:1px solid #263659; border-radius:10px; color:#e8ecf5; font-size:14px; padding:10px 12px; font-family:inherit; box-sizing:border-box; }
+  .directive-form textarea { resize:vertical; min-height:60px; margin-top:6px; }
+  .directive-form .label { font-size:11px; color:#8fa0bf; letter-spacing:0.5px; text-transform:uppercase; }
+  .directive-form .submit { margin-top:10px; background:#F5C562; color:#0d1220; border:none; border-radius:10px; padding:10px 18px; font-weight:800; font-size:14px; cursor:pointer; }
+  .directive-form .submit:hover { background:#f7d488; }
+  .directive-list { display:flex; flex-direction:column; gap:8px; margin-bottom:6px; }
+  .directive-item { background:#131a2e; border:1px solid #1e2740; border-radius:10px; padding:10px 14px; font-size:12.5px; display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+  .directive-item .dept-tag { color:#F5C562; font-weight:700; white-space:nowrap; }
+  .directive-item .txt { color:#e8ecf5; flex:1; }
+  .directive-item .meta { font-size:11px; color:#5a6785; white-space:nowrap; text-align:right; }
+  .status-done { color:#4ade80; font-weight:700; } .status-pending { color:#F5C562; font-weight:700; }
+  .empty-directive { color:#5a6785; font-size:12.5px; padding:8px 2px; }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
   .card { background:#131a2e; border:1px solid #1e2740; border-radius:14px; padding:18px; }
   .card .top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
@@ -170,6 +184,35 @@
     </div>
     <div class="bar"><div id="revBar" style="width:0%"></div></div>
   </div>
+
+  <!-- 업무 지시 -->
+  <h2 id="sec-directive">📝 업무 지시 <span style="font-size:11px;color:#5a6785;font-weight:400;text-transform:none;letter-spacing:0;">부서를 골라 바로 지시 · 전체 목록은 조직도</span></h2>
+  <div class="directive-form">
+    <div class="label">부서 선택</div>
+    <select id="deptSelect">
+      <option>경영전략실</option>
+      <option>콘텐츠제작본부(FORGE)</option>
+      <option>음악사업부(Lighthouse Worship)</option>
+      <option>출판사업부(전자책)</option>
+      <option>콘텐츠마케팅사업부(실버애드센스/브랜드커넥트)</option>
+      <option>커머스사업부(쇼핑쇼츠)</option>
+      <option>성장마케팅본부</option>
+      <option>기술운영본부</option>
+      <option>재무회계본부</option>
+      <option>비서실(JARVIS)</option>
+      <option>영업팀</option>
+    </select>
+    <div class="label" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+      <span>지시 내용</span>
+      <button type="button" id="micBtn" onclick="toggleVoiceInput()" title="음성으로 입력 — 브라우저 음성인식(Web Speech API) 사용 시 음성이 브라우저 제공사(예: Chrome은 Google) 서버로 전송되어 처리됩니다" style="background:#1a2340;border:1px solid #263659;color:#8fa0bf;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;">🎤 음성입력</button>
+    </div>
+    <textarea id="instructionInput" placeholder="예: 다음 전자책 표지 시안 3개 만들어줘"></textarea>
+    <div style="font-size:13px;color:#8fa0bf;margin-top:3px;">ⓘ 음성입력은 브라우저의 Web Speech API를 사용합니다 — 음성이 브라우저 제공사(Chrome은 Google) 서버로 전송되어 텍스트로 변환됩니다. 민감한 내용은 직접 입력을 권장합니다.</div>
+    <div id="voiceStatus" style="font-size:11.5px;color:#5a6785;min-height:16px;margin-top:4px;"></div>
+    <button class="submit" onclick="submitDirective()">지시 제출</button>
+  </div>
+  <div class="directive-list" id="directiveList"><div class="empty-directive">불러오는 중…</div></div>
+  <div style="font-size:12px;color:#5a6785;margin-bottom:4px;">최근 5건만 표시 · <a href="/company.html" style="color:#8fa0bf;">전체 목록·처리 결과는 조직도에서 →</a></div>
 
   <!-- 프로젝트 -->
   <h2 id="sec-projects">프로젝트 보드</h2>
@@ -395,6 +438,85 @@ async function requestApply(idx) {
   }
   alert('적용요청이 등록됐습니다 — company.html 업무지시 목록에서 확인할 수 있습니다.');
 }
+// ── 업무 지시 폼(company.html과 동일 로직 이식, 2026-09-13) ──
+// 신규 인증경로 없음: 기존 POST /api/directives + localStorage jarvisPin 헤더 그대로 재사용.
+async function loadDirectives() {
+  try {
+    const list = await (await fetch('/api/directives')).json();
+    const el = document.getElementById('directiveList');
+    if (!list.length) { el.innerHTML = '<div class="empty-directive">아직 제출된 지시가 없습니다</div>'; return; }
+    el.innerHTML = list.slice(-5).reverse().map(d => `
+      <div class="directive-item">
+        <span class="dept-tag">${escapeHtml(d.department)}</span>
+        <span class="txt">${escapeHtml(d.instruction)}${d.result ? `<br><small style="color:#5a6785;">→ ${escapeHtml(d.result)}</small>` : ''}</span>
+        <span class="meta">
+          <span class="${d.status === 'done' ? 'status-done' : 'status-pending'}">${d.status === 'done' ? '✓ 완료' : '⏳ 대기'}</span><br>
+          ${escapeHtml((d.created || '').slice(0,16).replace('T',' '))}
+        </span>
+      </div>`).join('');
+  } catch (e) { console.error(e); }
+}
+
+let voiceRecognition = null;
+let voiceListening = false;
+function initVoiceInput() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const micBtn = document.getElementById('micBtn');
+  if (!SR) { micBtn.style.display = 'none'; return; }
+  voiceRecognition = new SR();
+  voiceRecognition.lang = 'ko-KR';
+  voiceRecognition.continuous = true;
+  voiceRecognition.interimResults = true;
+  const statusEl = document.getElementById('voiceStatus');
+  const inputEl = document.getElementById('instructionInput');
+  let baseText = '';
+  voiceRecognition.onstart = () => {
+    voiceListening = true;
+    baseText = inputEl.value ? inputEl.value.trim() + ' ' : '';
+    micBtn.textContent = '⏹ 듣는 중...'; micBtn.style.color = '#F5C562';
+    statusEl.textContent = '말씀하세요 — 다시 누르면 종료';
+  };
+  voiceRecognition.onresult = (e) => {
+    let finalText = '', interim = '';
+    for (let i = 0; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      if (e.results[i].isFinal) finalText += t; else interim += t;
+    }
+    inputEl.value = baseText + finalText + interim;
+  };
+  voiceRecognition.onerror = (e) => { statusEl.textContent = '음성인식 오류: ' + e.error; };
+  voiceRecognition.onend = () => {
+    voiceListening = false;
+    micBtn.textContent = '🎤 음성입력'; micBtn.style.color = '#8fa0bf';
+    statusEl.textContent = '';
+  };
+}
+function toggleVoiceInput() {
+  if (!voiceRecognition) return;
+  if (voiceListening) voiceRecognition.stop(); else voiceRecognition.start();
+}
+
+async function submitDirective() {
+  const department = document.getElementById('deptSelect').value;
+  const instruction = document.getElementById('instructionInput').value.trim();
+  if (!instruction) return;
+  const res = await fetch('/api/directives', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-dashboard-pin': localStorage.getItem('jarvisPin') || '' },
+    body: JSON.stringify({ department, instruction }),
+  });
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    alert('지시 제출 실패: ' + (errBody.error || res.status));
+    return;
+  }
+  document.getElementById('instructionInput').value = '';
+  loadDirectives();
+}
+
+initVoiceInput();
+loadDirectives();
+setInterval(loadDirectives, 30000);
 </script>
 </body>
 </html>
