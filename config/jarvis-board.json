@@ -1,10 +1,54 @@
 {
-  "updated": "2026-07-31",
+  "updated": "2026-09-15",
   "goal": {
     "monthly": 5000000,
     "label": "월 500만원"
   },
   "projects": [
+    {
+      "id": "jarvis-growth-202609",
+      "station": "JARVIS",
+      "name": "자비스 성장 — cys 0.14.30 + AI 이미지·영상 + 스마트 성장",
+      "status": "done",
+      "progress": 100,
+      "next": "cys 0.14.30 재설치·조직 각성 완료, fal.ai AI 이미지 생성 실측 확인. 잔액 소진 시 fal.ai 소액 재충전만 필요.",
+      "tasks": [
+        {
+          "name": "cys 0.14.30 설치 + CSO·Worker·Reviewer 각성 (구독 인증)",
+          "done": true
+        },
+        {
+          "name": "AI 이미지/영상 배선 (fal.ai FAL_KEY + 테스트 스크립트) — 생성 실측 확인",
+          "done": true,
+          "result": "lighthouse-media/output/fal-test-*.png"
+        },
+        {
+          "name": "fal 공식 MCP 연결 (.mcp.json) + media-gen 스킬 전체 가동",
+          "done": true
+        },
+        {
+          "name": "역량 지도 (JARVIS_역량지도.md) — 180+ 스킬 용도별 정리",
+          "done": true
+        },
+        {
+          "name": "세컨드 브레인 (.jarvis/brain) 장기기억 구축",
+          "done": true
+        },
+        {
+          "name": "자기개선 루프 활성화 (CLAUDE.md 운영원칙 8·9)",
+          "done": true
+        },
+        {
+          "name": "워십음원 전담 부서 dept-1 편성 + DistroKid 제출 체크리스트",
+          "done": true
+        },
+        {
+          "name": "fal.ai 잔액 관리 (소진 시 소액 재충전)",
+          "done": false,
+          "owner": "목사님"
+        }
+      ]
+    },
     {
       "id": "ebook-launch",
       "station": "MINT",
