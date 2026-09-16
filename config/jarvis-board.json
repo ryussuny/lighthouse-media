@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-15",
+  "updated": "2026-09-16",
   "goal": {
     "monthly": 5000000,
     "label": "월 500만원"
@@ -46,6 +46,47 @@
           "name": "fal.ai 잔액 관리 (소진 시 소액 재충전)",
           "done": false,
           "owner": "목사님"
+        }
+      ]
+    },
+    {
+      "id": "sermon-lab-202609",
+      "station": "MINT",
+      "name": "설교랩(SermonLab) — 목회자용 AI 설교준비 도구 (신규 제품 프로토타입)",
+      "status": "active",
+      "progress": 35,
+      "next": "목사님 외출 중 자료조사+프로토타입 제작(9/16). 개인 sermon-qt-original-text-based 스킬을 타 목회자용 독립 제품으로 재구성. 차단: lighthouse-media Anthropic API 키 크레딧 0원 — 충전 후 실사용 테스트 필요. 상세: lighthouse-biz/sermon-lab/README.md, RESEARCH.md",
+      "tasks": [
+        {
+          "name": "시장조사: 한국·해외 AI 설교준비 도구 경쟁분석 + 가격벤치마크",
+          "done": true,
+          "result": "lighthouse-biz/sermon-lab/RESEARCH.md — 경쟁 도구 중 원어분석+검증가드 동시 보유 없음 확인"
+        },
+        {
+          "name": "생성 파이프라인 구축 (generate_qt.py, Claude Sonnet 5 API)",
+          "done": true
+        },
+        {
+          "name": "할루시네이션 검증 파이프라인 이식 (개역개정 127구절/원어표기 67단어/비약패턴 16종 DB)",
+          "done": true
+        },
+        {
+          "name": "실제 샘플로 전체 검증 파이프라인 통과 실증 (빌 4:4-7, C1-C8 ALL PASS)",
+          "done": true,
+          "result": "lighthouse-biz/sermon-lab/samples/phil-4-4-7.md"
+        },
+        {
+          "name": "웹 데모(Flask) 프로토타입 + 부팅 확인",
+          "done": true
+        },
+        {
+          "name": "Anthropic API 크레딧 충전 (lighthouse-media/.env)",
+          "done": false,
+          "owner": "목사님"
+        },
+        {
+          "name": "실사용 생성 테스트 10~20건 + 목회자 대상 무료 체험 배포",
+          "done": false
         }
       ]
     },
