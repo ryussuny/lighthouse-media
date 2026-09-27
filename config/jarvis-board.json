@@ -1,10 +1,46 @@
 {
-  "updated": "2026-09-16",
+  "updated": "2026-09-27",
   "goal": {
     "monthly": 5000000,
     "label": "월 500만원"
   },
   "projects": [
+    {
+      "id": "org-200-roles-202609",
+      "station": "JARVIS",
+      "name": "자비스 업그레이드 + 200역할 조직 v2 (cys 0.14.38)",
+      "status": "done",
+      "progress": 100,
+      "next": "오너 결정 대기: soul.md 자율권(벤더 기본=미부여 vs 현행 유지), nlm login·korean-law OC 키, 런타임 봉인(C80)은 최신 설치본으로 재설치 시 해결.",
+      "tasks": [
+        {
+          "name": "cys 0.14.30 → 0.14.38 팩 업그레이드 (디렉티브 5종·acl 신본, agents.json 맞춤 병합, soul/schedule 보존)",
+          "done": true,
+          "result": "preflight READY · FAIL 0 · WARN 21"
+        },
+        {
+          "name": "200역할·19부서 조직 설계 (역할마다 전문 스킬, 고유 295개, 누락 0)",
+          "done": true,
+          "result": ".jarvis/org/roles.json · ROUTING.md · lighthouse-biz/COMPANY.md"
+        },
+        {
+          "name": "스킬 보안 스캔 277개 (ACCEPT 177·REVISE 34·BLOCK 65) → 조직 사용분 중 40개 ⚠ 표시",
+          "done": true
+        },
+        {
+          "name": "마스터·워커·리뷰어 로컬 지침 오버레이 + 로컬 스킬 150개 연결(컨텍스트 절감 위해 미참조 127개 링크 해제)",
+          "done": true
+        },
+        {
+          "name": "company.html 200명 조직도 + 지시 부서 18개(server.js 허용목록 동기화)",
+          "done": true
+        },
+        {
+          "name": "reviewer-claude-1 좌석 복구(Sonnet) — 8좌석 가동",
+          "done": true
+        }
+      ]
+    },
     {
       "id": "jarvis-growth-202609",
       "station": "JARVIS",
