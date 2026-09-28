@@ -505,6 +505,42 @@ else:
     print("  Video FAIL")
     sys.exit(1)
 
+def upload_premium_reel(video_path, cap):
+    """완성 영상을 Imgur에 올린 뒤 인스타 릴스로 게시. 실패 시 None."""
+    try:
+        with open(video_path, 'rb') as f:
+            enc = base64.b64encode(f.read()).decode()
+        ir = requests.post('https://api.imgur.com/3/upload',
+                           headers={'Authorization': f'Client-ID {IMGUR_ID}'},
+                           data={'video': enc, 'type': 'base64'}, timeout=180)
+        vid_url = ir.json().get('data', {}).get('link')
+        if not vid_url:
+            print("  Imgur 영상 업로드 실패 — 이미지로 대체")
+            return None
+        r = requests.post(f'https://graph.facebook.com/v21.0/{IG_ID}/media', data={
+            'video_url': vid_url, 'media_type': 'REELS', 'caption': cap, 'access_token': IG_TOKEN
+        }, timeout=30)
+        cid = r.json().get('id')
+        if not cid:
+            print(f"  릴스 컨테이너 실패: {r.json().get('error', {}).get('message', r.json())}")
+            return None
+        for _ in range(18):  # 최대 3분 대기
+            time.sleep(10)
+            st = requests.get(f'https://graph.facebook.com/v21.0/{cid}?fields=status_code&access_token={IG_TOKEN}',
+                              timeout=10).json().get('status_code', '')
+            if st == 'FINISHED':
+                r2 = requests.post(f'https://graph.facebook.com/v21.0/{IG_ID}/media_publish',
+                                   data={'creation_id': cid, 'access_token': IG_TOKEN}, timeout=30)
+                return r2.json().get('id')
+            if st == 'ERROR':
+                print("  릴스 처리 오류")
+                return None
+        return None
+    except Exception as e:
+        print(f"  릴스 업로드 예외: {e}")
+        return None
+
+
 # === 인스타 릴스 업로드 ===
 print("\n[3/4] Instagram Reels...")
 
@@ -560,8 +596,14 @@ if thumb_url:
             f"{content.get('hashtags_kr', '#\ud790\ub9c1 #\uc790\uae30\uacc4\ubc1c #\ubc88\uc544\uc6c3 #\uc9c1\uc7a5\uc778 #\ub9c8\uc74c\uad00\ub9ac')}\n"
             f"{content.get('hashtags_en', '#LighthouseMedia #SelfCare #Motivation #Healing')}"
         )
+    # 2026-09-28 릴스 중심 전환: 이미지 대신 완성 영상을 릴스로 게시(이미지 평균 도달≈1, 릴스≈38).
+    # 영상 업로드가 실패하면 기존처럼 썸네일 이미지로 대체한다.
     ig_ok = False
-    for attempt in range(3):
+    reel_id = upload_premium_reel(vpath, caption)
+    if reel_id:
+        print(f"  IG Reels: OK ({reel_id})")
+        ig_ok = True
+    for attempt in range(0 if ig_ok else 3):
         try:
             r = requests.post(f'https://graph.facebook.com/v21.0/{IG_ID}/media', data={
                 'image_url': thumb_url, 'caption': caption, 'access_token': IG_TOKEN

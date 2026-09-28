@@ -6,6 +6,13 @@
 - Usage:
     python daily-ig-reels.py              # 자동 주제 선택
     python daily-ig-reels.py comfort      # 특정 카테고리
+    python daily-ig-reels.py --dry-run    # 영상만 만들고 업로드하지 않음(점검용)
+
+2026-09-28 릴스 중심 전환:
+- 최근 30개 훅을 기억해 같은 주제 반복 방지(config/reels-history.json)
+- AI 실패 시 예비 릴스는 같은 것을 30일에 1번까지만(반복 게시 = 노출 억제)
+- 첫 장면(훅)은 페이드 없이 첫 프레임부터 보이게, 3초로 단축
+- 캡션은 한국어 중심, 해시태그 5개 이내
 """
 import sys; sys.stdout.reconfigure(encoding='utf-8')
 import os, json, re, requests, time, base64, subprocess, shutil, random, hashlib
@@ -105,6 +112,20 @@ DAY_THEME_MAP = {
 
 VALID_CATEGORIES = {"comfort", "motivation", "growth", "healing"}
 
+HISTORY_FILE = os.path.join(CONFIG_DIR, "reels-history.json")
+
+
+def load_history():
+    try:
+        return json.load(open(HISTORY_FILE, encoding='utf-8'))
+    except (OSError, json.JSONDecodeError):
+        return {"hooks": [], "fallback_used": {}}
+
+
+def save_history(h):
+    h["hooks"] = h.get("hooks", [])[-30:]
+    json.dump(h, open(HISTORY_FILE, "w", encoding='utf-8'), ensure_ascii=False, indent=1)
+
 ACCENT_COLORS = [
     (29, 158, 117),   # teal
     (52, 152, 219),   # blue
@@ -128,9 +149,10 @@ def get_today_category(override=None):
 # ═══════════════════════════════════════════════════════════════
 # AI 릴스 콘텐츠 생성
 # ═══════════════════════════════════════════════════════════════
-def generate_reel_with_ai(category, date_str):
+def generate_reel_with_ai(category, date_str, recent_hooks=()):
     """Claude API로 릴스 콘텐츠 생성"""
     day_hash = int(hashlib.md5(date_str.encode()).hexdigest()[:8], 16)
+    avoid = "\n".join(f"- {h}" for h in list(recent_hooks)[-30:]) or "- (없음)"
 
     prompt = f"""당신은 Lighthouse Media의 인스타그램 릴스 크리에이티브 디렉터입니다.
 매일 25-45세 직장인/부모/사업가의 마음을 움직이는 30초 릴스를 만듭니다.
@@ -138,6 +160,9 @@ def generate_reel_with_ai(category, date_str):
 오늘 날짜: {date_str}
 오늘의 카테고리: {category}
 시드 번호: {day_hash} (콘텐츠 다양성을 위해 참고 — 어제와 완전히 다른 주제/톤/관점으로)
+
+=== 최근에 이미 쓴 훅 (이 주제·표현과 겹치지 말 것) ===
+{avoid}
 
 === 브랜드 톤 ===
 - 목회자+동행자 — 따뜻하게, 옆에서 걸어가는 느낌
@@ -164,8 +189,9 @@ def generate_reel_with_ai(category, date_str):
 - 5~7개 장면 (총 27~33초 분량)
 - closing은 감성적이고 여운이 남는 한 줄
 - caption_kr은 공감형 에세이 (300-500자), 마지막에 반드시 "이 말이 필요한 사람에게 보내주세요" 포함
-- caption_en은 따뜻하고 시적인 영어 2-3문장
-- hashtags는 한영 혼합 10-15개
+- caption_kr 첫 줄은 피드에서 잘리지 않는 25자 이내 공감 문장(훅을 반복하지 말고 확장)
+- caption_en은 따뜻하고 시적인 영어 1문장
+- hashtags는 한국어 위주 5개 이내(대형 태그 1개 + 틈새 태그 4개, 예: #직장인위로 #번아웃회복)
 
 JSON으로 출력:
 {{"category": "{category}",
@@ -254,9 +280,9 @@ def ai_to_reel(ai_content, date_str):
     random.shuffle(style_cycle)
 
     for i, s in enumerate(all_scenes_raw):
-        # 시간 배분: 첫 장면 8초, 마지막 5초, 나머지 7초
+        # 시간 배분: 첫 장면(훅) 3초, 마지막 5초, 나머지 7초 — 훅이 길면 스크롤 이탈
         if i == 0:
-            dur = 8
+            dur = 3 if hook else 8
         elif i == n_total - 1:
             dur = 5
         else:
@@ -380,11 +406,19 @@ EMERGENCY_POOL = [
 ]
 
 
-def pick_emergency_reel(date_str):
-    """비상 폴백: 날짜 기반으로 EMERGENCY_POOL에서 선택"""
+def pick_emergency_reel(date_str, history):
+    """비상 폴백: 최근 30일 안에 쓰지 않은 예비 릴스만 선택. 모두 썼으면 None(게시 건너뜀).
+    같은 영상을 반복 게시하면 인스타가 계정 노출을 줄이므로, 안 올리는 편이 낫다."""
+    used = history.setdefault("fallback_used", {})
+    today = datetime.strptime(date_str, "%Y-%m-%d")
     seed = int(hashlib.md5(date_str.encode()).hexdigest()[:8], 16)
-    idx = seed % len(EMERGENCY_POOL)
-    return EMERGENCY_POOL[idx]
+    for k in range(len(EMERGENCY_POOL)):
+        idx = (seed + k) % len(EMERGENCY_POOL)
+        last = used.get(str(idx))
+        if not last or (today - datetime.strptime(last, "%Y-%m-%d")).days >= 30:
+            used[str(idx)] = date_str
+            return EMERGENCY_POOL[idx]
+    return None
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -407,7 +441,8 @@ def make_frames(scenes, name):
         for f in range(dur * FPS):
             fp = f / max(dur * FPS, 1)
             tp = (elapsed + dur * fp) / total_dur
-            fade = min(1.0, fp * 4)
+            # 첫 장면은 첫 프레임부터 완전히 보이게(검은 화면으로 시작하면 1초 안에 넘겨짐)
+            fade = 1.0 if si == 0 else min(1.0, fp * 4)
             if fp > 0.8:
                 fade = max(0, (1 - fp) * 5)
 
@@ -469,7 +504,16 @@ def make_frames(scenes, name):
 
             # 한글 제목
             title = sc.get("title", "")
-            tc(d, 540, title, gf(52, True), tuple(int(255 * fade) for _ in range(3)), 20)
+            if si == 0 and not qe:
+                # 훅 장면: 크게, 화면 중앙에 — 피드에서 스크롤을 멈추게 하는 첫 1초
+                hf = gf(84, True)
+                if "\n" not in title and d.textbbox((0, 0), title, font=hf)[2] > W - 120 and " " in title:
+                    sp = [i for i, ch in enumerate(title) if ch == " "]
+                    cut = min(sp, key=lambda i: abs(i - len(title) / 2))
+                    title = title[:cut] + "\n" + title[cut + 1:]
+                tc(d, 820, title, hf, (255, 255, 255), 28)
+            else:
+                tc(d, 540, title, gf(52, True), tuple(int(255 * fade) for _ in range(3)), 20)
 
             # 부제
             body = sc.get("body", "")
@@ -580,21 +624,24 @@ def upload_fb_video(vpath, description):
 # 메인
 # ═══════════════════════════════════════════════════════════════
 def main():
-    category_arg = sys.argv[1] if len(sys.argv) > 1 else None
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    dry_run = "--dry-run" in sys.argv
+    category_arg = args[0] if args else None
+    history = load_history()
 
     print("=" * 60)
-    print("  DAILY INSTAGRAM REELS (AI-Generated)")
+    print("  DAILY INSTAGRAM REELS (AI-Generated)" + ("  [DRY-RUN: 업로드 안 함]" if dry_run else ""))
     print("=" * 60)
 
     cat, today = get_today_category(category_arg)
-    name = f"daily-{today}-{cat}"
+    name = f"daily-{today}-{cat}" + ("-dryrun" if dry_run else "")
 
     print(f"\n  Date: {today}")
     print(f"  Category: {cat}")
 
     # AI 콘텐츠 생성
     print("\n  [1/4] AI content generation...")
-    ai_content = generate_reel_with_ai(cat, today)
+    ai_content = generate_reel_with_ai(cat, today, history.get("hooks", []))
 
     scenes = None
     caption = None
@@ -611,9 +658,12 @@ def main():
 
     # 폴백
     if not scenes:
-        print("  AI generation failed — using emergency fallback")
+        fallback = pick_emergency_reel(today, history)
+        if not fallback:
+            print("  AI 생성 실패 + 최근 30일 안에 예비 릴스를 모두 사용 — 반복 게시 방지 위해 오늘은 건너뜀")
+            return
+        print("  AI generation failed — using emergency fallback (30일 1회 제한)")
         source = "FALLBACK"
-        fallback = pick_emergency_reel(today)
         scenes = fallback["scenes"]
         caption = fallback["cap"]
 
@@ -636,6 +686,16 @@ def main():
         return
     sz = os.path.getsize(vpath) / (1024 * 1024)
     print(f"  Video: {vpath} ({sz:.1f}MB)")
+
+    if dry_run:
+        print("\n  [4/4] DRY-RUN — 업로드 생략")
+        print(f"  캡션 미리보기:\n{caption}")
+        return
+
+    # 게시 전에 기록(같은 주제 반복 방지 · 예비 릴스 사용일)
+    if ai_content and source == "AI" and ai_content.get("hook"):
+        history.setdefault("hooks", []).append(ai_content["hook"])
+    save_history(history)
 
     # Facebook 업로드
     print("\n  [4/4] Uploading to SNS...")

@@ -155,8 +155,10 @@ def main():
     now = datetime.now().strftime('%H:%M')
     print(f"[{now}] Auto-engage start")
 
-    e = auto_engage_hashtags()
-    print(f"  Outreach: {e} comments")
+    # 2026-09-28 중단: 낯선 계정 게시물에 정형 댓글을 반복하면 스팸 신호로 계정 노출이 줄어든다.
+    # (최근 계속 0건이라 효과도 없었음) 내 게시물 댓글 답글만 유지. 되살리려면 아래 주석 해제.
+    # e = auto_engage_hashtags()
+    print("  Outreach: 중단됨(스팸 위험)")
 
     r = auto_reply_comments()
     print(f"  Replies: {r}")

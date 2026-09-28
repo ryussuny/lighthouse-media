@@ -6,6 +6,44 @@
   },
   "projects": [
     {
+      "id": "ig-growth-202609",
+      "station": "FORGE",
+      "name": "인스타 @lighthouse_media77 성장 — 릴스 중심 전환",
+      "status": "active",
+      "progress": 30,
+      "next": "매주 월 09:00 주간 점검(logs/ig-weekly.log)으로 릴스 조회·팔로워 추이 확인. 오너: 프로필 이름·소개 변경(앱에서).",
+      "tasks": [
+        {
+          "name": "진단: 팔로워 11·이미지 평균 도달≈1·릴스 평균 38회 — RetryIG가 같은 카드 10장을 매일 재게시(5/16~)",
+          "done": true
+        },
+        {
+          "name": "RetryIG 스케줄러 중단(오너)",
+          "done": true
+        },
+        {
+          "name": "19:00 프리미엄: 썸네일 이미지 → 릴스 영상 게시로 전환(하루 릴스 2편)",
+          "done": true
+        },
+        {
+          "name": "12:00 릴스: 훅 첫 프레임 크게 표시·3초, 주제 반복 방지, 예비 릴스 30일 1회, 해시태그 5개",
+          "done": true
+        },
+        {
+          "name": "낯선 계정 자동 댓글 중단(내 게시물 답글은 유지)",
+          "done": true
+        },
+        {
+          "name": "주간 성과 점검 스케줄러(LighthouseMedia_IGWeekly) — 기준값 팔로워 11·릴스 평균 38",
+          "done": true
+        },
+        {
+          "name": "프로필 이름·소개 변경(오너, 인스타 앱)",
+          "done": false
+        }
+      ]
+    },
+    {
       "id": "org-200-roles-202609",
       "station": "JARVIS",
       "name": "자비스 업그레이드 + 200역할 조직 v2 (cys 0.14.38)",
@@ -530,12 +568,17 @@
     },
     {
       "time": "실패 시",
-      "name": "RetryIG",
+      "name": "RetryIG (2026-09-28 중단)",
       "station": "FORGE"
     },
     {
       "time": "주 1회",
       "name": "TokenCheck",
+      "station": "FORGE"
+    },
+    {
+      "time": "월 09:00",
+      "name": "LighthouseMedia_IGWeekly — 인스타 주간 성과 점검",
       "station": "FORGE"
     }
   ],
