@@ -505,24 +505,62 @@ else:
     print("  Video FAIL")
     sys.exit(1)
 
-def upload_premium_reel(video_path, cap):
-    """완성 영상을 Imgur에 올린 뒤 인스타 릴스로 게시. 실패 시 None."""
+IG_MAX_SEC = 58  # Imgur 무료 영상 업로드 한도 60초 — 여유 2초
+
+
+def fit_for_imgur(video_path):
+    """60초가 넘으면 인스타용 사본을 58초로 맞춘다(화면은 배속, 배경음악은 58초에서 페이드아웃).
+    2026-09-29: 74초 프리미엄이 Imgur 60초 한도에 걸려 릴스 대신 이미지로 게시됨.
+    (인스타 직접 업로드 resumable은 ProcessingFailedError로 실패 — 앱 권한 문제로 보여 보류)"""
     try:
-        with open(video_path, 'rb') as f:
-            enc = base64.b64encode(f.read()).decode()
-        ir = requests.post('https://api.imgur.com/3/upload',
-                           headers={'Authorization': f'Client-ID {IMGUR_ID}'},
-                           data={'video': enc, 'type': 'base64'}, timeout=180)
-        vid_url = ir.json().get('data', {}).get('link')
-        if not vid_url:
-            print("  Imgur 영상 업로드 실패 — 이미지로 대체")
-            return None
-        r = requests.post(f'https://graph.facebook.com/v21.0/{IG_ID}/media', data={
-            'video_url': vid_url, 'media_type': 'REELS', 'caption': cap, 'access_token': IG_TOKEN
-        }, timeout=30)
-        cid = r.json().get('id')
+        dur = float(subprocess.run([FFMPEG.replace('ffmpeg', 'ffprobe'), '-v', 'error', '-show_entries',
+                                    'format=duration', '-of', 'csv=p=0', video_path],
+                                   capture_output=True, text=True, timeout=30).stdout.strip())
+    except Exception:
+        dur = 0
+    if not dur or dur <= IG_MAX_SEC:
+        return video_path
+    out = video_path.replace('.mp4', '_ig58.mp4')
+    speed = dur / IG_MAX_SEC
+    subprocess.run([FFMPEG, '-y', '-loglevel', 'error', '-i', video_path,
+                    '-filter:v', f'setpts=PTS/{speed:.4f}',
+                    '-af', f'atrim=0:{IG_MAX_SEC},afade=t=out:st={IG_MAX_SEC - 3}:d=3',
+                    '-t', str(IG_MAX_SEC), '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+                    '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart', out],
+                   capture_output=True, timeout=180)
+    if os.path.exists(out):
+        print(f"  인스타용 사본 {dur:.0f}초 → {IG_MAX_SEC}초 (화면 {speed:.2f}배속)")
+        return out
+    return video_path
+
+
+def create_reel_container(video_path, cap):
+    """Imgur에 영상을 올린 뒤 릴스 컨테이너를 만든다. 게시(publish)는 하지 않는다."""
+    video_path = fit_for_imgur(video_path)
+    with open(video_path, 'rb') as f:
+        enc = base64.b64encode(f.read()).decode()
+    ir = requests.post('https://api.imgur.com/3/upload',
+                       headers={'Authorization': f'Client-ID {IMGUR_ID}'},
+                       data={'video': enc, 'type': 'base64'}, timeout=180)
+    vid_url = ir.json().get('data', {}).get('link')
+    if not vid_url:
+        print("  Imgur 영상 업로드도 실패")
+        return None
+    r = requests.post(f'https://graph.facebook.com/v21.0/{IG_ID}/media', data={
+        'video_url': vid_url, 'media_type': 'REELS', 'caption': cap, 'access_token': IG_TOKEN
+    }, timeout=30)
+    cid = r.json().get('id')
+    if not cid:
+        print(f"  릴스 컨테이너 실패: {r.json().get('error', {}).get('message', r.json())}")
+    return cid
+
+
+def upload_premium_reel(video_path, cap):
+    """완성 영상을 인스타 릴스로 게시. 실패 시 None(호출부가 이미지로 대체)."""
+    try:
+        cid = create_reel_container(video_path, cap)
         if not cid:
-            print(f"  릴스 컨테이너 실패: {r.json().get('error', {}).get('message', r.json())}")
+            print("  릴스 업로드 실패 — 이미지로 대체")
             return None
         for _ in range(18):  # 최대 3분 대기
             time.sleep(10)
