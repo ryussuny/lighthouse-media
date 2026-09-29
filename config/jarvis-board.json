@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-28",
+  "updated": "2026-09-29",
   "goal": {
     "monthly": 5000000,
     "label": "월 500만원"
@@ -11,7 +11,7 @@
       "name": "인스타 @lighthouse_media77 성장 — 릴스 중심 전환",
       "status": "active",
       "progress": 30,
-      "next": "매주 월 09:00 주간 점검(logs/ig-weekly.log)으로 릴스 조회·팔로워 추이 확인. 오너: 프로필 이름·소개 변경(앱에서).",
+      "next": "cys 팀 품질 향상 샘플 3편 대기(업로드 없음) → 오너 확인 후 스케줄 적용. 지시서 .jarvis/org/directives/20260929-ig-quality.md",
       "tasks": [
         {
           "name": "진단: 팔로워 11·이미지 평균 도달≈1·릴스 평균 38회 — RetryIG가 같은 카드 10장을 매일 재게시(5/16~)",
@@ -39,6 +39,10 @@
         },
         {
           "name": "프로필 이름·소개 변경(오너, 인스타 앱)",
+          "done": false
+        },
+        {
+          "name": "게시물 품질 향상 — cys 팀(FORGE·AI미디어연구소·QA) 벤치마크→기준표→fal.ai 배경·움직임·자막 개선→dry-run 샘플 3편→QA 채점→오너 승인",
           "done": false
         }
       ]
