@@ -19,6 +19,15 @@ import os, json, re, requests, time, base64, subprocess, shutil, random, hashlib
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 
+# 2026-09-29 worker-2: fal.ai 비주얼(옵션 --visual=ai) — 미설치/미설정이어도 기존 절차형 배경으로 안전 동작
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from lib import fal_visuals as fv
+    FAL_VISUALS_AVAILABLE = True
+except ImportError as e:
+    FAL_VISUALS_AVAILABLE = False
+    _FAL_IMPORT_ERR = str(e)
+
 # ═══════════════════════════════════════════════════════════════
 # 설정
 # ═══════════════════════════════════════════════════════════════
@@ -46,7 +55,8 @@ if not os.path.exists(FFMPEG):
     FFMPEG = "ffmpeg"
 
 W, H = 1080, 1920
-FPS = 2
+FPS = 24  # 2026-09-29 worker-2: 2→24 (요청 "24~30fps 부드러운 렌더" — 정적배경 캐싱으로 비용 상쇄)
+KEN_BURNS_ZOOM_END = 1.15  # AI 배경 장면: 재생 중 1.0→1.15로 천천히 확대(느린 줌)
 
 # ═══════════════════════════════════════════════════════════════
 # 폰트
@@ -67,6 +77,130 @@ def tc(d, y, text, font, fill, sp=0):
         d.text(((W - (bb[2] - bb[0])) / 2, y), ln, font=font, fill=fill)
         y += bb[3] - bb[1] + sp
     return y
+
+
+def tc_boxed(img, d, y, text, font, fill, sp=0, box_alpha=150, pad_x=36, pad_y=18, radius=22, fade=1.0):
+    """반투명 박스 + 그림자를 배경으로 깔고 텍스트를 그린다(사진 배경 위 가독성용).
+    2026-09-29 worker-2: 브리프 "굵은 한글서체+반투명박스/그림자 자막" 요구 반영.
+    fade: 호출부의 장면 진입/퇴장 페이드(0~1) — 박스 알파도 텍스트와 함께 페이드시켜야
+    전환 구간에서 "텍스트는 흐린데 박스는 진한" 유령글씨 현상이 안 생긴다(실측 프리뷰
+    프레임에서 발견해 수정 — 2026-09-29)."""
+    lines = text.split("\n")
+    if not lines or not any(lines) or fade <= 0.03:
+        return y
+    box_alpha = int(box_alpha * fade)
+    widths, heights = [], []
+    for ln in lines:
+        bb = d.textbbox((0, 0), ln, font=font)
+        widths.append(bb[2] - bb[0])
+        heights.append(bb[3] - bb[1])
+    block_w = max(widths) if widths else 0
+    block_h = sum(heights) + sp * (len(lines) - 1)
+
+    box_x0 = max(0, (W - block_w) / 2 - pad_x)
+    box_x1 = min(W, (W + block_w) / 2 + pad_x)
+    box_y0 = y - pad_y
+    box_y1 = y + block_h + pad_y
+
+    # 성능: 프레임 전체(1080x1920) 대신 박스가 실제로 걸치는 영역만 합성(24fps 렌더에서
+    # 프레임당 비용을 크게 줄임 — 2026-09-29 worker-2, 초기 구현은 풀프레임 합성이라 느렸음)
+    margin = 12
+    rx0 = max(0, int(box_x0 - margin))
+    ry0 = max(0, int(box_y0 - margin))
+    rx1 = min(W, int(box_x1 + margin))
+    ry1 = min(H, int(box_y1 + margin + 6))
+    if rx1 <= rx0 or ry1 <= ry0:
+        return tc(d, y, text, font, fill, sp)
+
+    region = img.crop((rx0, ry0, rx1, ry1)).convert("RGBA")
+    overlay = Image.new("RGBA", region.size, (0, 0, 0, 0))
+    od = ImageDraw.Draw(overlay)
+    bx0, by0 = box_x0 - rx0, box_y0 - ry0
+    bx1, by1 = box_x1 - rx0, box_y1 - ry0
+    # 그림자(약간 아래로 오프셋, 더 낮은 알파) + 본 박스
+    od.rounded_rectangle([bx0, by0 + 6, bx1, by1 + 6], radius=radius, fill=(0, 0, 0, min(255, box_alpha // 2)))
+    od.rounded_rectangle([bx0, by0, bx1, by1], radius=radius, fill=(0, 0, 0, box_alpha))
+    region.alpha_composite(overlay)
+    img.paste(region.convert("RGB"), (rx0, ry0))
+
+    return tc(d, y, text, font, fill, sp)
+
+
+_BG_CACHE = {}
+
+
+def get_cached_gradient(style, name):
+    """스타일별 정적 그라디언트(+night 별자리)를 1회만 그리고 재사용 — FPS 24 렌더 성능 확보용.
+    2026-09-29 worker-2: FPS 2→24 상향에 따른 캐싱(픽셀 결과는 기존과 동일, night 별자리도
+    기존 코드처럼 고정 seed라 프레임마다 동일했으므로 캐싱해도 시각적 차이 없음)."""
+    key = (style, name if style == "night" else None)
+    cached = _BG_CACHE.get(key)
+    if cached is not None:
+        return cached.copy()
+
+    img = Image.new("RGB", (W, H), (0, 0, 0))
+    d = ImageDraw.Draw(img)
+    if style == "dawn":
+        for row in range(H):
+            p = row / H
+            d.line([(0, row), (W, row)], fill=(int(10 + p * 40), int(15 + p * 30), int(35 + p * 45)))
+    elif style == "night":
+        for row in range(H):
+            p = row / H
+            d.line([(0, row), (W, row)], fill=(int(5 + p * 3), int(5 + p * 5), int(15 + p * 10)))
+        seed = int(hashlib.md5(name.encode()).hexdigest()[:8], 16)
+        random.seed(seed)
+        for _ in range(80):
+            x, y2 = random.randint(0, W), random.randint(0, H // 2)
+            br = random.randint(150, 255)
+            d.ellipse([x - 1, y2 - 1, x + 1, y2 + 1], fill=(br, br, br))
+    elif style == "golden":
+        for row in range(H):
+            p = row / H
+            d.line([(0, row), (W, row)], fill=(int(25 + p * 30), int(15 + p * 18), int(5 + p * 8)))
+    elif style == "rain":
+        for row in range(H):
+            p = row / H
+            d.line([(0, row), (W, row)], fill=(int(8 + p * 4), int(10 + p * 6), int(18 + p * 10)))
+    else:
+        for row in range(H):
+            p = row / H
+            d.line([(0, row), (W, row)], fill=(int(8 + p * 6), int(10 + p * 8), int(20 + p * 12)))
+
+    _BG_CACHE[key] = img.copy()
+    return img
+
+
+_KB_SRC_CACHE = {}
+
+
+def get_ken_burns_frame(bg_path, fp):
+    """AI 생성 정지이미지를 1회만 로드해 캐시하고, fp(0..1 장면진행)에 따라 1.0→KEN_BURNS_ZOOM_END
+    로 서서히 확대하며 중앙 크롭 → (W,H) 리사이즈해 반환(Ken Burns, 전부 로컬/무료).
+    2026-09-29 worker-2: 브리프 "느린 줌(Ken Burns)" 요구 반영."""
+    src = _KB_SRC_CACHE.get(bg_path)
+    if src is None:
+        src = Image.open(bg_path).convert("RGB")
+        # 커버 리사이즈: 목표 비율(W:H)을 항상 채우도록 확대(짧은 변 기준)
+        target_ratio = W / H
+        sw, sh = src.size
+        src_ratio = sw / sh
+        if src_ratio > target_ratio:
+            new_h = H
+            new_w = int(H * src_ratio)
+        else:
+            new_w = W
+            new_h = int(W / src_ratio)
+        src = src.resize((max(new_w, W), max(new_h, H)), Image.LANCZOS)
+        _KB_SRC_CACHE[bg_path] = src
+
+    sw, sh = src.size
+    zoom = 1.0 + (KEN_BURNS_ZOOM_END - 1.0) * fp
+    crop_w = W / zoom
+    crop_h = H / zoom
+    cx, cy = sw / 2, sh / 2
+    box = (cx - crop_w / 2, cy - crop_h / 2, cx + crop_w / 2, cy + crop_h / 2)
+    return src.crop(box).resize((W, H), Image.LANCZOS)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -279,14 +413,23 @@ def ai_to_reel(ai_content, date_str):
     random.seed(day_hash)
     random.shuffle(style_cycle)
 
+    # 2026-09-29 worker-2: 총 길이를 장면 수와 무관하게 ~TARGET_TOTAL_DUR초로 정규화
+    # (master 지시 — 벤치마크 권장 25~35초, 기존엔 장면수*7초로 커져 43~57초까지 초과했음).
+    # 훅·클로징 길이는 고정(가독성 확보), 중간 장면은 남는 시간을 균등분배 — 장면 텍스트/개수는
+    # 그대로 두고 "재생 속도"만 조정하므로 콘텐츠 손실 없음(품질 트레이드오프 없는 변경).
+    TARGET_TOTAL_DUR = 30
+    hook_dur = 2.5 if hook else 5
+    closing_dur = 4
+    n_middle = max(n_total - 2, 1)
+    middle_dur = max(2.8, (TARGET_TOTAL_DUR - hook_dur - closing_dur) / n_middle)
+
     for i, s in enumerate(all_scenes_raw):
-        # 시간 배분: 첫 장면(훅) 3초, 마지막 5초, 나머지 7초 — 훅이 길면 스크롤 이탈
         if i == 0:
-            dur = 3 if hook else 8
+            dur = hook_dur
         elif i == n_total - 1:
-            dur = 5
+            dur = closing_dur
         else:
-            dur = 7
+            dur = middle_dur
 
         accent = ACCENT_COLORS[(day_hash + i) % len(ACCENT_COLORS)]
         style = style_cycle[i % len(style_cycle)]
@@ -424,7 +567,11 @@ def pick_emergency_reel(date_str, history):
 # ═══════════════════════════════════════════════════════════════
 # 프레임 생성
 # ═══════════════════════════════════════════════════════════════
-def make_frames(scenes, name):
+def make_frames(scenes, name, bg_images=None):
+    """bg_images: {scene_index: 파일경로} — fal.ai로 생성된 장면별 배경(있는 장면만 Ken Burns
+    적용, 없는 장면은 기존 절차형 그라디언트 — 전부-아니면-전무는 상위 호출부 정책, 여기선
+    장면 단위로 안전하게 혼용 가능하게 둔다)."""
+    bg_images = bg_images or {}
     frames_dir = os.path.join(OUT_DIR, f"frames_{name}")
     if os.path.exists(frames_dir):
         shutil.rmtree(frames_dir)
@@ -437,50 +584,26 @@ def make_frames(scenes, name):
         style = sc.get("style", "dark")
         accent = sc.get("accent", (29, 158, 117))
         elapsed = sum(scenes[j].get("dur", 8) for j in range(si))
+        bg_path = bg_images.get(si)
 
-        for f in range(dur * FPS):
-            fp = f / max(dur * FPS, 1)
+        n_frames_scene = max(1, round(dur * FPS))
+        for f in range(n_frames_scene):
+            fp = f / max(n_frames_scene, 1)
             tp = (elapsed + dur * fp) / total_dur
             # 첫 장면은 첫 프레임부터 완전히 보이게(검은 화면으로 시작하면 1초 안에 넘겨짐)
             fade = 1.0 if si == 0 else min(1.0, fp * 4)
             if fp > 0.8:
                 fade = max(0, (1 - fp) * 5)
 
-            img = Image.new("RGB", (W, H), (0, 0, 0))
-            d = ImageDraw.Draw(img)
-
-            # 배경
-            seed = int(hashlib.md5(name.encode()).hexdigest()[:8], 16)
-            if style == "dawn":
-                for row in range(H):
-                    p = row / H
-                    d.line([(0, row), (W, row)], fill=(int(10 + p * 40), int(15 + p * 30), int(35 + p * 45)))
-            elif style == "night":
-                for row in range(H):
-                    p = row / H
-                    d.line([(0, row), (W, row)], fill=(int(5 + p * 3), int(5 + p * 5), int(15 + p * 10)))
-                random.seed(seed)
-                for _ in range(80):
-                    x, y2 = random.randint(0, W), random.randint(0, H // 2)
-                    br = random.randint(150, 255)
-                    d.ellipse([x - 1, y2 - 1, x + 1, y2 + 1], fill=(br, br, br))
-            elif style == "golden":
-                for row in range(H):
-                    p = row / H
-                    d.line([(0, row), (W, row)], fill=(int(25 + p * 30), int(15 + p * 18), int(5 + p * 8)))
-            elif style == "rain":
-                for row in range(H):
-                    p = row / H
-                    d.line([(0, row), (W, row)], fill=(int(8 + p * 4), int(10 + p * 6), int(18 + p * 10)))
-                random.seed(int(fp * 100) + seed)
-                for _ in range(30):
-                    x = random.randint(0, W)
-                    ys = random.randint(0, H - 80)
-                    d.line([(x, ys), (x - 3, ys + 60)], fill=(50, 55, 70), width=1)
+            # 배경 — AI 사진(Ken Burns) 또는 캐시된 절차형 그라디언트
+            if bg_path:
+                img = get_ken_burns_frame(bg_path, fp)
+                # 사진 위 텍스트 가독성을 위한 은은한 어둡게(전체 25%) — 로컬 합성, 비용 없음
+                dim = Image.new("RGB", (W, H), (0, 0, 0))
+                img = Image.blend(img, dim, 0.25)
             else:
-                for row in range(H):
-                    p = row / H
-                    d.line([(0, row), (W, row)], fill=(int(8 + p * 6), int(10 + p * 8), int(20 + p * 12)))
+                img = get_cached_gradient(style, name)
+            d = ImageDraw.Draw(img)
 
             # 시네마틱 바
             d.rectangle([0, 0, W, 70], fill=(0, 0, 0))
@@ -502,7 +625,7 @@ def make_frames(scenes, name):
             if lw > 0:
                 d.rectangle([W // 2 - lw, 490, W // 2 + lw, 492], fill=bc)
 
-            # 한글 제목
+            # 한글 제목 — 굵은서체 + 반투명 박스/그림자(가독성, 사진배경일 때 특히 중요)
             title = sc.get("title", "")
             if si == 0 and not qe:
                 # 훅 장면: 크게, 화면 중앙에 — 피드에서 스크롤을 멈추게 하는 첫 1초
@@ -511,9 +634,9 @@ def make_frames(scenes, name):
                     sp = [i for i, ch in enumerate(title) if ch == " "]
                     cut = min(sp, key=lambda i: abs(i - len(title) / 2))
                     title = title[:cut] + "\n" + title[cut + 1:]
-                tc(d, 820, title, hf, (255, 255, 255), 28)
+                tc_boxed(img, d, 820, title, hf, (255, 255, 255), 28, fade=fade)
             else:
-                tc(d, 540, title, gf(52, True), tuple(int(255 * fade) for _ in range(3)), 20)
+                tc_boxed(img, d, 540, title, gf(52, True), tuple(int(255 * fade) for _ in range(3)), 20, fade=fade)
 
             # 부제
             body = sc.get("body", "")
@@ -626,11 +749,16 @@ def upload_fb_video(vpath, description):
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     dry_run = "--dry-run" in sys.argv
+    # --visual=ai 명시적 opt-in만 fal.ai 사용. 플래그 없는 기본 호출(스케줄러 .bat 포함)은
+    # 지금까지와 완전히 동일한 절차형 배경 — 성공기준 "실제 게시·스케줄러 변경 없음" 보장.
+    visual_arg = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--visual=")), "procedural")
+    out_subdir_arg = next((a.split("=", 1)[1] for a in sys.argv[1:] if a.startswith("--outsubdir=")), None)
     category_arg = args[0] if args else None
     history = load_history()
 
     print("=" * 60)
-    print("  DAILY INSTAGRAM REELS (AI-Generated)" + ("  [DRY-RUN: 업로드 안 함]" if dry_run else ""))
+    print("  DAILY INSTAGRAM REELS (AI-Generated)" + ("  [DRY-RUN: 업로드 안 함]" if dry_run else "")
+          + (f"  [visual={visual_arg}]" if visual_arg != "procedural" else ""))
     print("=" * 60)
 
     cat, today = get_today_category(category_arg)
@@ -667,15 +795,41 @@ def main():
         scenes = fallback["scenes"]
         caption = fallback["cap"]
 
-    # BGM 선택
+    # BGM 선택 — 카테고리 분위기에 맞춰 후보군을 좁힌 뒤 랜덤 선택
+    # 2026-09-29 worker-2: 1단계 품질기준표(00-benchmark-and-rubric.md) 항목5②
+    # "현재는 완전 랜덤이라 카테고리-곡 매칭이 없음, 개선 후보" 반영. 매칭 후보가 비면(파일명
+    # 변경 등) 기존처럼 전체 폴에서 랜덤 — 안전 폴백.
     bgm_files = [f for f in os.listdir(BGM_DIR) if f.endswith('.mp3')]
-    bgm = random.choice(bgm_files)
-    print(f"  BGM: {bgm}")
+    CATEGORY_BGM = {
+        "comfort": ["calm-piano", "soft-acoustic", "emotional", "ambient-dream"],
+        "motivation": ["motivational", "upbeat-energy", "cinematic-hope"],
+        "growth": ["morning-coffee", "cinematic-hope", "upbeat-energy"],
+        "healing": ["healing", "night-rain", "sunset-waves", "lofi-chill", "ambient-dream"],
+    }
+    matched = [f for f in bgm_files if any(k in f for k in CATEGORY_BGM.get(cat, []))]
+    bgm = random.choice(matched or bgm_files)
+    print(f"  BGM: {bgm}" + ("" if matched else "  (카테고리 매칭 후보 없음 — 전체 폴에서 선택)"))
     print(f"  Source: {source}")
+
+    # AI 비주얼(opt-in) — cost-preview-confirm 게이트를 lib/fal_visuals.py가 수행.
+    # 실패/예산초과/키없음이면 (None, 사유)로 안전 폴백 — 절차형 그라디언트로 계속 진행.
+    bg_images = {}
+    if visual_arg == "ai":
+        print("\n  [1.5/4] AI 배경 이미지 생성(fal.ai)...")
+        if not FAL_VISUALS_AVAILABLE:
+            print(f"  AI 비주얼 모듈 로드 실패({_FAL_IMPORT_ERR}) — 절차형 배경으로 진행")
+        else:
+            images_dir = os.path.join(OUT_DIR, f"images_{name}")
+            paths, err = fv.generate_all_scene_images(scenes, cat, images_dir, name)
+            if paths:
+                bg_images = {i: p for i, p in enumerate(paths)}
+                print(f"  AI 배경 {len(paths)}장 생성 완료 — Ken Burns 적용 예정")
+            else:
+                print(f"  AI 배경 생성 생략({err}) — 절차형 배경으로 폴백")
 
     # 프레임 생성
     print("\n  [2/4] Generating frames...")
-    frames_dir, total_dur, fnum = make_frames(scenes, name)
+    frames_dir, total_dur, fnum = make_frames(scenes, name, bg_images=bg_images)
     print(f"  {fnum} frames ({total_dur}s)")
 
     # 영상 인코딩
@@ -686,6 +840,13 @@ def main():
         return
     sz = os.path.getsize(vpath) / (1024 * 1024)
     print(f"  Video: {vpath} ({sz:.1f}MB)")
+
+    if out_subdir_arg:
+        dest_dir = os.path.join(OUT_DIR, out_subdir_arg)
+        os.makedirs(dest_dir, exist_ok=True)
+        dest_path = os.path.join(dest_dir, os.path.basename(vpath))
+        shutil.copy2(vpath, dest_path)
+        print(f"  샘플 사본: {dest_path}")
 
     if dry_run:
         print("\n  [4/4] DRY-RUN — 업로드 생략")
