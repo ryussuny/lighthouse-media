@@ -79,6 +79,30 @@ def tc(d, y, text, font, fill, sp=0):
     return y
 
 
+def wrap_to_width(d, text, font, max_width):
+    """공백 기준 그리디 줄바꿈 — 기존 \n은 그대로 유지하고, 폭을 넘는 줄만 공백에서 쪼갠다.
+    2026-10-03 worker-2: 실측 프레임 캡처에서 closing 문장(자수 제한 없음)이 화면 밖으로
+    잘려나가는 걸 발견(프롬프트가 title/sub는 10~20자로 제한하지만 closing은 제한이 없어
+    길어질 수 있음) — 훅 장면에만 있던 단일-분할 로직을 전체 장면에 적용 가능한 범용
+    여러줄 랩으로 일반화."""
+    out_lines = []
+    for line in text.split("\n"):
+        if d.textbbox((0, 0), line, font=font)[2] <= max_width or " " not in line:
+            out_lines.append(line)
+            continue
+        words = line.split(" ")
+        cur = words[0]
+        for w in words[1:]:
+            trial = cur + " " + w
+            if d.textbbox((0, 0), trial, font=font)[2] <= max_width:
+                cur = trial
+            else:
+                out_lines.append(cur)
+                cur = w
+        out_lines.append(cur)
+    return "\n".join(out_lines)
+
+
 def tc_boxed(img, d, y, text, font, fill, sp=0, box_alpha=150, pad_x=36, pad_y=18, radius=22, fade=1.0):
     """반투명 박스 + 그림자를 배경으로 깔고 텍스트를 그린다(사진 배경 위 가독성용).
     2026-09-29 worker-2: 브리프 "굵은 한글서체+반투명박스/그림자 자막" 요구 반영.
@@ -630,13 +654,12 @@ def make_frames(scenes, name, bg_images=None):
             if si == 0 and not qe:
                 # 훅 장면: 크게, 화면 중앙에 — 피드에서 스크롤을 멈추게 하는 첫 1초
                 hf = gf(84, True)
-                if "\n" not in title and d.textbbox((0, 0), title, font=hf)[2] > W - 120 and " " in title:
-                    sp = [i for i, ch in enumerate(title) if ch == " "]
-                    cut = min(sp, key=lambda i: abs(i - len(title) / 2))
-                    title = title[:cut] + "\n" + title[cut + 1:]
+                title = wrap_to_width(d, title, hf, W - 120)
                 tc_boxed(img, d, 820, title, hf, (255, 255, 255), 28, fade=fade)
             else:
-                tc_boxed(img, d, 540, title, gf(52, True), tuple(int(255 * fade) for _ in range(3)), 20, fade=fade)
+                mf = gf(52, True)
+                title = wrap_to_width(d, title, mf, W - 140)
+                tc_boxed(img, d, 540, title, mf, tuple(int(255 * fade) for _ in range(3)), 20, fade=fade)
 
             # 부제
             body = sc.get("body", "")
@@ -820,10 +843,22 @@ def main():
             print(f"  AI 비주얼 모듈 로드 실패({_FAL_IMPORT_ERR}) — 절차형 배경으로 진행")
         else:
             images_dir = os.path.join(OUT_DIR, f"images_{name}")
-            paths, err = fv.generate_all_scene_images(scenes, cat, images_dir, name)
+            # 중복과금 방지: 같은 날짜·카테고리로 이미 과금받은 이미지가 있고 장면수가 정확히
+            # 일치하면 재사용(2026-10-03 master 지시 — 메모리부족 중단 재시도 시 이미 생성된
+            # motivation 8장을 재사용하도록). 장면수가 다르면(AI 콘텐츠가 매번 달라질 수 있음)
+            # 안전하게 재호출한다.
+            existing = sorted(
+                os.path.join(images_dir, f) for f in os.listdir(images_dir)
+                if f.startswith("scene_") and f.endswith(".png")
+            ) if os.path.isdir(images_dir) else []
+            if len(existing) == len(scenes) and all(os.path.getsize(p) > 0 for p in existing):
+                paths, err = existing, None
+                print(f"  기존 AI 배경 {len(existing)}장 재사용(중복과금 방지) — {images_dir}")
+            else:
+                paths, err = fv.generate_all_scene_images(scenes, cat, images_dir, name)
             if paths:
                 bg_images = {i: p for i, p in enumerate(paths)}
-                print(f"  AI 배경 {len(paths)}장 생성 완료 — Ken Burns 적용 예정")
+                print(f"  AI 배경 {len(paths)}장 준비 완료 — Ken Burns 적용 예정")
             else:
                 print(f"  AI 배경 생성 생략({err}) — 절차형 배경으로 폴백")
 
