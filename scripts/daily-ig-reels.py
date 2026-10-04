@@ -57,6 +57,8 @@ if not os.path.exists(FFMPEG):
 W, H = 1080, 1920
 FPS = 24  # 2026-09-29 worker-2: 2→24 (요청 "24~30fps 부드러운 렌더" — 정적배경 캐싱으로 비용 상쇄)
 KEN_BURNS_ZOOM_END = 1.15  # AI 배경 장면: 재생 중 1.0→1.15로 천천히 확대(느린 줌)
+FADE_IN_SEC = 0.35   # 장면 진입 알파 페이드(첫 장면은 페이드 없음)
+FADE_OUT_SEC = 0.30  # 장면 퇴장 알파 페이드
 
 # ═══════════════════════════════════════════════════════════════
 # 폰트
@@ -103,6 +105,34 @@ def wrap_to_width(d, text, font, max_width):
     return "\n".join(out_lines)
 
 
+def draw_text_alpha(img, y, text, font, rgb, alpha, sp=0, left_x=None):
+    """tc()와 같은 위치·줄간격으로 글자를 그리되 색을 어둡게 보간하지 않고 rgb 고정 + 알파로만 페이드.
+    2026-10-05 R1수정: 기존엔 fill=(255*fade,…)로 검정→회색→흰색 색 보간을 해서 새 장면 글자가
+    '유령글씨'처럼 보였다(qa-05 REVISE). L 마스크에 글자를 그린 뒤 마스크 값에 알파를 곱해
+    단색 rgb를 paste하므로 가장자리 어두운 헤일로도 없다."""
+    alpha = max(0.0, min(1.0, alpha))
+    if alpha <= 0.01 or not text:
+        return y
+    d0 = ImageDraw.Draw(img)
+    items = []
+    yy = y
+    for ln in text.split("\n"):
+        bb = d0.textbbox((0, 0), ln, font=font)
+        items.append((ln, left_x if left_x is not None else (W - (bb[2] - bb[0])) / 2, yy))
+        yy += bb[3] - bb[1] + sp
+    top = int(y) - 10
+    bottom = min(H, int(yy) + font.size + 20)
+    top = max(0, top)
+    mask = Image.new("L", (W, bottom - top), 0)
+    md = ImageDraw.Draw(mask)
+    for ln, x, ly in items:
+        md.text((x, ly - top), ln, font=font, fill=255)
+    if alpha < 1.0:
+        mask = mask.point(lambda v: int(v * alpha))
+    img.paste(Image.new("RGB", mask.size, rgb), (0, top), mask)
+    return yy
+
+
 def tc_boxed(img, d, y, text, font, fill, sp=0, box_alpha=150, pad_x=36, pad_y=18, radius=22, fade=1.0):
     """반투명 박스 + 그림자를 배경으로 깔고 텍스트를 그린다(사진 배경 위 가독성용).
     2026-09-29 worker-2: 브리프 "굵은 한글서체+반투명박스/그림자 자막" 요구 반영.
@@ -134,7 +164,7 @@ def tc_boxed(img, d, y, text, font, fill, sp=0, box_alpha=150, pad_x=36, pad_y=1
     rx1 = min(W, int(box_x1 + margin))
     ry1 = min(H, int(box_y1 + margin + 6))
     if rx1 <= rx0 or ry1 <= ry0:
-        return tc(d, y, text, font, fill, sp)
+        return draw_text_alpha(img, y, text, font, (255, 255, 255), fade, sp)
 
     region = img.crop((rx0, ry0, rx1, ry1)).convert("RGBA")
     overlay = Image.new("RGBA", region.size, (0, 0, 0, 0))
@@ -147,7 +177,8 @@ def tc_boxed(img, d, y, text, font, fill, sp=0, box_alpha=150, pad_x=36, pad_y=1
     region.alpha_composite(overlay)
     img.paste(region.convert("RGB"), (rx0, ry0))
 
-    return tc(d, y, text, font, fill, sp)
+    # 글자는 항상 흰색, 투명도(알파)로만 페이드 — 박스와 같은 fade 값을 쓴다
+    return draw_text_alpha(img, y, text, font, (255, 255, 255), fade, sp)
 
 
 _BG_CACHE = {}
@@ -615,16 +646,20 @@ def make_frames(scenes, name, bg_images=None):
             fp = f / max(n_frames_scene, 1)
             tp = (elapsed + dur * fp) / total_dur
             # 첫 장면은 첫 프레임부터 완전히 보이게(검은 화면으로 시작하면 1초 안에 넘겨짐)
-            fade = 1.0 if si == 0 else min(1.0, fp * 4)
-            if fp > 0.8:
-                fade = max(0, (1 - fp) * 5)
+            # 2026-10-05 R1수정: 페이드를 장면 길이 비율(25%/20% ≈ 1초 안팎)에서 고정 시간으로 바꿔
+            # 반투명 구간을 짧게(0.35초/0.3초) — 글자는 알파로만 페이드하고 색은 항상 흰색.
+            t_in = f / FPS
+            t_out = (n_frames_scene - 1 - f) / FPS
+            fade = 1.0 if si == 0 else min(1.0, t_in / FADE_IN_SEC)
+            fade = min(fade, max(0.0, t_out / FADE_OUT_SEC)) if t_out < FADE_OUT_SEC else fade
 
             # 배경 — AI 사진(Ken Burns) 또는 캐시된 절차형 그라디언트
             if bg_path:
                 img = get_ken_burns_frame(bg_path, fp)
-                # 사진 위 텍스트 가독성을 위한 은은한 어둡게(전체 25%) — 로컬 합성, 비용 없음
+                # 2026-10-05 오너 피드백 "배경이 어둡다": 전체 25% 어둡게 → 10%로 줄임.
+                # 글자 가독성은 반투명 박스(tc_boxed)가 맡는다.
                 dim = Image.new("RGB", (W, H), (0, 0, 0))
-                img = Image.blend(img, dim, 0.25)
+                img = Image.blend(img, dim, 0.10)
             else:
                 img = get_cached_gradient(style, name)
             d = ImageDraw.Draw(img)
@@ -636,44 +671,55 @@ def make_frames(scenes, name, bg_images=None):
             bc = tuple(int(c * fade) for c in accent)
             d.rectangle([0, 70, W, 73], fill=bc)
 
-            # 브랜드
-            d.text((60, 85), "LIGHTHOUSE MEDIA", font=gf(18), fill=tuple(int(c * fade * 0.5) for c in accent))
+            # 브랜드 (알파 페이드 — 색 보간 없음)
+            draw_text_alpha(img, 85, "LIGHTHOUSE MEDIA", gf(18), accent, 0.5 * fade, left_x=60)
+            d = ImageDraw.Draw(img)
 
             # 영어 명언
             qe = sc.get("quote_en", "")
             if qe:
-                tc(d, 320, qe, gf_en(26), tuple(int(140 * fade) for _ in range(3)), 6)
+                draw_text_alpha(img, 320, qe, gf_en(26), (200, 200, 200), 0.75 * fade, 6)
+                d = ImageDraw.Draw(img)
 
-            # 구분선
+            # 구분선 (2026-10-05: 제목을 화면 중앙으로 내리면서 함께 이동)
             lw = int(100 * min(1, fp * 3))
-            if lw > 0:
-                d.rectangle([W // 2 - lw, 490, W // 2 + lw, 492], fill=bc)
+            if lw > 0 and not (si == 0 and not qe):
+                d.rectangle([W // 2 - lw, 700, W // 2 + lw, 702], fill=bc)
 
             # 한글 제목 — 굵은서체 + 반투명 박스/그림자(가독성, 사진배경일 때 특히 중요)
+            # 글자는 항상 흰색(알파로만 페이드). 2026-10-05 R1수정.
             title = sc.get("title", "")
             if si == 0 and not qe:
                 # 훅 장면: 크게, 화면 중앙에 — 피드에서 스크롤을 멈추게 하는 첫 1초
                 hf = gf(84, True)
                 title = wrap_to_width(d, title, hf, W - 120)
-                tc_boxed(img, d, 820, title, hf, (255, 255, 255), 28, fade=fade)
+                text_end_y = tc_boxed(img, d, 820, title, hf, (255, 255, 255), 28, fade=fade)
             else:
-                mf = gf(52, True)
+                # 2026-10-05 오너 피드백 "중간 장면 글씨가 위쪽에 작다": 52px·y540 → 66px·y760(화면 중앙부)
+                mf = gf(66, True)
                 title = wrap_to_width(d, title, mf, W - 140)
-                tc_boxed(img, d, 540, title, mf, tuple(int(255 * fade) for _ in range(3)), 20, fade=fade)
+                text_end_y = tc_boxed(img, d, 760, title, mf, (255, 255, 255), 22, fade=fade)
 
-            # 부제
+            # 부제(실제 메시지 둘째 줄) — 제목과 같은 반투명 박스 + 충분한 크기·불투명도.
+            # 2026-10-05 R1수정(qa-05 REVISE): 기존엔 박스 없는 26px 회색 반투명 글자라 밝은 배경에서 판독 불가.
             body = sc.get("body", "")
             if body:
-                tc(d, 880, body, gf(26, False), tuple(int(160 * fade) for _ in range(3)), 10)
+                body_y = text_end_y + 50
+                if body.startswith("@"):
+                    draw_text_alpha(img, body_y, body, gf(32, True), (255, 255, 255), 0.85 * fade)
+                else:
+                    bf = gf(40, True)
+                    body = wrap_to_width(d, body, bf, W - 160)
+                    tc_boxed(img, d, body_y, body, bf, (255, 255, 255), 12, box_alpha=185, pad_x=30, pad_y=14, radius=20, fade=fade)
 
             # 출처
             src = sc.get("source", "")
             if src:
-                tc(d, H - 220, src, gf(20, False), tuple(int(c * fade * 0.5) for c in accent))
+                draw_text_alpha(img, H - 220, src, gf(20, False), accent, 0.5 * fade)
 
-            # 하단 장식
+            # 하단 장식 + 계정 핸들(가시성 상향: 14px 짙은회색 → 24px 흰색 55%)
             d.rectangle([W // 2 - 25, H - 140, W // 2 + 25, H - 137], fill=bc)
-            tc(d, H - 120, "@lighthouse_media77", gf(14, False), tuple(int(50 * fade) for _ in range(3)))
+            draw_text_alpha(img, H - 125, "@lighthouse_media77", gf(24, True), (255, 255, 255), 0.55 * fade)
 
             # 진행바
             d.rectangle([0, H - 70, int(W * tp), H - 67], fill=bc)
@@ -687,16 +733,44 @@ def make_frames(scenes, name, bg_images=None):
 # ═══════════════════════════════════════════════════════════════
 # 영상 인코딩
 # ═══════════════════════════════════════════════════════════════
+BGM_TARGET_MEAN_DB = -21.5  # 나레이션 없는 릴스 — 들리는 수준. 페이드 반영 후 실측 -22dB 안팎(허용 -24~-20)
+
+
+def bgm_gain_db(bgm_path, seconds):
+    """실제로 쓰이는 앞 `seconds`초 구간의 mean_volume을 재서 목표 평균음량까지의 게인(dB)을 돌려준다.
+    2026-10-05 R1수정: 소스 BGM 평균음량이 파일마다 -13.6~-51.7dB로 제각각인데(실측) 믹스에서
+    `volume=0.3`(-10.5dB)을 일괄 곱해 조용한 곡은 -53~-62dB로 사실상 무음이 됐다.
+    측정 실패 시 None(호출부가 기존 고정값으로 폴백)."""
+    try:
+        r = subprocess.run([FFMPEG, "-hide_banner", "-t", str(seconds), "-i", bgm_path,
+                            "-af", "volumedetect", "-vn", "-f", "null", "-"],
+                           capture_output=True, text=True, timeout=60)
+        m = re.search(r"mean_volume:\s*(-?[\d.]+) dB", r.stderr)
+        if not m:
+            return None
+        return max(-20.0, min(40.0, BGM_TARGET_MEAN_DB - float(m.group(1))))
+    except Exception as e:
+        print(f"  BGM 음량 측정 실패({e}) — 기존 고정 게인으로 진행")
+        return None
+
+
 def encode_video(frames_dir, total_dur, bgm_file, output_name):
     vpath = os.path.join(OUT_DIR, f"{output_name}.mp4")
     bgm_path = os.path.join(BGM_DIR, bgm_file)
+
+    gain_db = bgm_gain_db(bgm_path, total_dur)
+    if gain_db is None:
+        vol_filter = "volume=0.3"
+    else:
+        vol_filter = f"volume={gain_db:.2f}dB,alimiter=limit=0.9"
+        print(f"  BGM 정규화: {bgm_file} 게인 {gain_db:+.1f}dB (목표 평균 {BGM_TARGET_MEAN_DB}dB)")
 
     cmd = [FFMPEG, "-y",
            "-framerate", str(FPS), "-i", os.path.join(frames_dir, "frame_%05d.png"),
            "-i", bgm_path,
            "-c:v", "libx264", "-preset", "fast", "-crf", "23", "-pix_fmt", "yuv420p",
            "-c:a", "aac", "-b:a", "128k",
-           "-filter_complex", f"[1:a]afade=t=in:d=1,afade=t=out:st={max(1, total_dur - 2)}:d=2,volume=0.3[a]",
+           "-filter_complex", f"[1:a]{vol_filter},afade=t=in:d=1,afade=t=out:st={max(1, total_dur - 2)}:d=2[a]",
            "-map", "0:v", "-map", "[a]",
            "-vf", f"scale={W}:{H},fps=30",
            "-t", str(total_dur), "-shortest",

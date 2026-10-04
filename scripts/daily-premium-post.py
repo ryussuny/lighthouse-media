@@ -406,97 +406,141 @@ with open(os.path.join(OUT, "content.json"), 'w', encoding='utf-8') as f:
 # === 릴스 영상 제작 ===
 print("\n[2/4] Creating premium video...")
 
-scenes_data = []
-# 오프닝
-scenes_data.append({"dur": 6, "bg": pal['bg'], "items": [
-    {"y": 700, "text": content.get('hook', ''), "font": ft(48), "color": pal['text']},
-]})
+def render_with_reels_engine(content, out_path):
+    """2026-10-05 오너 승인: 프리미엄도 12시 릴스와 같은 렌더러(fal.ai 사진 배경 + 느린 줌 +
+    반투명 박스 자막 + 24fps)로 만든다. 실패하면 False를 돌려주고 기존 단색 렌더러가 대신 만든다.
+    장면당 6초 × 최대 8장면 + 훅 3초 + 마무리 6초 = 최대 57초(Imgur 60초 한도 안)."""
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "reels_engine", os.path.join(os.path.dirname(os.path.abspath(__file__)), "daily-ig-reels.py"))
+        rx = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(rx)
+        styles = ["golden", "dawn", "rain", "night"]
+        acc = rx.ACCENT_COLORS
+        blank = {"quote_en": "", "source": ""}
+        scenes = [dict(blank, dur=3, style="golden", accent=acc[2], title=content.get('hook', ''), body="")]
+        for i, sc in enumerate(content.get('scenes', [])[:8]):
+            scenes.append(dict(blank, dur=6, style=styles[(i + 1) % 4], accent=acc[(i + 1) % len(acc)],
+                               title=sc.get('text', ''), body=sc.get('sub', '')))
+        closing = content.get('closing', content.get('one_liner', ''))
+        if closing:
+            scenes.append(dict(blank, dur=6, style="dawn", accent=acc[0], title=closing, body="@lighthouse_media77"))
+        category = ["comfort", "healing", "growth", "motivation"][datetime.now().weekday() % 4]
+        name = f"premium-{DATE_STR}"
+        bg = {}
+        if rx.FAL_VISUALS_AVAILABLE:
+            paths, err = rx.fv.generate_all_scene_images(scenes, category, os.path.join(OUT, "images"), name)
+            if paths:
+                bg = dict(enumerate(paths))
+                print(f"  AI 배경 {len(paths)}장 준비 완료")
+            else:
+                print(f"  AI 배경 생략({err}) — 단색 배경으로 진행")
+        frames_dir, total, n = rx.make_frames(scenes, name, bg_images=bg)
+        bgm_files = [f for f in os.listdir(rx.BGM_DIR) if f.endswith('.mp3')]
+        v = rx.encode_video(frames_dir, total, random.choice(bgm_files), name)
+        if v and os.path.exists(v):
+            shutil.move(v, out_path)
+            print(f"  새 렌더러: {n} frames ({total}s)")
+            return True
+    except Exception as e:
+        print(f"  새 렌더러 실패({e}) — 기존 렌더러로 진행")
+    return False
 
-# 본문 장면들
-for sc in content.get('scenes', []):
-    scenes_data.append({"dur": 7, "bg": pal['bg'], "items": [
-        {"y": 650, "text": sc['text'], "font": ft(52), "color": pal['text']},
-        {"y": 850, "text": sc.get('sub',''), "font": ft_l(28), "color": pal['sub']},
+
+vpath = os.path.join(OUT, f"premium_{DATE_STR}.mp4")
+if not render_with_reels_engine(content, vpath):
+    scenes_data = []
+    # 오프닝
+    scenes_data.append({"dur": 6, "bg": pal['bg'], "items": [
+        {"y": 700, "text": content.get('hook', ''), "font": ft(48), "color": pal['text']},
     ]})
 
-# 마무리
-scenes_data.append({"dur": 7, "bg": pal['dark_bg'], "items": [
-    {"y": 700, "text": content.get('closing', content.get('one_liner', '')), "font": ft(42), "color": (220,215,205)},
-]})
+    # 본문 장면들
+    for sc in content.get('scenes', []):
+        scenes_data.append({"dur": 7, "bg": pal['bg'], "items": [
+            {"y": 650, "text": sc['text'], "font": ft(52), "color": pal['text']},
+            {"y": 850, "text": sc.get('sub',''), "font": ft_l(28), "color": pal['sub']},
+        ]})
 
-# 클로징
-scenes_data.append({"dur": 5, "bg": pal['bg'], "items": [
-    {"y": 750, "text": "Lighthouse Media", "font": ft_sb(22), "color": pal['accent']},
-    {"y": 800, "text": "@lighthouse_media77", "font": ft_s(16), "color": (170,155,135)},
-]})
+    # 마무리
+    scenes_data.append({"dur": 7, "bg": pal['dark_bg'], "items": [
+        {"y": 700, "text": content.get('closing', content.get('one_liner', '')), "font": ft(42), "color": (220,215,205)},
+    ]})
 
-# 프레임 생성
-FRAMES = os.path.join(OUT, "frames")
-os.makedirs(FRAMES, exist_ok=True)
-fn = 0
-total_dur = sum(s['dur'] for s in scenes_data)
+    # 클로징
+    scenes_data.append({"dur": 5, "bg": pal['bg'], "items": [
+        {"y": 750, "text": "Lighthouse Media", "font": ft_sb(22), "color": pal['accent']},
+        {"y": 800, "text": "@lighthouse_media77", "font": ft_s(16), "color": (170,155,135)},
+    ]})
 
-for si, scene in enumerate(scenes_data):
-    dur = scene['dur']
-    bg = scene['bg']
-    elapsed = sum(scenes_data[j]['dur'] for j in range(si))
+    # 프레임 생성
+    FRAMES = os.path.join(OUT, "frames")
+    os.makedirs(FRAMES, exist_ok=True)
+    fn = 0
+    total_dur = sum(s['dur'] for s in scenes_data)
 
-    for f in range(dur * FPS):
-        fp = f / max(dur*FPS, 1)
-        fade = min(1.0, fp * 3)
-        if fp > 0.85: fade = max(0, (1-fp) * 7)
+    for si, scene in enumerate(scenes_data):
+        dur = scene['dur']
+        bg = scene['bg']
+        elapsed = sum(scenes_data[j]['dur'] for j in range(si))
 
-        img = Image.new('RGB', (W, H), bg)
-        grain(img, 3)
-        d = ImageDraw.Draw(img)
+        for f in range(dur * FPS):
+            fp = f / max(dur*FPS, 1)
+            fade = min(1.0, fp * 3)
+            if fp > 0.85: fade = max(0, (1-fp) * 7)
 
-        # 상단 라인
-        ac = tuple(int(c*fade) for c in pal['accent'])
-        d.rectangle([0, 0, W, 2], fill=ac)
+            img = Image.new('RGB', (W, H), bg)
+            grain(img, 3)
+            d = ImageDraw.Draw(img)
 
-        # 십자가 (미니멀)
-        cross(d, 60, ac)
+            # 상단 라인
+            ac = tuple(int(c*fade) for c in pal['accent'])
+            d.rectangle([0, 0, W, 2], fill=ac)
 
-        # 텍스트
-        for item in scene['items']:
-            text = item['text']
-            if not text: continue
-            y = item['y']
-            color = tuple(int(c*fade) for c in item['color'])
-            font = item['font']
+            # 십자가 (미니멀)
+            cross(d, 60, ac)
 
-            # 슬라이드업 효과
-            y_offset = int((1 - min(1, fp * 2.5)) * 20)
-            ctr(d, y + y_offset, text, font, color, 20)
+            # 텍스트
+            for item in scene['items']:
+                text = item['text']
+                if not text: continue
+                y = item['y']
+                color = tuple(int(c*fade) for c in item['color'])
+                font = item['font']
 
-        # 하단 진행바
-        tp = (elapsed + dur*fp) / total_dur
-        bar_w = int(W * tp)
-        d.rectangle([0, H-4, bar_w, H], fill=ac)
+                # 슬라이드업 효과
+                y_offset = int((1 - min(1, fp * 2.5)) * 20)
+                ctr(d, y + y_offset, text, font, color, 20)
 
-        # 하단 점
-        dots(d, H-60, ac)
+            # 하단 진행바
+            tp = (elapsed + dur*fp) / total_dur
+            bar_w = int(W * tp)
+            d.rectangle([0, H-4, bar_w, H], fill=ac)
 
-        img.save(os.path.join(FRAMES, f"f_{fn:05d}.png"))
-        fn += 1
+            # 하단 점
+            dots(d, H-60, ac)
 
-print(f"  {fn} frames ({total_dur}s)")
+            img.save(os.path.join(FRAMES, f"f_{fn:05d}.png"))
+            fn += 1
 
-# BGM 선택 (랜덤)
-bgm_files = [f for f in os.listdir(BGM_DIR) if f.endswith('.mp3')]
-bgm = os.path.join(BGM_DIR, random.choice(bgm_files))
-print(f"  BGM: {os.path.basename(bgm)}")
+    print(f"  {fn} frames ({total_dur}s)")
 
-# ffmpeg 합성
-vpath = os.path.join(OUT, f"premium_{DATE_STR}.mp4")
-subprocess.run([FFMPEG, "-y", "-framerate", str(FPS), "-i", os.path.join(FRAMES, "f_%05d.png"),
-                "-i", bgm, "-c:v", "libx264", "-preset", "medium", "-crf", "22", "-pix_fmt", "yuv420p",
-                "-c:a", "aac", "-b:a", "192k",
-                "-filter_complex", f"[1:a]afade=t=in:d=2,afade=t=out:st={total_dur-3}:d=3,volume=0.2[a]",
-                "-map", "0:v", "-map", "[a]",
-                "-vf", f"scale={W}:{H},fps=30", "-t", str(total_dur), "-shortest", vpath],
-               capture_output=True, timeout=120)
-shutil.rmtree(FRAMES, ignore_errors=True)
+    # BGM 선택 (랜덤)
+    bgm_files = [f for f in os.listdir(BGM_DIR) if f.endswith('.mp3')]
+    bgm = os.path.join(BGM_DIR, random.choice(bgm_files))
+    print(f"  BGM: {os.path.basename(bgm)}")
+
+    # ffmpeg 합성
+    vpath = os.path.join(OUT, f"premium_{DATE_STR}.mp4")
+    subprocess.run([FFMPEG, "-y", "-framerate", str(FPS), "-i", os.path.join(FRAMES, "f_%05d.png"),
+                    "-i", bgm, "-c:v", "libx264", "-preset", "medium", "-crf", "22", "-pix_fmt", "yuv420p",
+                    "-c:a", "aac", "-b:a", "192k",
+                    "-filter_complex", f"[1:a]afade=t=in:d=2,afade=t=out:st={total_dur-3}:d=3,volume=0.2[a]",
+                    "-map", "0:v", "-map", "[a]",
+                    "-vf", f"scale={W}:{H},fps=30", "-t", str(total_dur), "-shortest", vpath],
+                   capture_output=True, timeout=120)
+    shutil.rmtree(FRAMES, ignore_errors=True)
 
 if os.path.exists(vpath):
     sz = os.path.getsize(vpath) / (1024*1024)

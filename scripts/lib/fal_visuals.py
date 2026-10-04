@@ -137,11 +137,12 @@ def _append_manifest(record):
 # ═══════════════════════════════════════════════════════════════
 # 장면 프롬프트 (카테고리 × 스타일 → 사진풍 배경 프롬프트, 브랜드 원칙: 보편적·비종교적·인물 클로즈업 금지)
 # ═══════════════════════════════════════════════════════════════
+# 2026-10-05 오너 피드백 "배경이 전체적으로 어둡다" → night/rain의 dark·moody 표현 제거, 밝은 자연광 지시 추가
 STYLE_MOOD = {
-    "dawn": "soft dawn light breaking through clouds, gentle warm blue-gold gradient sky, calm horizon, cinematic",
-    "night": "quiet night sky with soft stars, deep navy tones, peaceful moonlight, cinematic dark atmosphere",
-    "golden": "warm golden hour sunlight, soft amber glow, cinematic warm tones, gentle lens flare",
-    "rain": "gentle rain on a window or quiet street, soft blue-grey tones, cinematic moody atmosphere, reflections on wet surface",
+    "dawn": "bright soft dawn light breaking through clouds, gentle warm blue-gold sky, calm horizon, airy and luminous",
+    "night": "blue hour twilight just after sunset, glowing lavender and soft blue sky, first stars, luminous and peaceful",
+    "golden": "warm golden hour sunlight, soft amber glow, bright warm tones, gentle lens flare",
+    "rain": "light rain just ending, sunlight breaking through, soft silver-blue tones, fresh and bright, glistening wet surfaces",
 }
 
 CATEGORY_SUBJECT = {
@@ -156,8 +157,9 @@ def build_scene_prompt(category, style):
     cat = CATEGORY_SUBJECT.get(category, CATEGORY_SUBJECT["comfort"])
     mood = STYLE_MOOD.get(style, STYLE_MOOD["dawn"])
     return (
-        f"{cat}, {mood}, vertical portrait composition, cinematic photography, "
-        f"shallow depth of field, high detail, no text, no logos, no watermark, no visible human faces"
+        f"{cat}, {mood}, vertical portrait composition, bright natural light, well exposed, "
+        f"light and airy photography, shallow depth of field, high detail, "
+        f"no text, no logos, no watermark, no visible human faces"
     )
 
 
