@@ -602,22 +602,27 @@ def create_reel_container(video_path, cap):
 
 def upload_premium_reel(video_path, cap):
     """완성 영상을 인스타 릴스로 게시. 실패 시 None(호출부가 이미지로 대체)."""
+    # 2026-10-05: 19:00 실행에서 인스타 처리 오류(ERROR)가 났지만 같은 영상으로 다시 하니 FINISHED →
+    # 일시적 오류로 판단, 처리 오류면 20초 뒤 컨테이너를 새로 만들어 1회 재시도.
     try:
-        cid = create_reel_container(video_path, cap)
-        if not cid:
-            print("  릴스 업로드 실패 — 이미지로 대체")
-            return None
-        for _ in range(18):  # 최대 3분 대기
-            time.sleep(10)
-            st = requests.get(f'https://graph.facebook.com/v21.0/{cid}?fields=status_code&access_token={IG_TOKEN}',
-                              timeout=10).json().get('status_code', '')
+        for attempt in range(2):
+            cid = create_reel_container(video_path, cap)
+            if not cid:
+                print("  릴스 업로드 실패 — 이미지로 대체")
+                return None
+            for _ in range(18):  # 최대 3분 대기
+                time.sleep(10)
+                st = requests.get(f'https://graph.facebook.com/v21.0/{cid}?fields=status_code&access_token={IG_TOKEN}',
+                                  timeout=10).json().get('status_code', '')
+                if st in ('FINISHED', 'ERROR'):
+                    break
             if st == 'FINISHED':
                 r2 = requests.post(f'https://graph.facebook.com/v21.0/{IG_ID}/media_publish',
                                    data={'creation_id': cid, 'access_token': IG_TOKEN}, timeout=30)
                 return r2.json().get('id')
-            if st == 'ERROR':
-                print("  릴스 처리 오류")
-                return None
+            print(f"  릴스 처리 {st or '시간초과'} (시도 {attempt + 1}/2)")
+            if attempt == 0:
+                time.sleep(20)
         return None
     except Exception as e:
         print(f"  릴스 업로드 예외: {e}")
