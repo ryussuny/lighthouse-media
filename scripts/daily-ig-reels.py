@@ -787,11 +787,13 @@ def encode_video(frames_dir, total_dur, bgm_file, output_name):
 # ═══════════════════════════════════════════════════════════════
 def upload_ig_reels(vpath, caption):
     # Imgur에 영상 업로드
+    # 2026-10-05: AI 배경 영상(약 10MB)을 base64로 보내면 Imgur가 연결을 끊음(10053) →
+    # 파일 그대로(multipart) 업로드로 변경(10MB 4초 업로드 확인).
     with open(vpath, 'rb') as f:
-        enc = base64.b64encode(f.read()).decode()
-    ir = requests.post('https://api.imgur.com/3/upload',
-                       headers={'Authorization': f'Client-ID {IMGUR_ID}'},
-                       data={'video': enc, 'type': 'base64'}, timeout=120)
+        ir = requests.post('https://api.imgur.com/3/upload',
+                           headers={'Authorization': f'Client-ID {IMGUR_ID}'},
+                           files={'video': (os.path.basename(vpath), f, 'video/mp4')},
+                           data={'type': 'file'}, timeout=300)
     vid_url = ir.json().get('data', {}).get('link')
     if not vid_url:
         print("    Imgur upload failed")

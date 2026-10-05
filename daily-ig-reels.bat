@@ -1,3 +1,4 @@
 @echo off
 cd /d C:\Users\ryuss\lighthouse-media
-py scripts\daily-ig-reels.py >> logs\daily-ig-reels.log 2>&1
+rem 2026-10-05 owner approved: AI photo backgrounds (fal.ai flux/schnell, about 0.05 USD per reel)
+py scripts\daily-ig-reels.py --visual=ai >> logs\daily-ig-reels.log 2>&1

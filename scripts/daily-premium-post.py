@@ -581,11 +581,12 @@ def fit_for_imgur(video_path):
 def create_reel_container(video_path, cap):
     """Imgur에 영상을 올린 뒤 릴스 컨테이너를 만든다. 게시(publish)는 하지 않는다."""
     video_path = fit_for_imgur(video_path)
+    # 2026-10-05: 큰 영상(AI 배경 ≈10MB)은 base64 전송 시 Imgur가 연결을 끊음 → 파일 그대로(multipart) 업로드
     with open(video_path, 'rb') as f:
-        enc = base64.b64encode(f.read()).decode()
-    ir = requests.post('https://api.imgur.com/3/upload',
-                       headers={'Authorization': f'Client-ID {IMGUR_ID}'},
-                       data={'video': enc, 'type': 'base64'}, timeout=180)
+        ir = requests.post('https://api.imgur.com/3/upload',
+                           headers={'Authorization': f'Client-ID {IMGUR_ID}'},
+                           files={'video': (os.path.basename(video_path), f, 'video/mp4')},
+                           data={'type': 'file'}, timeout=300)
     vid_url = ir.json().get('data', {}).get('link')
     if not vid_url:
         print("  Imgur 영상 업로드도 실패")
