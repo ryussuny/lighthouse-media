@@ -733,7 +733,8 @@ def make_frames(scenes, name, bg_images=None):
 # ═══════════════════════════════════════════════════════════════
 # 영상 인코딩
 # ═══════════════════════════════════════════════════════════════
-BGM_TARGET_MEAN_DB = -21.5  # 나레이션 없는 릴스 — 들리는 수준. 페이드 반영 후 실측 -22dB 안팎(허용 -24~-20)
+# 2026-10-05 오너 요청 "음악을 좀 더 올려줘": -21.5 → -18dB (리미터가 피크를 0.9로 제한)
+BGM_TARGET_MEAN_DB = -18.0
 
 
 def bgm_gain_db(bgm_path, seconds):
@@ -767,7 +768,8 @@ def encode_video(frames_dir, total_dur, bgm_file, output_name):
 
     cmd = [FFMPEG, "-y",
            "-framerate", str(FPS), "-i", os.path.join(frames_dir, "frame_%05d.png"),
-           "-i", bgm_path,
+           # 2026-10-05: 새 배경음악은 곡당 약 33초 → 영상이 더 길면(프리미엄 57초) 음악을 반복
+           "-stream_loop", "-1", "-i", bgm_path,
            "-c:v", "libx264", "-preset", "fast", "-crf", "23", "-pix_fmt", "yuv420p",
            "-c:a", "aac", "-b:a", "128k",
            "-filter_complex", f"[1:a]{vol_filter},afade=t=in:d=1,afade=t=out:st={max(1, total_dur - 2)}:d=2[a]",
@@ -899,11 +901,13 @@ def main():
     # "현재는 완전 랜덤이라 카테고리-곡 매칭이 없음, 개선 후보" 반영. 매칭 후보가 비면(파일명
     # 변경 등) 기존처럼 전체 폴에서 랜덤 — 안전 폴백.
     bgm_files = [f for f in os.listdir(BGM_DIR) if f.endswith('.mp3')]
+    # 2026-10-05 오너 요청 "음악을 트렌디하게": 기존 13개(실제 1곡 복사본 4개 + 거의 무음 합성음 8개)를
+    # assets/bgm/_old로 옮기고, Lyria 2로 만든 카테고리별 3곡(trend-<카테고리>-N.mp3)으로 교체.
     CATEGORY_BGM = {
-        "comfort": ["calm-piano", "soft-acoustic", "emotional", "ambient-dream"],
-        "motivation": ["motivational", "upbeat-energy", "cinematic-hope"],
-        "growth": ["morning-coffee", "cinematic-hope", "upbeat-energy"],
-        "healing": ["healing", "night-rain", "sunset-waves", "lofi-chill", "ambient-dream"],
+        "comfort": ["trend-comfort"],
+        "motivation": ["trend-motivation"],
+        "growth": ["trend-growth"],
+        "healing": ["trend-healing"],
     }
     matched = [f for f in bgm_files if any(k in f for k in CATEGORY_BGM.get(cat, []))]
     bgm = random.choice(matched or bgm_files)

@@ -11,7 +11,9 @@ CHURCH_IG_ID = tokens.get('church_ig_id', '')
 CHURCH_PAGE_ID = tokens.get('church_page_id', '')
 FFMPEG = os.path.join(HOME, "AppData", "Local", "Microsoft", "WinGet", "Links", "ffmpeg.exe")
 if not os.path.exists(FFMPEG): FFMPEG = "ffmpeg"
-BGM_DIR = os.path.join(HOME, "lighthouse-media", "assets", "bgm")
+# 2026-10-05: 릴스용 새 음악(33초)이 assets/bgm에 들어가면서 기존 곡은 _old로 옮김.
+# 말씀카드 영상(약 60초)은 짧은 곡에서 잘리므로 지금까지와 같은 기존 곡을 계속 사용.
+BGM_DIR = os.path.join(HOME, "lighthouse-media", "assets", "bgm", "_old")
 
 TODAY = datetime.now()
 DATE_STR = TODAY.strftime("%Y-%m-%d")

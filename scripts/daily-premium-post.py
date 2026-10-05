@@ -438,7 +438,8 @@ def render_with_reels_engine(content, out_path):
                 print(f"  AI 배경 생략({err}) — 단색 배경으로 진행")
         frames_dir, total, n = rx.make_frames(scenes, name, bg_images=bg)
         bgm_files = [f for f in os.listdir(rx.BGM_DIR) if f.endswith('.mp3')]
-        v = rx.encode_video(frames_dir, total, random.choice(bgm_files), name)
+        matched = [f for f in bgm_files if f.startswith(f"trend-{category}")]  # 2026-10-05 카테고리별 새 음악
+        v = rx.encode_video(frames_dir, total, random.choice(matched or bgm_files), name)
         if v and os.path.exists(v):
             shutil.move(v, out_path)
             print(f"  새 렌더러: {n} frames ({total}s)")
@@ -534,7 +535,7 @@ if not render_with_reels_engine(content, vpath):
     # ffmpeg 합성
     vpath = os.path.join(OUT, f"premium_{DATE_STR}.mp4")
     subprocess.run([FFMPEG, "-y", "-framerate", str(FPS), "-i", os.path.join(FRAMES, "f_%05d.png"),
-                    "-i", bgm, "-c:v", "libx264", "-preset", "medium", "-crf", "22", "-pix_fmt", "yuv420p",
+                    "-stream_loop", "-1", "-i", bgm, "-c:v", "libx264", "-preset", "medium", "-crf", "22", "-pix_fmt", "yuv420p",
                     "-c:a", "aac", "-b:a", "192k",
                     "-filter_complex", f"[1:a]afade=t=in:d=2,afade=t=out:st={total_dur-3}:d=3,volume=0.2[a]",
                     "-map", "0:v", "-map", "[a]",
