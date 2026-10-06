@@ -796,12 +796,28 @@ def upload_ig_reels(vpath, caption):
                            headers={'Authorization': f'Client-ID {IMGUR_ID}'},
                            files={'video': (os.path.basename(vpath), f, 'video/mp4')},
                            data={'type': 'file'}, timeout=300)
-    vid_url = ir.json().get('data', {}).get('link')
+    data = ir.json().get('data', {})
+    vid_url = data.get('link')
     if not vid_url:
         print("    Imgur upload failed")
         return None
 
     print(f"    Imgur OK: {vid_url}")
+
+    # 2026-10-06: Imgur 영상 변환(pending→started→completed, 30초 이상)이 끝나기 전에 인스타가 가져가면
+    # '처리 ERROR'가 남(프리미엄 이틀 연속) → 완료 상태를 확인한 뒤 컨테이너를 만든다.
+    t0 = time.time()
+    while time.time() - t0 < 240:
+        try:
+            info = requests.get(f"https://api.imgur.com/3/image/{data.get('id')}",
+                                headers={'Authorization': f'Client-ID {IMGUR_ID}'}, timeout=30).json().get('data', {})
+            st = (info.get('processing') or {}).get('status')
+            if st == 'completed' or (st is None and info.get('mp4_size')):
+                print(f"    Imgur 영상 변환 완료({time.time() - t0:.0f}초)")
+                break
+        except Exception:
+            pass
+        time.sleep(10)
 
     # 릴스 컨테이너 생성
     r = requests.post(f'https://graph.facebook.com/v21.0/{IG_ID}/media', data={

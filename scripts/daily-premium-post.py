@@ -579,6 +579,27 @@ def fit_for_imgur(video_path):
     return video_path
 
 
+def wait_imgur_ready(imgur_id, max_wait=240):
+    """Imgur는 업로드 직후 링크를 주지만 영상 변환은 pending→started→completed로 30초 이상 걸린다.
+    2026-10-06: 처리 중인 링크를 인스타에 넘겨 이틀 연속 '릴스 처리 ERROR' → 완료까지 기다린 뒤 넘긴다."""
+    if not imgur_id:
+        return False
+    t0 = time.time()
+    while time.time() - t0 < max_wait:
+        try:
+            info = requests.get(f'https://api.imgur.com/3/image/{imgur_id}',
+                                headers={'Authorization': f'Client-ID {IMGUR_ID}'}, timeout=30).json().get('data', {})
+            st = (info.get('processing') or {}).get('status')
+            if st == 'completed' or (st is None and info.get('mp4_size')):
+                print(f"  Imgur 영상 변환 완료({time.time() - t0:.0f}초)")
+                return True
+        except Exception:
+            pass
+        time.sleep(10)
+    print("  Imgur 영상 변환 대기 시간 초과 — 그대로 진행")
+    return False
+
+
 def create_reel_container(video_path, cap):
     """Imgur에 영상을 올린 뒤 릴스 컨테이너를 만든다. 게시(publish)는 하지 않는다."""
     video_path = fit_for_imgur(video_path)
@@ -588,10 +609,12 @@ def create_reel_container(video_path, cap):
                            headers={'Authorization': f'Client-ID {IMGUR_ID}'},
                            files={'video': (os.path.basename(video_path), f, 'video/mp4')},
                            data={'type': 'file'}, timeout=300)
-    vid_url = ir.json().get('data', {}).get('link')
+    data = ir.json().get('data', {})
+    vid_url = data.get('link')
     if not vid_url:
         print("  Imgur 영상 업로드도 실패")
         return None
+    wait_imgur_ready(data.get('id'))
     r = requests.post(f'https://graph.facebook.com/v21.0/{IG_ID}/media', data={
         'video_url': vid_url, 'media_type': 'REELS', 'caption': cap, 'access_token': IG_TOKEN
     }, timeout=30)
