@@ -338,8 +338,8 @@ def get_today_category(override=None):
 # ═══════════════════════════════════════════════════════════════
 # AI 릴스 콘텐츠 생성
 # ═══════════════════════════════════════════════════════════════
-def generate_reel_with_ai(category, date_str, recent_hooks=()):
-    """Claude API로 릴스 콘텐츠 생성"""
+def _generate_reel_once(category, date_str, recent_hooks=(), extra_note=""):
+    """Claude API로 릴스 콘텐츠 1회 생성 (검증·재생성은 generate_reel_with_ai)"""
     day_hash = int(hashlib.md5(date_str.encode()).hexdigest()[:8], 16)
     avoid = "\n".join(f"- {h}" for h in list(recent_hooks)[-30:]) or "- (없음)"
 
@@ -381,7 +381,10 @@ def generate_reel_with_ai(category, date_str, recent_hooks=()):
 - caption_kr 첫 줄은 피드에서 잘리지 않는 25자 이내 공감 문장(훅을 반복하지 말고 확장)
 - caption_en은 따뜻하고 시적인 영어 1문장
 - hashtags는 한국어 위주 5개 이내(대형 태그 1개 + 틈새 태그 4개, 예: #직장인위로 #번아웃회복)
-
+- 구체성(필수): 화면에 보이는 대본(hook·scenes의 text/sub·closing) 안에 ①구체 상황 1곳(시간·장소·숫자 중 1개 이상, 예: "퇴근길 지하철", "밤 11시", "5분")과 ②오늘 당장 할 수 있는 실천 1개(예: "물 한 잔 마시기", "3번 깊게 숨쉬기")가 글자 그대로 들어가야 합니다. 추상적 위로만 이어지는 대본 금지.
+- concrete_detail에는 ①의 구절을, action에는 ②의 구절을 화면 대본에 쓴 그대로(글자 그대로) 적습니다. 화면 대본에 없는 표현을 적으면 안 됩니다.
+- 한글 맞춤법·띄어쓰기를 정확히 지키고 비표준 표현(예: "천천해도")을 쓰지 않습니다.
+{extra_note}
 JSON으로 출력:
 {{"category": "{category}",
  "hook": "첫 1.7초 훅 (15자 이내, 질문 또는 반전)",
@@ -393,6 +396,8 @@ JSON으로 출력:
    {{"text": "핵심 메시지 (10자 이내)", "sub": "부연 (20자 이내)"}}
  ],
  "closing": "여운이 남는 마지막 한 줄",
+ "concrete_detail": "화면 대본에 글자 그대로 들어간 구체 상황 구절 (시간·장소·숫자 중 1개 이상)",
+ "action": "화면 대본에 글자 그대로 들어간 오늘 할 수 있는 실천 1개",
  "caption_kr": "한국어 캡션 공감형 에세이 300-500자",
  "caption_en": "English caption warm poetic 2-3 sentences",
  "hashtags": "#위로 #힐링 #healing #selfcare ..."
@@ -439,6 +444,125 @@ JSON으로 출력:
         print("  AI output missing scenes")
         return None
 
+    return content
+
+
+# ═══════════════════════════════════════════════════════════════
+# 2026-10-11 IG릴스 R3: 대본 구체성 검증 + 맞춤법 점검 (qa-review.md R2 미해소 #1·#2)
+# ═══════════════════════════════════════════════════════════════
+def screen_script_texts(content):
+    """화면에 실제로 보이는 대본 문자열 목록(hook·scenes text/sub·closing). 공백/줄바꿈 정규화 전 원본."""
+    out = []
+    for key in ("hook", "closing"):
+        v = content.get(key)
+        if isinstance(v, str) and v.strip():
+            out.append(v)
+    for sc in content.get("scenes") or []:
+        if isinstance(sc, dict):
+            for key in ("text", "sub"):
+                v = sc.get(key)
+                if isinstance(v, str) and v.strip():
+                    out.append(v)
+    return out
+
+
+def _squash(text):
+    return re.sub(r"\s+", "", text or "")
+
+
+def concreteness_problems(content):
+    """구체 상황·실천 필드가 비었거나 화면 대본에 실제로 등장하지 않으면 사유 리스트를 돌려준다(빈 리스트=통과)."""
+    screen = _squash("".join(screen_script_texts(content)))
+    problems = []
+    for key, label in (("concrete_detail", "구체 상황"), ("action", "실천")):
+        val = content.get(key)
+        if not isinstance(val, str) or not val.strip():
+            problems.append(f"{key}({label}) 필드가 비어 있음")
+        elif _squash(val) not in screen:
+            problems.append(f"{key}({label}) '{val.strip()}'가 화면 대본(hook·scenes·closing)에 글자 그대로 등장하지 않음")
+    return problems
+
+
+# 외부 검사기 불가 시에도 이미 알려진 비표준 표현은 잡는다(오프라인 최소 사전).
+LOCAL_TYPO_FIXES = {"천천해도": "천천히 해도"}
+SPELL_CHECK_SCRIPT = os.environ.get("KOREAN_SPELL_CHECK_SCRIPT") or os.path.join(
+    os.path.expanduser("~"), ".cys", "pack", "skills", "korean-spell-check", "scripts", "korean_spell_check.py")
+
+
+def spell_check_issues(text, timeout=90):
+    """korean-spell-check 스킬 스크립트(바른한글) 호출 → [(원문, 첫 제안, 이유)]. 실패 시 예외를 올린다."""
+    r = subprocess.run([sys.executable, "-X", "utf8", SPELL_CHECK_SCRIPT, "--text", text, "--format", "json"],
+                       capture_output=True, text=True, encoding="utf-8", timeout=timeout)
+    if r.returncode != 0:
+        raise RuntimeError(f"exit {r.returncode}: {(r.stderr or r.stdout)[:200]}")
+    data = json.loads(r.stdout)
+    return [(i.get("original", ""), (i.get("suggestions") or [""])[0], (i.get("reason") or "").split("\n")[0])
+            for i in data.get("issues", []) if i.get("original")]
+
+
+def spell_check_content(content, checker=None):
+    """화면 대본 문자열을 맞춤법 점검하고, 제안이 있으면 해당 필드에서 교정한다.
+    외부 검사기 실패는 경고만 남기고 로컬 사전으로 진행한다 — 파이프라인을 중단하지 않는다. 변경 로그 리스트를 돌려준다."""
+    checker = checker or spell_check_issues
+    log = []
+    texts = screen_script_texts(content)
+    fixes = {}
+    try:
+        for orig, sug, why in checker(". ".join(texts)):  # 검사기는 줄바꿈을 지워 어절이 붙으므로 마침표로 구분
+            punct = lambda t: re.sub(r"[.,?!…]", "", t)
+            if sug and punct(orig) != punct(sug):  # 마침표 추가 같은 문장부호 제안은 화면 자막에 적용하지 않음
+                fixes[orig] = (sug, why)
+    except Exception as e:
+        print(f"  [맞춤법] 경고: 외부 검사 실패({str(e)[:120]}) — 로컬 사전만 적용하고 진행")
+    for orig, sug in LOCAL_TYPO_FIXES.items():
+        fixes.setdefault(orig, (sug, "로컬 사전"))
+    if not fixes:
+        print("  [맞춤법] 이상 없음")
+        return log
+
+    def fix_str(v):
+        for orig, (sug, why) in fixes.items():
+            if orig in v:
+                log.append(f"'{orig}' → '{sug}' ({why[:40]})")
+                v = v.replace(orig, sug)
+        return v
+    for key in ("hook", "closing", "concrete_detail", "action"):
+        if isinstance(content.get(key), str):
+            content[key] = fix_str(content[key])
+    for sc in content.get("scenes") or []:
+        if isinstance(sc, dict):
+            for key in ("text", "sub"):
+                if isinstance(sc.get(key), str):
+                    sc[key] = fix_str(sc[key])
+    for l in log:
+        print(f"  [맞춤법] 교정: {l}")
+    if not log:
+        print("  [맞춤법] 검사기 지적이 화면 대본에 없음(필드 매칭 안 됨) — 변경 없음")
+    return log
+
+
+def generate_reel_with_ai(category, date_str, recent_hooks=()):
+    """릴스 콘텐츠 생성 → 구체성 검증(미달 시 1회 재생성) → 맞춤법 점검. 검증 실패는 경고만 남기고 진행."""
+    content = _generate_reel_once(category, date_str, recent_hooks)
+    if not content:
+        return None
+    problems = concreteness_problems(content)
+    if problems:
+        print(f"  [구체성] 미달: {'; '.join(problems)} — 1회 재생성")
+        note = ("- 직전 생성본은 구체성 검증에 실패했습니다: " + "; ".join(problems)
+                + ". 이번에는 반드시 화면 대본 안에 구체 상황과 실천을 그대로 쓰고 같은 구절을 concrete_detail/action에 적으세요.")
+        retry = _generate_reel_once(category, date_str, recent_hooks, extra_note=note)
+        if retry:
+            content = retry
+            problems = concreteness_problems(content)
+        if problems:
+            print(f"  [구체성] 경고: 재생성 후에도 미달({'; '.join(problems)}) — 그대로 진행")
+        else:
+            print("  [구체성] 재생성 후 통과")
+    else:
+        print(f"  [구체성] 통과 — concrete_detail='{content['concrete_detail']}' / action='{content['action']}'")
+    spell_check_content(content)
+    print("  [화면 대본] " + " | ".join(screen_script_texts(content)))
     return content
 
 
