@@ -105,7 +105,8 @@ def claude(prompt, retries=3):
         try:
             r = requests.post("https://api.anthropic.com/v1/messages", headers={
                 "x-api-key": API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json",
-            }, json={"model": "claude-sonnet-4-6", "max_tokens": 1500, "messages": [{"role":"user","content":prompt}]}, timeout=60)
+            # 프리미엄 JSON(캡션 500-700자+본문 4문단+장면)은 1500토큰을 넘어 잘렸다(2026-10-10·11 로그: 첫 파싱 실패·caption 빈 값).
+            }, json={"model": "claude-sonnet-4-6", "max_tokens": 4096, "messages": [{"role":"user","content":prompt}]}, timeout=120)
             if r.status_code != 200:
                 print(f"  API HTTP {r.status_code} (attempt {attempt+1}/{retries}): {r.text[:200]}")
             else:
@@ -356,28 +357,33 @@ except RuntimeError as e:
     print(f"  Premium content skipped for {DATE_STR}. Will retry next run.")
     sys.exit(1)
 
-start = content_raw.find("{")
-end = content_raw.rfind("}") + 1
-try:
-    content = json.loads(content_raw[start:end])
-except json.JSONDecodeError:
-    # JSON 파싱 실패 시 재시도 (Claude에게 수정 요청)
-    import re
-    raw_json = content_raw[start:end]
-    # 흔한 JSON 오류 수정: 줄바꿈이 포함된 문자열 값
-    raw_json = re.sub(r'(?<!\\)\n(?=.*?")', '\\n', raw_json)
+def parse_json_reply(content_raw):
+    """AI 응답에서 JSON을 꺼낸다. 실패하면 줄바꿈 보정 → Claude에게 문법 수정 요청 순으로 재시도한다."""
+    start = content_raw.find("{")
+    end = content_raw.rfind("}") + 1
     try:
-        content = json.loads(raw_json)
+        return json.loads(content_raw[start:end])
     except json.JSONDecodeError:
-        print("  JSON parse failed, retrying with Claude...")
-        fix_raw = claude(
-            f"아래 JSON의 문법 오류를 수정해서 올바른 JSON만 출력해줘. "
-            f"코드블록 없이 순수 JSON만. 문자열 안 줄바꿈은 \\n으로 escape.\n\n"
-            f"{content_raw[start:end]}"
-        )
-        fs = fix_raw.find("{")
-        fe = fix_raw.rfind("}") + 1
-        content = json.loads(fix_raw[fs:fe])
+        import re
+        raw_json = content_raw[start:end]
+        # 흔한 JSON 오류 수정: 줄바꿈이 포함된 문자열 값
+        # (치환 문자열 '\\n'은 re가 다시 줄바꿈으로 해석해 무효였다 — 함수로 넘겨 글자 그대로 \n을 넣는다)
+        raw_json = re.sub(r'(?<!\\)\n(?=.*?")', lambda m: '\\n', raw_json)
+        try:
+            return json.loads(raw_json)
+        except json.JSONDecodeError:
+            print("  JSON parse failed, retrying with Claude...")
+            fix_raw = claude(
+                f"아래 JSON의 문법 오류를 수정해서 올바른 JSON만 출력해줘. "
+                f"코드블록 없이 순수 JSON만. 문자열 안 줄바꿈은 \\n으로 escape.\n\n"
+                f"{content_raw[start:end]}"
+            )
+            fs = fix_raw.find("{")
+            fe = fix_raw.rfind("}") + 1
+            return json.loads(fix_raw[fs:fe])
+
+
+content = parse_json_reply(content_raw)
 # surrogate 문자 제거 (모든 문자열 값)
 for k, v in content.items():
     if isinstance(v, str):
@@ -423,9 +429,7 @@ if _rx:
             print(f"  [구체성] 미달: {'; '.join(_problems)} — 1회 재생성")
             _note = ("\n\n=== 직전 생성본 검증 실패 (이번에는 반드시 고칠 것) ===\n- " + "\n- ".join(_problems)
                      + "\n- 화면 대본(hook, scenes, closing) 안에 구체 상황과 실천을 그대로 쓰고 같은 구절을 concrete_detail/action에 적는다.")
-            _raw2 = claude(premium_prompt + _note)
-            _s2, _e2 = _raw2.find("{"), _raw2.rfind("}") + 1
-            _c2 = json.loads(_raw2[_s2:_e2])
+            _c2 = parse_json_reply(claude(premium_prompt + _note))
             _c2 = {k: (clean_surrogates(v) if isinstance(v, str) else v) for k, v in _c2.items()}
             for k, v in defaults.items():
                 if k not in _c2 or not _c2[k]:
