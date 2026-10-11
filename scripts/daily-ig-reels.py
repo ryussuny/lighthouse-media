@@ -470,8 +470,16 @@ def _squash(text):
     return re.sub(r"\s+", "", text or "")
 
 
+# concrete_detail 에 '시간·장소·숫자' 신호가 하나는 있어야 한다(과잉 설계 방지: 단순 키워드 목록).
+_DETAIL_SIGNAL = re.compile(
+    r"\d|[한두세네다여일이삼사오육칠팔구십백]\s?(?:번|개|잔|분|시|명|곳|가지|시간|주|달|일)|"
+    r"아침|점심|저녁|새벽|밤|낮|오전|오후|퇴근|출근|주말|평일|오늘|어제|내일|요일|"
+    r"지하철|버스|역|집|방|회사|사무실|학교|교실|카페|식당|부엌|침대|책상|거리|길|공원|엘리베이터|화장실|현관|편의점|병원")
+
+
 def concreteness_problems(content):
-    """구체 상황·실천 필드가 비었거나 화면 대본에 실제로 등장하지 않으면 사유 리스트를 돌려준다(빈 리스트=통과)."""
+    """구체 상황·실천 필드가 비었거나 화면 대본에 실제로 등장하지 않거나, 구체 상황에 시간·장소·숫자 신호가 없으면
+    사유 리스트를 돌려준다(빈 리스트=통과)."""
     screen = _squash("".join(screen_script_texts(content)))
     problems = []
     for key, label in (("concrete_detail", "구체 상황"), ("action", "실천")):
@@ -480,11 +488,16 @@ def concreteness_problems(content):
             problems.append(f"{key}({label}) 필드가 비어 있음")
         elif _squash(val) not in screen:
             problems.append(f"{key}({label}) '{val.strip()}'가 화면 대본(hook·scenes·closing)에 글자 그대로 등장하지 않음")
+        elif key == "concrete_detail" and not _DETAIL_SIGNAL.search(val):
+            problems.append(f"concrete_detail '{val.strip()}'에 시간·장소·숫자 신호가 없음")
     return problems
 
 
 # 외부 검사기 불가 시에도 이미 알려진 비표준 표현은 잡는다(오프라인 최소 사전).
-LOCAL_TYPO_FIXES = {"천천해도": "천천히 해도"}
+LOCAL_TYPO_FIXES = {
+    "천천해도": "천천히 해도", "몇일": "며칠", "금새": "금세", "할께요": "할게요",
+    "역활": "역할", "웬지": "왠지", "어떻해": "어떡해", "설겆이": "설거지",
+}
 SPELL_CHECK_SCRIPT = os.environ.get("KOREAN_SPELL_CHECK_SCRIPT") or os.path.join(
     os.path.expanduser("~"), ".cys", "pack", "skills", "korean-spell-check", "scripts", "korean_spell_check.py")
 
@@ -514,8 +527,10 @@ def spell_check_content(content, checker=None):
                 fixes[orig] = (sug, why)
     except Exception as e:
         print(f"  [맞춤법] 경고: 외부 검사 실패({str(e)[:120]}) — 로컬 사전만 적용하고 진행")
+    joined = "".join(texts)
     for orig, sug in LOCAL_TYPO_FIXES.items():
-        fixes.setdefault(orig, (sug, "로컬 사전"))
+        if orig in joined:  # 대본에 실제로 있는 항목만 — 없으면 '이상 없음' 분기에 도달한다
+            fixes.setdefault(orig, (sug, "로컬 사전"))
     if not fixes:
         print("  [맞춤법] 이상 없음")
         return log
@@ -537,7 +552,7 @@ def spell_check_content(content, checker=None):
     for l in log:
         print(f"  [맞춤법] 교정: {l}")
     if not log:
-        print("  [맞춤법] 검사기 지적이 화면 대본에 없음(필드 매칭 안 됨) — 변경 없음")
+        print("  [맞춤법] 검사기 제안이 대본 필드와 일치하지 않아 변경 없음")
     return log
 
 

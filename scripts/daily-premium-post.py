@@ -411,30 +411,40 @@ try:
         "reels_checks", os.path.join(os.path.dirname(os.path.abspath(__file__)), "daily-ig-reels.py"))
     _rx = _ilu.module_from_spec(_spec)
     _spec.loader.exec_module(_rx)
-    _problems = _rx.concreteness_problems(content)
-    if _problems:
-        print(f"  [구체성] 미달: {'; '.join(_problems)} — 1회 재생성")
-        _note = ("\n\n=== 직전 생성본 검증 실패 (이번에는 반드시 고칠 것) ===\n- " + "\n- ".join(_problems)
-                 + "\n- 화면 대본(hook, scenes, closing) 안에 구체 상황과 실천을 그대로 쓰고 같은 구절을 concrete_detail/action에 적는다.")
-        _raw2 = claude(premium_prompt + _note)
-        _s2, _e2 = _raw2.find("{"), _raw2.rfind("}") + 1
-        _c2 = json.loads(_raw2[_s2:_e2])
-        _c2 = {k: (clean_surrogates(v) if isinstance(v, str) else v) for k, v in _c2.items()}
-        for k, v in defaults.items():
-            if k not in _c2 or not _c2[k]:
-                _c2[k] = v
-        if _c2.get('scenes'):
-            content = _c2
+except Exception as e:
+    _rx = None
+    print(f"  [구체성/맞춤법] 경고: 검증 모듈 로드 실패({str(e)[:150]}) — 검증 없이 진행")
+
+if _rx:
+    # 재생성 블록: 호출·파싱 실패 시 원본 content 를 유지하고, 아래 맞춤법 점검은 그대로 수행한다.
+    try:
         _problems = _rx.concreteness_problems(content)
         if _problems:
-            print(f"  [구체성] 경고: 재생성 후에도 미달({'; '.join(_problems)}) — 그대로 진행")
+            print(f"  [구체성] 미달: {'; '.join(_problems)} — 1회 재생성")
+            _note = ("\n\n=== 직전 생성본 검증 실패 (이번에는 반드시 고칠 것) ===\n- " + "\n- ".join(_problems)
+                     + "\n- 화면 대본(hook, scenes, closing) 안에 구체 상황과 실천을 그대로 쓰고 같은 구절을 concrete_detail/action에 적는다.")
+            _raw2 = claude(premium_prompt + _note)
+            _s2, _e2 = _raw2.find("{"), _raw2.rfind("}") + 1
+            _c2 = json.loads(_raw2[_s2:_e2])
+            _c2 = {k: (clean_surrogates(v) if isinstance(v, str) else v) for k, v in _c2.items()}
+            for k, v in defaults.items():
+                if k not in _c2 or not _c2[k]:
+                    _c2[k] = v
+            if _c2.get('scenes'):
+                content = _c2
+            _problems = _rx.concreteness_problems(content)
+            if _problems:
+                print(f"  [구체성] 경고: 재생성 후에도 미달({'; '.join(_problems)}) — 그대로 진행")
+            else:
+                print("  [구체성] 재생성 후 통과")
         else:
-            print("  [구체성] 재생성 후 통과")
-    else:
-        print(f"  [구체성] 통과 — concrete_detail='{content['concrete_detail']}' / action='{content['action']}'")
-    _rx.spell_check_content(content)
-except Exception as e:
-    print(f"  [구체성/맞춤법] 경고: 검증 단계 실패({str(e)[:150]}) — 검증 없이 진행")
+            print(f"  [구체성] 통과 — concrete_detail='{content['concrete_detail']}' / action='{content['action']}'")
+    except Exception as e:
+        print(f"  [구체성] 경고: 재생성/검증 실패({str(e)[:150]}) — 원본 대본 유지하고 진행")
+    try:
+        _rx.spell_check_content(content)
+    except Exception as e:
+        print(f"  [맞춤법] 경고: 점검 단계 실패({str(e)[:150]}) — 점검 없이 진행")
 
 print(f"  Topic: {content.get('topic', '성장')}")
 print(f"  Hook: {content.get('hook', today_theme)}")
