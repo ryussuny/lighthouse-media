@@ -112,6 +112,8 @@ def claude(prompt, retries=3):
             else:
                 data = r.json()
                 if "content" in data:
+                    if data.get("stop_reason") == "max_tokens":
+                        print("  [경고] AI 응답이 max_tokens에서 잘렸습니다 — JSON 복구 경로로 진행")
                     return clean_surrogates(data["content"][0]["text"])
                 err_msg = data.get("error", {}).get("message", str(data)[:200])
                 print(f"  API error (attempt {attempt+1}/{retries}): {err_msg}")
@@ -362,7 +364,8 @@ def parse_json_reply(content_raw):
     start = content_raw.find("{")
     end = content_raw.rfind("}") + 1
     try:
-        return json.loads(content_raw[start:end])
+        # strict=False: 문자열 안의 날 줄바꿈 같은 제어문자를 허용(정상 JSON은 결과 동일)
+        return json.loads(content_raw[start:end], strict=False)
     except json.JSONDecodeError:
         import re
         raw_json = content_raw[start:end]
