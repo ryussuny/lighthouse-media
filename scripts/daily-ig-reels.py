@@ -502,6 +502,9 @@ LOCAL_TYPO_FIXES = {
 }
 SPELL_CHECK_SCRIPT = os.environ.get("KOREAN_SPELL_CHECK_SCRIPT") or os.path.join(
     os.path.expanduser("~"), ".cys", "pack", "skills", "korean-spell-check", "scripts", "korean_spell_check.py")
+# 외부 검사기(nara-speller)는 '비상업·개인/학생 무료' 조건이라 상업 계정 자동 게시에는 기본으로 쓰지 않는다.
+# 공급사와 유료 계약 등 사용 근거가 생기면 KOREAN_SPELL_CHECK_EXTERNAL=1 로 켠다.
+SPELL_CHECK_EXTERNAL = os.environ.get("KOREAN_SPELL_CHECK_EXTERNAL") == "1"
 
 
 def spell_check_issues(text, timeout=90):
@@ -518,12 +521,13 @@ def spell_check_issues(text, timeout=90):
 def spell_check_content(content, checker=None):
     """화면 대본 문자열을 맞춤법 점검하고, 제안이 있으면 해당 필드에서 교정한다.
     외부 검사기 실패는 경고만 남기고 로컬 사전으로 진행한다 — 파이프라인을 중단하지 않는다. 변경 로그 리스트를 돌려준다."""
-    checker = checker or spell_check_issues
+    if checker is None and SPELL_CHECK_EXTERNAL:
+        checker = spell_check_issues
     log = []
     texts = screen_script_texts(content)
     fixes = {}
     try:
-        for orig, sug, why in checker(". ".join(texts)):  # 검사기는 줄바꿈을 지워 어절이 붙으므로 마침표로 구분
+        for orig, sug, why in (checker(". ".join(texts)) if checker else []):  # 검사기는 줄바꿈을 지워 어절이 붙으므로 마침표로 구분
             punct = lambda t: re.sub(r"[.,?!…]", "", t)
             if sug and punct(orig) != punct(sug):  # 마침표 추가 같은 문장부호 제안은 화면 자막에 적용하지 않음
                 fixes[orig] = (sug, why)
