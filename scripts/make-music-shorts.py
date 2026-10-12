@@ -12,7 +12,7 @@ AUDIO = os.path.join(MUSIC, "audio")
 COVERS = os.path.join(MUSIC, "cover", "tracks")
 SHORTS = os.path.join(MUSIC, "shorts")
 BOARD = os.path.join(HOME, "lighthouse-media", "config", "jarvis-board.json")
-TOKEN = os.path.join(HOME, "OneDrive", "바탕 화면", "lighthouse_media", "token_lighthouse.json")
+TOKEN = os.path.join(HOME, "OneDrive", "바탕 화면", "03_사업_마케팅", "lighthouse_media", "token_lighthouse.json")
 PLAYLIST_URL = "https://youtube.com/playlist?list=PLTt-NE3XVRRs"
 os.makedirs(SHORTS, exist_ok=True)
 

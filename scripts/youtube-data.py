@@ -6,7 +6,7 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
 HOME = os.path.expanduser("~")
-token_path = os.path.join(HOME, "OneDrive", "바탕 화면", "lighthouse_media", "token_lighthouse.json")
+token_path = os.path.join(HOME, "OneDrive", "바탕 화면", "03_사업_마케팅", "lighthouse_media", "token_lighthouse.json")
 
 t = json.load(open(token_path))
 creds = Credentials.from_authorized_user_info(t)

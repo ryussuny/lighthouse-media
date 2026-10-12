@@ -16,7 +16,7 @@ MUSIC = os.path.join(HOME, "lighthouse-biz", "music", "pilot-ep01")
 AUDIO = os.path.join(MUSIC, "audio")
 THEMES = os.path.join(MUSIC, "cover", "themes")
 BOARD = os.path.join(HOME, "lighthouse-media", "config", "jarvis-board.json")
-TOKEN = os.path.join(HOME, "OneDrive", "바탕 화면", "lighthouse_media", "token_lighthouse.json")
+TOKEN = os.path.join(HOME, "OneDrive", "바탕 화면", "03_사업_마케팅", "lighthouse_media", "token_lighthouse.json")
 PLAYLIST_ID = "PLTt-NE3XVRRs"
 PLAYLIST_URL = "https://youtube.com/playlist?list=" + PLAYLIST_ID
 

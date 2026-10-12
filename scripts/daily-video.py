@@ -188,7 +188,7 @@ def main():
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload
 
-    ytp = os.path.join(HOME, "OneDrive", "\ubc14\ud0d5 \ud654\uba74", "lighthouse_media", "token_lighthouse.json")
+    ytp = os.path.join(HOME, "OneDrive", "\ubc14\ud0d5 \ud654\uba74", "03_\uc0ac\uc5c5_\ub9c8\ucf00\ud305", "lighthouse_media", "token_lighthouse.json")
     ytk = json.load(open(ytp))
     creds = Credentials.from_authorized_user_info(ytk)
     if creds.expired and creds.refresh_token:

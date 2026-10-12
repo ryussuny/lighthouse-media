@@ -4,7 +4,7 @@ import sys; sys.stdout.reconfigure(encoding='utf-8')
 import json, os
 
 HOME = os.path.expanduser("~")
-TOKEN_PATH = os.path.join(HOME, "OneDrive", "바탕 화면", "lighthouse_media", "token_lighthouse.json")
+TOKEN_PATH = os.path.join(HOME, "OneDrive", "바탕 화면", "03_사업_마케팅", "lighthouse_media", "token_lighthouse.json")
 
 # 기존 토큰에서 client 정보 읽기
 old = json.load(open(TOKEN_PATH, encoding='utf-8'))

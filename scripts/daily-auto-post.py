@@ -10,7 +10,7 @@ from pathlib import Path
 # === 경로 설정 ===
 HOME = os.path.expanduser("~")
 PROJECT = os.path.join(HOME, "lighthouse-media")
-COWORK = os.path.join(HOME, "OneDrive", "바탕 화면", "lighthouse_media")
+COWORK = os.path.join(HOME, "OneDrive", "바탕 화면", "03_사업_마케팅", "lighthouse_media")
 OUTPUT = os.path.join(PROJECT, "output", datetime.now().strftime("%Y-%m-%d"))
 FRAMES_DIR = os.path.join(OUTPUT, "frames")
 LOG_DIR = os.path.join(PROJECT, "logs")

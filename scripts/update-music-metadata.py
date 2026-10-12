@@ -9,7 +9,7 @@ from googleapiclient.discovery import build
 HOME = os.path.expanduser("~")
 MUSIC = os.path.join(HOME, "lighthouse-biz", "music", "pilot-ep01")
 BOARD = os.path.join(HOME, "lighthouse-media", "config", "jarvis-board.json")
-TOKEN = os.path.join(HOME, "OneDrive", "바탕 화면", "lighthouse_media", "token_lighthouse.json")
+TOKEN = os.path.join(HOME, "OneDrive", "바탕 화면", "03_사업_마케팅", "lighthouse_media", "token_lighthouse.json")
 PLAYLIST = "https://youtube.com/playlist?list=PLTt-NE3XVRRs"
 
 # 트랙별 검색형 제목 + 무드 소개

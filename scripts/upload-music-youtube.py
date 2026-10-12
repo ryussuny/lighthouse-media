@@ -22,7 +22,7 @@ AUDIO = os.path.join(MUSIC, "audio")
 COVER = os.path.join(MUSIC, "cover", "cover.png")            # 폴백 커버
 COVERS = os.path.join(MUSIC, "cover", "tracks")               # 곡별 커버
 BOARD = os.path.join(HOME, "lighthouse-media", "config", "jarvis-board.json")
-TOKEN = os.path.join(HOME, "OneDrive", "바탕 화면", "lighthouse_media", "token_lighthouse.json")
+TOKEN = os.path.join(HOME, "OneDrive", "바탕 화면", "03_사업_마케팅", "lighthouse_media", "token_lighthouse.json")
 
 # 파일명 → 보드 트랙 매칭 (슬러그 또는 곡 제목 어느 쪽으로 저장해도 인식)
 SLUGS = {

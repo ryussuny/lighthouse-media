@@ -4,8 +4,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.oauth2.credentials import Credentials
 
 HOME = os.path.expanduser("~")
-CLIENT_SECRET = os.path.join(HOME, "OneDrive", "바탕 화면", "lighthouse_media", "client_secret.json")
-TOKEN_PATH = os.path.join(HOME, "OneDrive", "바탕 화면", "lighthouse_media", "token_lighthouse.json")
+CLIENT_SECRET = os.path.join(HOME, "OneDrive", "바탕 화면", "03_사업_마케팅", "lighthouse_media", "client_secret.json")
+TOKEN_PATH = os.path.join(HOME, "OneDrive", "바탕 화면", "03_사업_마케팅", "lighthouse_media", "token_lighthouse.json")
 
 SCOPES = [
     'https://www.googleapis.com/auth/youtube.upload',
