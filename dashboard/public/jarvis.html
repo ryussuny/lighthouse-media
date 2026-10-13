@@ -70,6 +70,36 @@
   .tasks li.done { color:#4a5a78; text-decoration:line-through; }
   .tasks li .owner { font-size:10px; background:#1e2740; border-radius:999px; padding:1px 7px; margin-left:6px; color:#F5C562; }
 
+  /* 동산교회 오늘의 말씀 */
+  .church-today { background:#131a2e; border:1px solid #1e2740; border-radius:14px; padding:16px; font-size:13px; color:#c8d1e6; }
+  .church-today .ref { font-size:16px; font-weight:800; color:#F5C562; margin:4px 0; }
+  .church-today .ttl { font-size:14px; font-weight:700; } .church-today .d { font-size:11.5px; color:#5a6785; }
+  .church-today .line { margin-top:10px; padding:8px 10px; background:#0d1220; border-radius:8px; }
+  .church-today .warn { margin-top:8px; color:#F56262; font-weight:700; } .church-today .okd { margin-top:8px; color:#6fe58f; font-size:12px; }
+
+  /* 앱 만들기 (apps3) */
+  .apps-summary { font-size:13px; color:#c8d1e6; background:#131a2e; border:1px solid #1e2740; border-radius:12px; padding:12px 14px; margin-bottom:12px; }
+  .app-status { font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:999px; background:#10303d; color:#62cdf5; flex-shrink:0; }
+  .app-cols { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; font-size:12px; }
+  .app-cols b { display:block; font-size:11px; color:#5a6785; margin-bottom:4px; }
+  .app-cols ul { padding-left:16px; color:#8fa0bf; } .app-cols li { margin:2px 0; }
+  .app-cols .ok li::marker { content:'✓ '; color:#6fe58f; }
+  .shots { display:flex; gap:8px; overflow-x:auto; margin-top:12px; padding-bottom:4px; }
+  .shots figure { margin:0; flex:0 0 110px; } .shots img { width:110px; border-radius:8px; border:1px solid #1e2740; display:block; cursor:zoom-in; }
+  .shots figcaption { font-size:10.5px; color:#5a6785; margin-top:3px; line-height:1.3; }
+  .decision { background:#131a2e; border:1px solid #1e2740; border-radius:12px; padding:14px; }
+  .decision h3 { font-size:14px; margin:0 0 4px; } .decision .why { font-size:12px; color:#8fa0bf; }
+  .decision .opts { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .decision .opts button { background:#1a2340; border:1px solid #263659; color:#e8ecf5; border-radius:8px; padding:7px 11px; font-size:12.5px; cursor:pointer; }
+  .decision .opts button.rec { border-color:#C48220; }
+  .decision .opts button.picked { background:#12351c; border-color:#6fe58f; color:#6fe58f; font-weight:700; }
+  .decision .chosen { font-size:11.5px; color:#6fe58f; margin-top:8px; }
+  .decision .own { display:flex; gap:6px; margin-top:8px; }
+  .decision .own input { flex:1; min-width:0; background:#0d1220; border:1px solid #263659; color:#e8ecf5; border-radius:8px; padding:6px 8px; font-size:12.5px; }
+  .decision .own button { background:#1a2340; border:1px solid #263659; color:#8fa0bf; border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer; }
+  .results li { list-style:none; font-size:12.5px; color:#8fa0bf; padding:4px 0; border-bottom:1px solid #1a2340; } .results li b { color:#e8ecf5; }
+  @media (max-width:520px){ .app-cols { grid-template-columns:1fr; } }
+
   /* Music pipeline */
   table { width:100%; border-collapse:collapse; background:#131a2e; border:1px solid #1e2740; border-radius:14px; overflow:hidden; font-size:13px; }
   th, td { padding:9px 10px; text-align:left; border-bottom:1px solid #1a2340; }
@@ -214,6 +244,20 @@
   <div class="directive-list" id="directiveList"><div class="empty-directive">불러오는 중…</div></div>
   <div style="font-size:12px;color:#5a6785;margin-bottom:4px;">최근 5건만 표시 · <a href="/company.html" style="color:#8fa0bf;">전체 목록·처리 결과는 조직도에서 →</a></div>
 
+  <!-- 동산교회 홈페이지·오늘의 말씀 (2026-10-13) — 데이터: board.church, 말씀은 GitHub Pages today.html(CORS *)에서 직접 읽음 -->
+  <h2 id="sec-church">⛪ 동산교회 — 홈페이지 · 오늘의 말씀</h2>
+  <div class="church-today" id="churchToday">불러오는 중…</div>
+  <div class="links" id="churchLinks" style="margin-top:10px;"></div>
+
+  <!-- 앱 만들기 (apps3, 2026-10-13) — 데이터: config/jarvis-board.json의 apps3. 결정 버튼은 기존 POST /api/directives(PIN)로 큐잉 -->
+  <h2 id="sec-apps">📱 앱 만들기 <span id="appsUpdated" style="font-size:11px;color:#5a6785;font-weight:400;text-transform:none;letter-spacing:0;"></span></h2>
+  <div class="apps-summary" id="appsSummary">불러오는 중…</div>
+  <div class="grid" id="appsCards"></div>
+  <h2 id="sec-app-decisions">🧭 앱 — 목사님 결정 필요 <span style="font-size:11px;color:#5a6785;font-weight:400;text-transform:none;letter-spacing:0;">버튼을 누르면 자비스에게 바로 전달됩니다</span></h2>
+  <div class="grid" id="appsDecisions"></div>
+  <h2>📦 앱 결과물 위치</h2>
+  <ul class="results" id="appsResults"></ul>
+
   <!-- 프로젝트 -->
   <h2 id="sec-projects">프로젝트 보드</h2>
   <div class="grid" id="projects"></div>
@@ -300,6 +344,12 @@ async function load() {
         <div class="pct">${Number(p.progress)||0}%</div>
       </div>`).join('');
 
+    /* 동산교회 링크 + 오늘의 말씀 */
+    renderChurch(d.board.church);
+
+    /* 앱 만들기 (apps3) */
+    renderApps(d.board.apps3);
+
     /* 음원 */
     document.getElementById('epName').textContent = d.board.music.ep;
     const chip = v => `<span class="chip ${v?'ok':'no'}">${v?'✓':'·'}</span>`;
@@ -378,8 +428,106 @@ async function load() {
 
   } catch(e) { console.error(e); }
 }
+/* ── 동산교회 — today.html을 읽어 본문 정보만 텍스트로 꺼낸다(페이지 HTML은 그대로 넣지 않음) ── */
+let churchTodayAt = 0;
+async function renderChurch(c) {
+  if (!c) return;
+  document.getElementById('churchLinks').innerHTML = (c.links||[]).map(l =>
+    `<a href="${escapeHtml(safeHref(l.url))}" target="_blank">${escapeHtml(l.name)}</a>`).join('');
+  if (Date.now() - churchTodayAt < 10 * 60000) return; // 10분에 한 번만 다시 읽는다
+  churchTodayAt = Date.now();
+  const el = document.getElementById('churchToday');
+  try {
+    const html = await (await fetch(c.today + '?t=' + Date.now(), { cache: 'no-store' })).text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const t = sel => (doc.querySelector(sel)?.textContent || '').trim();
+    const dateLine = t('.hero .d');
+    const kst = new Date(Date.now() + 9 * 3600000).toISOString().slice(0, 10).replace(/-/g, '.');
+    const fresh = dateLine.startsWith(kst);
+    el.innerHTML = `
+      <div class="d">${escapeHtml(dateLine)}</div>
+      <div class="ref">${escapeHtml(t('.hero .p'))}</div>
+      <div class="ttl">${escapeHtml(t('.hero .t'))} · <span style="color:#8fa0bf">${escapeHtml(t('.hero .th'))}</span></div>
+      <div class="line">📌 ${escapeHtml(t('.remember div'))}</div>
+      <div class="line">${escapeHtml(t('.pray'))}</div>
+      ${fresh ? '<div class="okd">● 오늘 말씀이 정상 게시됐습니다</div>'
+              : `<div class="warn">⚠️ 오늘(${escapeHtml(kst)}) 말씀이 아직 안 올라왔습니다 — 자동 게시 기록을 확인하세요</div>`}
+      <div style="margin-top:10px;"><a class="yt-link" href="${escapeHtml(safeHref(c.today))}" target="_blank">전체 보기 →</a></div>`;
+  } catch (e) {
+    el.innerHTML = `<div class="warn">오늘의 말씀을 읽지 못했습니다: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+/* ── 앱 만들기 (apps3) — 결정 버튼은 기존 POST /api/directives + jarvisPin 재사용(신규 인증경로 없음) ── */
+let appsDecisionsCache = [];
+let appsChosen = {}; // 결정 id → 가장 최근 선택 문구(업무지시 목록에서 "[앱결정 ID]" 접두로 복원)
+function renderApps(a) {
+  if (!a) { document.getElementById('appsSummary').textContent = '앱 현황 데이터 없음'; return; }
+  document.getElementById('appsUpdated').textContent = `(${a.updated} 기준)`;
+  document.getElementById('appsSummary').textContent = a.summary || '';
+  const list = items => `<ul>${(items||[]).map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`;
+  document.getElementById('appsCards').innerHTML = (a.apps||[]).map(p => `
+    <div class="card">
+      <div class="top"><h3>${escapeHtml(p.name)}</h3><span class="app-status">${escapeHtml(p.status)}</span></div>
+      <div class="next"><b>다음 →</b> ${escapeHtml(p.next)}</div>
+      <div class="app-cols"><div class="ok"><b>된 것</b>${list(p.done)}</div><div><b>남은 것</b>${list(p.remaining)}</div></div>
+      ${(p.shots||[]).length ? `<div class="shots">${p.shots.map(s => `<figure><a href="${escapeHtml(safeHref(s.src))}" target="_blank"><img loading="lazy" src="${escapeHtml(safeHref(s.src))}" alt="${escapeHtml(s.cap)}"></a><figcaption>${escapeHtml(s.cap)}</figcaption></figure>`).join('')}</div>` : ''}
+      <div class="mini-bar"><div style="width:${Number(p.progress)||0}%;background:linear-gradient(90deg,#C48220,#F5C562)"></div></div>
+      <div class="pct">${Number(p.progress)||0}%</div>
+    </div>`).join('');
+  // 60초 갱신 때 같은 결정 목록이면 다시 그리지 않는다(직접 쓰기 입력 중인 글자가 지워지지 않게).
+  const next = a.decisions || [];
+  if (JSON.stringify(next) !== JSON.stringify(appsDecisionsCache)) { appsDecisionsCache = next; renderAppDecisions(); }
+  document.getElementById('appsResults').innerHTML = (a.results||[]).map(r =>
+    `<li><b>${escapeHtml(r.name)}</b> — ${escapeHtml(r.where)}</li>`).join('');
+}
+function renderAppDecisions() {
+  document.getElementById('appsDecisions').innerHTML = appsDecisionsCache.map((dc, i) => {
+    const chosen = appsChosen[dc.id];
+    return `<div class="decision">
+      <h3>${escapeHtml(dc.title)}</h3>
+      <div class="why">${escapeHtml(dc.why)}</div>
+      <div class="opts">${(dc.options||[]).map((o, j) =>
+        `<button class="${chosen === o ? 'picked' : (dc.recommended === j ? 'rec' : '')}" onclick="pickAppDecision(${i},${j})">${escapeHtml(o)}</button>`).join('')}</div>
+      <div class="own"><input id="appOwn${i}" placeholder="직접 쓰기 (다른 생각이 있으면)"><button onclick="pickAppDecision(${i},-1)">보내기</button></div>
+      ${chosen ? `<div class="chosen">✓ 전달됨: ${escapeHtml(chosen)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+async function pickAppDecision(i, j) {
+  const dc = appsDecisionsCache[i];
+  if (!dc) return;
+  const choice = j >= 0 ? dc.options[j] : (document.getElementById('appOwn' + i).value || '').trim();
+  if (!choice) return;
+  const res = await fetch('/api/directives', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-dashboard-pin': localStorage.getItem('jarvisPin') || '' },
+    body: JSON.stringify({ department: '웹·앱개발본부', instruction: `[앱결정 ${dc.id}] ${dc.title} → 선택: ${choice}` }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    alert('전달 실패: ' + (err.error || res.status));
+    return;
+  }
+  appsChosen[dc.id] = choice;
+  renderAppDecisions();
+  loadDirectives();
+}
+async function loadAppChoices() {
+  try {
+    const list = await (await fetch('/api/directives')).json();
+    appsChosen = {};
+    list.forEach(d => {
+      const m = /^\[앱결정 (\w+)\] .*? → 선택: (.*)$/s.exec(d.instruction || '');
+      if (m) appsChosen[m[1]] = m[2];
+    });
+    renderAppDecisions();
+  } catch (e) { console.error(e); }
+}
+
 load();
 setInterval(load, 60000);
+loadAppChoices();
 
 /* 자비스 업데이트 — idoforgod/cys-terminal 이슈/PR 조회 + 적용요청 큐잉 */
 let jarvisUpdatesCache = [];
