@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-05",
+  "updated": "2026-10-13",
   "goal": {
     "monthly": 5000000,
     "label": "월 500만원"
@@ -682,5 +682,256 @@
       "url": "https://github.com/ryussuny/lighthouse-media",
       "category": "외부 서비스"
     }
-  ]
+  ],
+  "apps3": {
+    "updated": "2026-10-13 20:30",
+    "summary": "앱 3개 중 앱1이 가장 앞섬 — 실제 서버·실제 AI로 실폰(갤럭시 A31) 끝까지 동작 확인. 출시까지 남은 것은 대부분 목사님 결정·계정 작업입니다.",
+    "apps": [
+      {
+        "id": "app1",
+        "name": "앱1 · AI 생활비 코치",
+        "progress": 85,
+        "status": "실폰 시험 중",
+        "next": "AI 분류 이유를 한국어로 고치는 중(worker-2) → 서버 반영 → 이 폰으로 재확인",
+        "done": [
+          "빠른 기록 + 자동 분류(기기 규칙 → 필요할 때만 AI)",
+          "주간 코치 리포트(한국어, '재무 조언 아님' 표시)",
+          "구독 점검·갱신 알림",
+          "Plus 구독 화면(이중 결제 방지 포함)",
+          "서버 배포(서울) — 보안 확인 App Check·로그인 통과",
+          "실폰 시험: AI 1회 비용 약 0.16원"
+        ],
+        "remaining": [
+          "AI 이유 문구 한국어화 (작업 중)",
+          "한도 재탭 시 리포트가 사라지는 작은 불편",
+          "출시 서류·계정 (아래 결정 참고)"
+        ],
+        "shots": [
+          {
+            "src": "/apps3/app1-ai-classify.jpg",
+            "cap": "AI 자동 분류 (이유 문구가 영어 — 수정 중)"
+          },
+          {
+            "src": "/apps3/app1-records.jpg",
+            "cap": "기록 목록"
+          },
+          {
+            "src": "/apps3/app1-coach.jpg",
+            "cap": "주간 코치 리포트"
+          },
+          {
+            "src": "/apps3/app1-limit.jpg",
+            "cap": "무료 한도 소진 안내"
+          },
+          {
+            "src": "/apps3/app1-plus.jpg",
+            "cap": "Plus 구독 화면 (상품 등록 전)"
+          }
+        ]
+      },
+      {
+        "id": "app2",
+        "name": "앱2 · 일자리 도우미",
+        "progress": 65,
+        "status": "기능 완성 · 서버 미개설",
+        "next": "Firebase 프로젝트 만들기(목사님 결정) → 서버 배포 → 실폰 시험",
+        "done": [
+          "구인 공고 사기 점검(경고 신호 찾기)",
+          "급여·시급 계산기",
+          "지원서 코치 화면(이력 메모 + 공고 → 초안, AI 표시)",
+          "신고 기능",
+          "개인정보 처리방침·Data safety 초안"
+        ],
+        "remaining": [
+          "Firebase 프로젝트 생성·서버 배포",
+          "AI 전송 동의 문구 개정(이력 메모도 보냄)",
+          "영어 전용 앱 — 영어 문구 검수"
+        ],
+        "shots": []
+      },
+      {
+        "id": "app3",
+        "name": "앱3 · 말벗",
+        "progress": 50,
+        "status": "안전 기능 우선 개발",
+        "next": "위기 대응 안내 화면·'사람 상담 인력 없음' 문구·기도/묵상 기능 → 안전 평가(유료) 승인 대기",
+        "done": [
+          "연령 확인, 'AI입니다' 고지",
+          "위기·도움 카드(한국·미국 상담 번호)",
+          "대화·기억 노트",
+          "서버 안전 장치 3중 + 출력 점검",
+          "안전 평가 세트 160건 · 평가 전엔 AI가 켜지지 않게 잠금",
+          "사고 대응 절차서·처리방침 초안"
+        ],
+        "remaining": [
+          "위기 대응 프로토콜 공개 화면",
+          "장시간 사용 휴식 제안 등 의존 방지",
+          "기도·묵상(성경 본문 번들) — 신학 검수 필요",
+          "안전 평가 실제 실행(유료, 승인 필요)",
+          "법무 검토"
+        ],
+        "shots": []
+      }
+    ],
+    "decisions": [
+      {
+        "id": "AD1",
+        "title": "앱1 출시 준비 — 구글 플레이 개발자 계정",
+        "why": "출시하려면 반드시 필요($25, 본인 확인). 목사님만 만들 수 있습니다.",
+        "options": [
+          "이미 있음",
+          "지금 만들겠다",
+          "나중에"
+        ]
+      },
+      {
+        "id": "AD2",
+        "title": "사업자등록·통신판매업 신고",
+        "why": "유료 구독(Plus)을 팔려면 한국에서 필요. 처리방침에도 사업자 정보가 들어갑니다.",
+        "options": [
+          "개인사업자로 진행(권장)",
+          "기존 사업자 사용",
+          "무료 앱으로만 먼저 출시"
+        ],
+        "recommended": 0
+      },
+      {
+        "id": "AD3",
+        "title": "앱 서명 키(업로드 키) 만들기",
+        "why": "플레이에 올릴 때 쓰는 키. 잃어버리면 업데이트가 어려워 백업 위치를 정해야 합니다.",
+        "options": [
+          "지금 만들어(백업은 USB+클라우드)",
+          "나중에"
+        ],
+        "recommended": 0
+      },
+      {
+        "id": "AD4",
+        "title": "비공개 테스터 12명 모집",
+        "why": "구글 규칙: 새 개인 계정은 테스터 12명이 14일 써야 정식 출시 가능.",
+        "options": [
+          "교회 성도 중 모집",
+          "가족·지인 중 모집",
+          "나중에"
+        ],
+        "recommended": 0
+      },
+      {
+        "id": "AD5",
+        "title": "계정 삭제 기능 범위",
+        "why": "구글은 앱 안 + 웹에서 계정 삭제를 요구할 수 있음. 서버 쪽은 이미 완성.",
+        "options": [
+          "앱 안 삭제 + 이메일로 웹 요청 받기(권장)",
+          "앱 안 삭제만 먼저",
+          "나중에 결정"
+        ],
+        "recommended": 0
+      },
+      {
+        "id": "AD6",
+        "title": "앱3 안전 평가 비용 한도",
+        "why": "말벗 앱은 위기 대화 안전 평가를 실제 AI로 돌려야 출시 가능. 상한을 정해 주세요.",
+        "options": [
+          "$50까지",
+          "$120까지",
+          "아직 보류"
+        ]
+      },
+      {
+        "id": "AD7",
+        "title": "앱2·앱3 서버(Firebase 프로젝트) 만들기",
+        "why": "앱마다 따로 만들어야 서로 영향이 없습니다. 무료 범위 내 시작, 사용량 따라 과금.",
+        "options": [
+          "앱2부터 만들어(권장)",
+          "앱2·앱3 둘 다",
+          "나중에"
+        ],
+        "recommended": 0
+      },
+      {
+        "id": "AD8",
+        "title": "앱2 AI 전송 동의 문구 개정",
+        "why": "지금 문구는 '붙여넣은 공고'만 말하는데 실제로는 이력 메모도 보냅니다. 문구를 넓혀 다시 동의받는 안.",
+        "options": [
+          "개정해(권장)",
+          "그대로 두고 보내기 직전 안내만 유지"
+        ],
+        "recommended": 0
+      },
+      {
+        "id": "AD9",
+        "title": "PC 재부팅 시점",
+        "why": "윈도우 서비스 메모리 누수(7GB)로 무거운 빌드를 한 번에 하나만 돌리는 중. 재부팅하면 풀립니다.",
+        "options": [
+          "오늘 밤 작업 끝나면",
+          "지금 바로",
+          "나중에 알려줄게"
+        ]
+      }
+    ],
+    "results": [
+      {
+        "name": "앱 3개 설치 파일(APK)·화면 사진",
+        "where": "바탕화면 › 앱 미리보기 (2026-10-13)"
+      },
+      {
+        "name": "실폰 시험 사진 5장",
+        "where": "바탕화면 › 앱 미리보기 › 실폰테스트-갤럭시A31"
+      },
+      {
+        "name": "코드 저장소 (커밋 87개)",
+        "where": "D:\\apps3"
+      },
+      {
+        "name": "남은 작업 대조표",
+        "where": "D:\\apps3\\_round\\evidence\\p4-status\\REMAINING.md"
+      }
+    ]
+  },
+  "church": {
+    "base": "https://ryussuny.github.io/dongsan-church/",
+    "today": "https://ryussuny.github.io/dongsan-church/today.html",
+    "links": [
+      {
+        "name": "⛪ 교회 홈페이지",
+        "url": "https://ryussuny.github.io/dongsan-church/"
+      },
+      {
+        "name": "📖 오늘의 말씀",
+        "url": "https://ryussuny.github.io/dongsan-church/today.html"
+      },
+      {
+        "name": "🙏 성인용 말씀 앱",
+        "url": "https://ryussuny.github.io/dongsan-church/word-adult.html"
+      },
+      {
+        "name": "🧒 어린이용 말씀 앱",
+        "url": "https://ryussuny.github.io/dongsan-church/word-kids.html"
+      },
+      {
+        "name": "🎙️ 설교·말씀 아카이브",
+        "url": "https://ryussuny.github.io/dongsan-church/archive.html"
+      },
+      {
+        "name": "📚 로마서 묵상집(PDF)",
+        "url": "https://ryussuny.github.io/dongsan-church/book/sermon-romans.pdf"
+      },
+      {
+        "name": "📚 빌립보서 묵상집(PDF)",
+        "url": "https://ryussuny.github.io/dongsan-church/book/sermon-philippians.pdf"
+      },
+      {
+        "name": "📷 교회 사진",
+        "url": "https://ryussuny.github.io/dongsan-church/photos.html"
+      },
+      {
+        "name": "🎵 찬양",
+        "url": "https://ryussuny.github.io/dongsan-church/songs.html"
+      },
+      {
+        "name": "⚙️ 자동 게시 기록(GitHub)",
+        "url": "https://github.com/ryussuny/dongsan-church/actions"
+      }
+    ]
+  }
 }
