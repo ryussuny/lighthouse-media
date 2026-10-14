@@ -1,6 +1,6 @@
 """매일 고퀄리티 숏츠 영상 1편 → YouTube + Instagram + Facebook 동시 업로드"""
 import sys; sys.stdout.reconfigure(encoding='utf-8')
-import os, json, requests, time, base64, subprocess, shutil
+import os, json, requests, time, base64, subprocess, shutil, re
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 
@@ -10,7 +10,7 @@ OUT = os.path.join(HOME, "lighthouse-media", "output", TODAY)
 os.makedirs(OUT, exist_ok=True)
 
 API_KEY = ""
-for line in open(os.path.join(HOME, "lighthouse-media", ".env")):
+for line in open(os.path.join(HOME, "lighthouse-media", ".env"), encoding="utf-8"):
     if line.startswith("ANTHROPIC_API_KEY="): API_KEY = line.strip().split("=",1)[1]
 
 tokens = json.load(open(os.path.join(HOME, "lighthouse-media", "config", "tokens.json"), encoding='utf-8'))
@@ -39,7 +39,7 @@ def draw_centered(draw, y, text, font, fill, W, spacing=10):
         y += bb[3]-bb[1] + spacing
     return y
 
-def main():
+def main(dry_run=False):
     print("=" * 60)
     print(f"  LIGHTHOUSE MEDIA - Daily Video")
     print(f"  {TODAY}")
@@ -47,7 +47,7 @@ def main():
 
     # 1. 스크립트
     print("\n[1/4] Script...")
-    raw = claude(
+    _prompt = (
         "너는 Lighthouse Media(류선희) 숏츠 스크립트 작가다.\n"
         "타겟: 지친 20-40대 직장인. 톤: 따뜻하고 지적이며 실용적.\n"
         "종교 콘텐츠 아님 — 세속적 자기계발/동기부여/힐링.\n"
@@ -72,8 +72,17 @@ def main():
         "첫3초: 충격통계/질문. 감정곡선: 공감->위로->희망->실천. 마지막: CTA."
     )
 
-    start = raw.find("{"); end = raw.rfind("}")+1
-    script = json.loads(raw[start:end])
+    # 모델이 가끔 문법이 깨진 JSON을 돌려준다(2026-10-08 실패 원인) — 최대 3회 재시도
+    for attempt in range(1, 4):
+        raw = claude(_prompt)
+        start = raw.find("{"); end = raw.rfind("}")+1
+        try:
+            script = json.loads(raw[start:end])
+            break
+        except json.JSONDecodeError as e:
+            print(f"  JSON 파싱 실패({attempt}/3): {e}")
+            if attempt == 3:
+                raise
     print(f"  Title: {script['title']}")
 
     # 2. 프레임
@@ -177,6 +186,13 @@ def main():
     if not os.path.exists(vpath):
         print("  FAIL!"); return
     print(f"  OK! {os.path.getsize(vpath)/(1024*1024):.1f}MB")
+
+    if dry_run:  # --dry-run: 기존 방식 비교 샘플 — 인코딩까지만, 어디에도 올리지 않는다
+        os.makedirs(QUALITY_DIR, exist_ok=True)
+        keep = os.path.join(QUALITY_DIR, "legacy-sample.mp4")
+        shutil.copy(vpath, keep)
+        print(f"  DRY-RUN — 업로드 생략(유튜브·인스타·페이스북). 비교 샘플: {keep}")
+        return
 
     # 4. Upload
     print("\n[4/4] Uploading...")
@@ -297,5 +313,373 @@ def main():
     print(f"  YT: https://youtube.com/shorts/{vid_id}")
     print(f"{'='*60}")
 
+# ════════════════════════════════════════════════════════════════════════════
+# 품질 모드 (--quality) — 오너 지시 2026-10-15 "조회수 높은 영상 수준"  (worker-3, forge 착용)
+#   한국어 TTS 나레이션 + AI 배경(Ken Burns) + 나레이션 타이밍 자막 + 제목 공식 + 해시태그 3~6개
+#   - 기본은 dry-run: --upload 를 명시하지 않으면 어디에도 올리지 않는다(루브릭 C2).
+#   - 인스타·페이스북 썸네일 게시는 하지 않는다(이미지 도달 ≈ 0 — 제거 '제안', 적용은 JARVIS·오너 승인 후).
+#   - 편당 비용(TTS+이미지) US$0.20 초과면 호출하지 않는다(루브릭 C1). 단가 출처는 lib/fal_tts.py·lib/fal_visuals.py 주석.
+#   - 스케줄러가 부르는 기존 방식(플래그 없음)은 그대로 둔다 — 새 방식은 오너 승인 뒤 daily-video.bat 에 --quality --upload 를 넣을 때 켜진다.
+# ════════════════════════════════════════════════════════════════════════════
+QUALITY_DIR = os.path.join(HOME, "lighthouse-media", "output", "youtube", "quality")
+PER_VIDEO_BUDGET_USD = 0.20
+TL_LEAD, TL_GAP, TL_TAIL = 0.10, 0.22, 1.2   # 첫 음성 시작·문장 사이 휴지·끝 여운(초)
+SYLLABLES_MIN, SYLLABLES_MAX = 150, 290       # 루브릭 S1 (≈ 30~55초)
+LEN_MIN, LEN_MAX = 30.0, 55.0                 # 루브릭 L1
+CATEGORY_BGM = {"comfort": "trend-comfort", "motivation": "trend-motivation", "growth": "trend-growth", "healing": "trend-healing"}
+RELIGION_WORDS = ["기도", "하나님", "하느님", "주님", "예수", "그리스도", "부처", "스님", "불교", "교회", "성경", "찬송", "아멘", "신앙", "은혜", "천국", "축복", "믿음", "구원", "영혼"]
+RELIGION_RE = re.compile(r"(?<![가-힣])신(?:의|께|이)(?![가-힣])")
+UNSOURCED_RE = re.compile(r"\d\s*%|퍼센트|연구|조사|통계|박사|교수|논문|실험|전문가|과학자")
+NAMED_PERSON_RE = re.compile(r"쇼펜하우어|니체|법륜|법정|공자|괴테|아인슈타인|스티브 잡스|워런 버핏|말했다|말씀하셨")
+# 주제 순환: --topic 을 안 주면 날짜로 하나를 고른다(매일 같은 주제로 올리지 않게). 최근 올린 제목은 대본 프롬프트에 넣어 겹치지 않게 한다.
+TOPICS = [
+    "퇴근 후에도 머릿속이 꺼지지 않는 직장인", "거절하지 못해서 늘 지치는 사람", "남과 비교하다 하루가 무너지는 날", "아침에 일어나기 힘든 사람의 작은 시작",
+    "열심히 했는데 인정받지 못한 날", "쉬어도 쉰 것 같지 않을 때", "혼자 있는 시간이 필요한 사람", "실수한 뒤 계속 자책하는 사람",
+    "일요일 밤마다 불안해지는 사람", "관계에서 먼저 지치는 사람", "완벽하지 않아도 괜찮다고 말해 주는 법", "번아웃이 와도 일상을 놓지 않는 법",
+    "하루를 마무리하는 작은 습관", "나를 돌보는 일이 어색한 사람",
+]
+HISTORY_PATH = os.path.join(QUALITY_DIR, "history.json")
+
+
+def pick_topic(today=None):
+    today = today or datetime.now()
+    return TOPICS[today.toordinal() % len(TOPICS)]
+
+
+def recent_titles(n=14):
+    try:
+        return json.load(open(HISTORY_PATH, encoding="utf-8"))[-n:]
+    except (OSError, json.JSONDecodeError):
+        return []
+
+
+IMAGE_STYLE_SUFFIX = ", soft painterly illustration, bright well-exposed scene with warm natural daylight or warm lamp light (not dark, not night-black), calm, vertical composition, no text, no logo, no watermark, no visible human faces (people only from behind or far away)"
+
+
+def _syllables(text):
+    return len(re.findall(r"[가-힣]", text))
+
+
+def claude_json(prompt, tries=3, max_t=3500):
+    """Claude 호출 → (JSON 객체, usage). 형식이 깨지면 최대 tries회 재시도. 실패하면 예외."""
+    last = None
+    for attempt in range(1, tries + 1):
+        r = requests.post("https://api.anthropic.com/v1/messages", headers={
+            "x-api-key": API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json",
+        }, json={"model": "claude-sonnet-4-6", "max_tokens": max_t, "messages": [{"role": "user", "content": prompt}]}, timeout=120)
+        j = r.json()
+        if "content" not in j:
+            last = f"API 응답 이상: {str(j)[:200]}"
+            print(f"  Claude 호출 실패({attempt}/{tries}): {last}")
+            continue
+        raw = j["content"][0]["text"]
+        a, b = raw.find("{"), raw.rfind("}") + 1
+        try:
+            return json.loads(raw[a:b]), j.get("usage", {})
+        except json.JSONDecodeError as e:
+            last = f"JSON 파싱 실패: {e}"
+            print(f"  {last} ({attempt}/{tries})")
+    raise RuntimeError(last or "Claude 호출 실패")
+
+
+def quality_prompt(topic, feedback="", recent=()):
+    return (
+        "너는 Lighthouse Media(류선희) 유튜브 쇼츠 대본 작가다. 목표: 조회수가 높은 한국 '인생 조언·위로' 쇼츠 수준의 나레이션 대본.\n"
+        f"오늘 주제: {topic}\n"
+        "타겟: 지친 20~40대 직장인(공감하는 말투). 톤: 따뜻하고 지적이며 실용적. 존댓말(~해요/~입니다) 한 가지로 통일.\n"
+        "브랜드 원칙: 종교 색 없이 보편적인 자기돌봄 조언. 하나님·기도·부처·스님·교회·신앙 같은 말 금지.\n"
+        "근거 원칙: 통계·퍼센트·'연구에 따르면'·박사/교수/전문가·실존 인물의 말 인용·'~하면 낫는다/성공한다' 같은 보장 표현은 절대 쓰지 마라(출처 없는 단정 금지).\n\n"
+        "구성(감정곡선): ① 첫 문장 = 제목의 약속을 그대로 말하는 훅(30자 이내, 인사·자기소개 금지) ② 공감 ③ 구체적 상황 1곳(시간·장소·행동이 있는 장면 문장 1개 — 예: 퇴근길 지하철, 일요일 밤) "
+        "④ 관점 전환(위로) ⑤ 오늘 할 수 있는 실천 1개(한 가지 행동, 동사로 끝나게) ⑥ 짧은 마무리 한 줄.\n"
+        "제목 공식 중 하나를 골라라: A) 대상+특징/행동 수('…한 사람들의 3가지 특징') B) 궁금증·숨김('…가 끝까지 숨기는 것') C) 세대·대상 호명('30대에게 꼭 전하고 싶은 말') D) 숫자 약속('…하면 달라지는 하루 습관 3가지'). "
+        "제목은 15~30자, 과장·허위 약속 금지. 제목에 숫자가 있으면(예: 3가지) 본론에서 정확히 그만큼의 항목을 '첫째, … 둘째, … 셋째, …'로 말한다. "
+        "첫 문장은 제목 문구를 거의 그대로 말하고, title_lines는 제목을 줄여 둘로 나눈 것이다(제목에 없는 말 금지).\n\n"
+        "분량: 문장 8~14개, 문장당 40자 이하, 전체 한글 음절 150~290개(약 30~55초 나레이션). 소리 내어 읽기 편한 짧은 문장. 숫자는 '3가지'처럼 말로 읽히게 쓴다.\n"
+        "장면: 5~7장면. 각 장면에 문장 2개 안팎을 묶는다(sentences[].scene = 장면 번호 0부터, 순서대로 같거나 커진다). "
+        "각 장면의 image_prompt는 영어로, 사람 얼굴 없는 구체적 생활 장면(창가, 길, 책상, 자연 등) 한 문장.\n\n"
+        "JSON만 출력(설명 금지):\n"
+        "{\"title\":\"15~30자 제목\",\"title_lines\":[\"화면 위 제목 1줄(14자 이하)\",\"2줄(14자 이하)\"],\"formula\":\"A|B|C|D\","
+        "\"category\":\"comfort|motivation|growth|healing\","
+        "\"sentences\":[{\"text\":\"나레이션 한 문장\",\"scene\":0},...],"
+        "\"situation_idx\":구체적 상황 문장의 인덱스,\"practice_idx\":실천 문장의 인덱스,"
+        "\"scenes\":[{\"image_prompt\":\"English one-sentence scene\"},...],"
+        "\"description_hook\":\"설명 첫 줄(훅 한 줄)\",\"description_body\":\"설명 본문 2~3줄\","
+        "\"hashtags\":[\"#해시태그\",...3~5개, #shorts 제외],\"tags\":[\"검색 키워드\",...8~12개]}\n"
+        + (f"\n최근에 올린 제목(같은 제목·같은 훅 금지): {' / '.join(recent)}\n" if recent else "")
+        + (f"\n지난 시도의 문제(반드시 고쳐라): {feedback}\n" if feedback else "")
+    )
+
+
+def validate_script(s):
+    """루브릭 H2·S1~S4·N1·N2·G1 자동 검사. 문제 목록(빈 목록 = 통과)."""
+    p = []
+    try:
+        sents = [x["text"].strip() for x in s["sentences"]]
+        scene_ids = [int(x["scene"]) for x in s["sentences"]]
+        title = s["title"].strip()
+        n_scenes = len(s["scenes"])
+    except Exception as e:
+        return [f"필드 누락/형식 오류: {e}"]
+    syl = sum(_syllables(t) for t in sents)
+    if not (SYLLABLES_MIN <= syl <= SYLLABLES_MAX): p.append(f"한글 음절 {syl}개 — {SYLLABLES_MIN}~{SYLLABLES_MAX}이어야 한다")
+    if not (8 <= len(sents) <= 14): p.append(f"문장 {len(sents)}개 — 8~14개")
+    long_ = [i for i, t in enumerate(sents) if len(t) > 40]
+    if long_: p.append(f"40자 넘는 문장 {long_}")
+    if sents and len(sents[0]) > 30: p.append(f"첫 문장 {len(sents[0])}자 — 30자 이하")
+    if not (15 <= len(title) <= 30): p.append(f"제목 {len(title)}자 — 15~30자")
+    tl = s.get("title_lines") or []
+    if not (1 <= len(tl) <= 2) or any(len(x) > 14 for x in tl): p.append("title_lines는 1~2줄, 줄당 14자 이하")
+    if not (5 <= n_scenes <= 7): p.append(f"장면 {n_scenes}개 — 5~7개")
+    if scene_ids != sorted(scene_ids) or (scene_ids and (scene_ids[0] != 0 or scene_ids[-1] != n_scenes - 1 or set(scene_ids) != set(range(n_scenes)))):
+        p.append("sentences[].scene이 0..장면수-1을 순서대로 모두 덮지 않는다")
+    for k in ("situation_idx", "practice_idx"):
+        v = s.get(k)
+        if not isinstance(v, int) or not (0 <= v < len(sents)): p.append(f"{k} 없음/범위 밖")
+    if s.get("situation_idx") == s.get("practice_idx"): p.append("구체 상황 문장과 실천 문장이 같다")
+    blob = " ".join(sents + [title, s.get("description_hook", ""), s.get("description_body", ""), " ".join(s.get("tags", [])), " ".join(x.get("image_prompt", "") for x in s["scenes"])])
+    for w in RELIGION_WORDS:
+        if w in blob: p.append(f"종교 용어 '{w.strip()}'")
+    m = RELIGION_RE.search(blob)
+    if m: p.append(f"종교 용어 '{m.group(0)}'")
+    spoken = " ".join(sents + [title])
+    m = UNSOURCED_RE.search(spoken)
+    if m: p.append(f"근거 없는 단정 가능 표현 '{m.group(0)}'")
+    m = NAMED_PERSON_RE.search(spoken)
+    if m: p.append(f"실존 인물·인용 표현 '{m.group(0)}'")
+    # 제목의 약속을 지키는가(루브릭 H2): 숫자 약속이면 그만큼 항목을 말하고, 첫 문장·화면 제목은 제목과 같은 말이어야 한다
+    m = re.search(r"(\d+)\s*(?:가지|개)", title)
+    if m and 2 <= int(m.group(1)) <= 5:
+        ords = ["첫째", "둘째", "셋째", "넷째", "다섯째"][:int(m.group(1))]
+        miss = [o for o in ords if o not in spoken]
+        if miss: p.append(f"제목이 {m.group(1)}가지를 약속하는데 대본에 {miss}가 없다(항목마다 '첫째, 둘째…'로 말해라)")
+
+    def _bigrams(t):
+        t = re.sub(r"[^가-힣]", "", t)
+        return {t[i:i + 2] for i in range(len(t) - 1)}
+    if sents and len(_bigrams(title) & _bigrams(sents[0])) < 3: p.append("첫 문장이 제목의 약속과 같은 말이 아니다(제목 문구를 거의 그대로 말해라)")
+    tlb = _bigrams("".join(tl))
+    if tlb and len(tlb & _bigrams(title)) < 0.6 * len(tlb): p.append("title_lines가 제목의 문구와 다르다(제목을 둘로 나눈 것이어야 한다)")
+    tags = s.get("hashtags") or []
+    if not (3 <= len(tags) <= 5) or any(not t.startswith("#") or " " in t for t in tags) or any(t.lower() == "#shorts" for t in tags):
+        p.append("hashtags는 '#'로 시작하는 3~5개(#shorts 제외 — 코드가 붙인다)")
+    if len(s.get("tags", [])) < 5: p.append("tags 5개 이상")
+    return p
+
+
+def generate_script(topic):
+    feedback = ""
+    recent = recent_titles()
+    for attempt in range(1, 5):
+        print(f"  대본 생성 {attempt}/4 ...")
+        s, usage = claude_json(quality_prompt(topic, feedback, recent))
+        probs = validate_script(s)
+        if not probs:
+            return s, usage
+        feedback = " / ".join(probs)
+        print(f"    검사 미통과: {feedback}")
+    raise RuntimeError("대본이 4회 모두 기준을 통과하지 못했다: " + feedback)
+
+
+def _ffprobe_duration(path):
+    ffp = FFMPEG.replace("ffmpeg.exe", "ffprobe.exe") if FFMPEG.endswith("ffmpeg.exe") else "ffprobe"
+    r = subprocess.run([ffp, "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", path], capture_output=True, text=True)
+    return float(r.stdout.strip())
+
+
+def build_timeline(script, chunks):
+    """TTS 청크의 실제 길이로 문장·장면·자막 구간(초)을 만든다. chunks[i]['dur'] = 그 문장의 음성 길이."""
+    import sys as _sys
+    _sys.path.insert(0, os.path.join(HOME, "lighthouse-media", "scripts", "lib"))
+    import shorts_render as R
+    t = TL_LEAD
+    sents = []
+    for i, (sd, ch) in enumerate(zip(script["sentences"], chunks)):
+        sents.append({"i": i, "text": sd["text"].strip(), "scene": int(sd["scene"]), "start": round(t, 3), "end": round(t + ch["dur"], 3), "audio": ch["path"]})
+        t += ch["dur"] + TL_GAP
+    total = round(sents[-1]["end"] + TL_TAIL, 3)
+    # 자막 카드: 한 문장 안에서 글자 수 비례로 시간 배분(문장이 길어도 음성 구간 밖으로 안 나간다)
+    subs = []
+    for s in sents:
+        cards = R.split_sentence(s["text"])
+        wsum = sum(c[1] for c in cards) or 1
+        cur = s["start"]
+        for k, (txt, wn) in enumerate(cards):
+            end = s["end"] if k == len(cards) - 1 else cur + (s["end"] - s["start"]) * wn / wsum
+            subs.append({"start": round(cur, 3), "end": round(end, 3), "text": txt, "sentence": s["i"]})
+            cur = end
+    # 마지막 문장의 자막은 끝 여운 동안 유지
+    subs[-1]["end"] = total - 0.3
+    scenes = []
+    n_sc = len(script["scenes"])
+    for si in range(n_sc):
+        mine = [s for s in sents if s["scene"] == si]
+        start = 0.0 if si == 0 else scenes[-1]["end"]
+        end = total if si == n_sc - 1 else mine[-1]["end"] + TL_GAP / 2
+        scenes.append({"index": si, "start": round(start, 3), "end": round(end, 3)})
+    return {"sentences": sents, "subs": subs, "scenes": scenes, "total": total}
+
+
+def mux_audio(silent, tl, bgm_path, out_path, ffmpeg):
+    """나레이션(문장별 mp3를 시작 시각에 배치) + 배경음악(나레이션 아래로 덕킹) → 통합 라우드니스 정규화 → 영상에 입힘."""
+    sents, total = tl["sentences"], tl["total"]
+    cmd = [ffmpeg, "-y", "-i", silent]
+    for s in sents:
+        cmd += ["-i", s["audio"]]
+    cmd += ["-stream_loop", "-1", "-i", bgm_path]
+    n = len(sents)
+    parts = []
+    for i, s in enumerate(sents):
+        ms = int(round(s["start"] * 1000))
+        parts.append(f"[{i + 1}:a]aresample=44100,adelay={ms}|{ms}[n{i}]")
+    parts.append("".join(f"[n{i}]" for i in range(n)) + f"amix=inputs={n}:normalize=0:duration=longest,asplit=2[nar][narsc]")
+    parts.append(f"[{n + 1}:a]aresample=44100,volume=0.30,afade=t=out:st={total - 1.5:.2f}:d=1.5[bg]")
+    parts.append("[bg][narsc]sidechaincompress=threshold=0.02:ratio=10:attack=15:release=400[duck]")
+    parts.append("[nar][duck]amix=inputs=2:normalize=0:duration=longest,loudnorm=I=-16:TP=-1.5:LRA=11,aresample=44100[a]")
+    cmd += ["-filter_complex", ";".join(parts), "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-t", f"{total:.3f}", out_path]
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="ignore")
+    if r.returncode != 0 or not os.path.exists(out_path):
+        raise RuntimeError("오디오 합성 실패: " + r.stderr[-500:])
+    return out_path
+
+
+def upload_youtube_quality(vpath, script, tl):
+    """품질 모드 유튜브 업로드(--upload 명시 때만 호출). 인스타·페이스북은 올리지 않는다."""
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaFileUpload
+    ytp = os.path.join(HOME, "OneDrive", "바탕 화면", "03_사업_마케팅", "lighthouse_media", "token_lighthouse.json")
+    creds = Credentials.from_authorized_user_info(json.load(open(ytp, encoding="utf-8")))
+    if creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        with open(ytp, "w", encoding="utf-8") as f: f.write(creds.to_json())
+    yt = build("youtube", "v3", credentials=creds)
+    tags_line = " ".join(script["hashtags"] + ["#shorts"])
+    desc = f"{script['description_hook']}\n\n{script['description_body']}\n\n—\n류선희 | Lighthouse Media\n\n{tags_line}"
+    body = {"snippet": {"title": script["title"] + " #shorts", "description": desc, "tags": script["tags"], "categoryId": "22", "defaultLanguage": "ko"},
+            "status": {"privacyStatus": "public", "selfDeclaredMadeForKids": False}}
+    req = yt.videos().insert(part="snippet,status", body=body, media_body=MediaFileUpload(vpath, mimetype="video/mp4", resumable=True))
+    resp = None
+    while resp is None: _, resp = req.next_chunk()
+    print(f"    https://youtube.com/shorts/{resp['id']}")
+    return resp["id"]
+
+
+def quality_main(args):
+    import sys as _sys, random as _random
+    _sys.path.insert(0, os.path.join(HOME, "lighthouse-media", "scripts", "lib"))
+    import fal_tts as T, fal_visuals as fv, shorts_render as R
+    dry = not args.upload
+    name = args.name or f"quality-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    work = os.path.join(QUALITY_DIR, "work", name)
+    os.makedirs(work, exist_ok=True)
+    print("=" * 60)
+    print(f"  LIGHTHOUSE MEDIA - Daily Video (QUALITY mode)  {name}")
+    print(f"  {'DRY-RUN — 업로드하지 않음' if dry else '!! --upload 지정됨: 유튜브에 업로드한다 !!'}")
+    print("=" * 60)
+
+    # 1. 대본
+    print("\n[1/6] Script...")
+    args.topic = args.topic or pick_topic()
+    print(f"  주제: {args.topic}")
+    script, usage = generate_script(args.topic)
+    print(f"  Title: {script['title']}  (공식 {script.get('formula')})  Claude 토큰 in/out = {usage.get('input_tokens')}/{usage.get('output_tokens')}")
+    n_img = len(script["scenes"])
+    tts_chars = sum(len(s["text"].strip()) for s in script["sentences"])
+    est = {"tts": T.estimate_tts_cost(tts_chars), "image": round(n_img * fv.IMAGE_MODEL_COST_USD, 5)}
+    est["total"] = round(est["tts"] + est["image"], 5)
+    print(f"  [비용미리보기] TTS {tts_chars}자 ${est['tts']:.4f} + 이미지 {n_img}장 ${est['image']:.4f} = ${est['total']:.4f} (한도 ${PER_VIDEO_BUDGET_USD:.2f})")
+    if est["total"] > PER_VIDEO_BUDGET_USD:
+        print("  [비용게이트] 편당 예산 초과 — 호출하지 않는다. master 보고 대상"); return 2
+
+    # 2. 나레이션
+    print("\n[2/6] Narration (fal TTS)...")
+    chunks, err = T.synth_chunks([s["text"].strip() for s in script["sentences"]], os.path.join(work, "tts"), name, PER_VIDEO_BUDGET_USD,
+                                 voice=args.voice, speed=args.speed)
+    if not chunks:
+        print("  FAIL:", err); return 1
+    for c in chunks: c["dur"] = _ffprobe_duration(c["path"])
+    voice_s = sum(c["dur"] for c in chunks)
+    syl = sum(_syllables(s["text"]) for s in script["sentences"])
+    print(f"  음성 {voice_s:.1f}s, 한글 {syl}음절 → {syl / voice_s:.2f} 음절/초 (벤치마크 중앙 ≈6)")
+
+    # 3. 타임라인(+길이 검사)
+    tl = build_timeline(script, chunks)
+    print(f"  타임라인: 총 {tl['total']:.1f}s, 장면 {len(tl['scenes'])}개 {[round(s['end'] - s['start'], 1) for s in tl['scenes']]}, 자막 {len(tl['subs'])}장")
+    odd = [round(x["end"] - x["start"], 1) for x in tl["scenes"] if not (3.0 <= x["end"] - x["start"] <= 10.0)]
+    if odd: print(f"  [장면 길이 주의] 3~10초 밖의 장면 {odd}s — 루브릭 G1")
+    if not (LEN_MIN <= tl["total"] <= LEN_MAX):
+        print(f"  [길이 경고] {tl['total']:.1f}s — 루브릭 L1은 {LEN_MIN:.0f}~{LEN_MAX:.0f}초. 이미지 호출 전에 중단한다(--speed 조정 또는 대본 재생성)."); return 3
+
+    # 4. 배경 이미지
+    print("\n[3/6] Background images (fal)...")
+    img_dir = os.path.join(work, "img"); os.makedirs(img_dir, exist_ok=True)
+    key = fv.load_fal_key()
+    if not key:
+        print("  FAIL: FAL_KEY 없음"); return 1
+    paths = []
+    for i, sc in enumerate(script["scenes"]):
+        prompt = sc["image_prompt"].strip().rstrip(".") + IMAGE_STYLE_SUFFIX
+        out, err = fv.generate_scene_image(prompt, os.path.join(img_dir, f"scene_{i:02d}.png"), key=key)
+        if not out:
+            print(f"  FAIL 장면 {i}: {err}"); return 1
+        paths.append(out)
+    fv.log_run_cost("quality_image_batch", fv.IMAGE_MODEL, n_img, est["image"], reel_name=name)
+    for sc, pth in zip(tl["scenes"], paths): sc["image"] = pth
+
+    # 5. 렌더
+    print("\n[4/6] Render frames...")
+    silent = os.path.join(work, "silent.mp4")
+    R.render_video(tl["scenes"], script["title_lines"], tl["subs"], tl["total"], silent, ffmpeg=FFMPEG)
+
+    print("\n[5/6] Mix audio...")
+    cat = script.get("category", "comfort")
+    bgm_dir = os.path.join(HOME, "lighthouse-media", "assets", "bgm")
+    pool = sorted(f for f in os.listdir(bgm_dir) if f.endswith(".mp3") and CATEGORY_BGM.get(cat, "trend-comfort") in f) or sorted(f for f in os.listdir(bgm_dir) if f.endswith(".mp3"))
+    bgm = _random.Random(name).choice(pool)
+    print(f"  BGM: {bgm} (카테고리 {cat})")
+    final = os.path.join(QUALITY_DIR, name + ".mp4")
+    mux_audio(silent, tl, os.path.join(bgm_dir, bgm), final, FFMPEG)
+    print(f"  OK {final}  {os.path.getsize(final) / 1048576:.1f}MB")
+
+    report = {"name": name, "topic": args.topic, "script": script, "timeline": {k: v for k, v in tl.items() if k != "sentences"},
+              "sentences": [{k: v for k, v in s.items() if k != "audio"} for s in tl["sentences"]],
+              "voice": {"model": T.TTS_MODEL, "voice": args.voice or T.DEFAULT_VOICE, "speed": args.speed if args.speed is not None else T.DEFAULT_SPEED,
+                        "voice_sec": round(voice_s, 2), "syllables": syl, "syll_per_s": round(syl / voice_s, 2)},
+              "cost_usd": {**est, "claude_tokens": usage, "pricing": T.TTS_PRICING_SOURCE}, "bgm": bgm, "dry_run": dry}
+    json.dump(report, open(os.path.join(QUALITY_DIR, name + ".json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+
+    print("\n[6/6] Upload...")
+    if dry:
+        print("  DRY-RUN — 업로드 생략(유튜브·인스타·페이스북 모두). 올리려면 --quality --upload (오너 승인 후)")
+        return 0
+    upload_youtube_quality(final, script, tl)
+    try:  # 올린 제목 기록(다음 대본이 겹치지 않게) — 업로드한 때만
+        h = recent_titles(200) + [script["title"]]
+        json.dump(h, open(HISTORY_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    except OSError:
+        pass
+    print("  (인스타·페이스북 썸네일 게시는 품질 모드에서 하지 않는다)")
+    return 0
+
+
+def parse_args(argv=None):
+    import argparse
+    ap = argparse.ArgumentParser(description="Lighthouse Media daily video")
+    ap.add_argument("--quality", action="store_true", help="새 방식(한국어 나레이션·AI 배경·동기 자막). 기본 dry-run")
+    ap.add_argument("--upload", action="store_true", help="--quality 에서만: 실제로 유튜브에 올린다(명시하지 않으면 올리지 않음)")
+    ap.add_argument("--dry-run", action="store_true", help="업로드하지 않는다(기존 방식에서는 인코딩까지만)")
+    ap.add_argument("--topic", default=None, help="없으면 날짜로 TOPICS에서 순환 선택")
+    ap.add_argument("--voice", default=None)
+    ap.add_argument("--speed", type=float, default=None)
+    ap.add_argument("--name", default=None)
+    return ap.parse_args(argv)
+
+
 if __name__ == "__main__":
-    main()
+    _a = parse_args()
+    if _a.quality:
+        sys.exit(quality_main(_a))
+    if _a.upload:
+        print("--upload 는 --quality 와 함께만 쓴다(기존 방식은 플래그 없이 올린다)."); sys.exit(2)
+    main(dry_run=_a.dry_run)
