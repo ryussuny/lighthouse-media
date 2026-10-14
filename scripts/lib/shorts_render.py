@@ -18,6 +18,7 @@ KB_ZOOM_END = 1.15      # 장면 재생 중 1.0 -> 1.15 (reels 와 같은 값)
 XFADE_SEC = 0.40        # 장면 사이 크로스페이드
 DARKEN = 0.92           # 배경을 아주 조금만 어둡게 — 글자는 반투명 박스가 받쳐 준다(오너 10/05 "배경이 어둡다" 피드백 반영, reels 는 25% 어둡게)
 SAFE_TOP, SAFE_BOTTOM = 200, 280   # 유튜브 쇼츠 UI가 가리는 위·아래 여백(루브릭 T2)
+BOTTOM_CROP = 0.12         # 원본 이미지 아래 12%를 버린다 — AI 이미지가 우하단에 그려 넣는 서명·로고 문양을 화면에서 없앤다(M2)
 SUB_FONT_PX = 64
 SUB_MAX_CHARS = 16
 TITLE_FONT_PX = 66
@@ -98,6 +99,7 @@ def boxed_layer(text, fnt, rgb, y, box_alpha=150, pad_x=38, pad_y=20, radius=26,
 
 def _cover(path):
     src = Image.open(path).convert("RGB")
+    src = src.crop((0, 0, src.size[0], int(src.size[1] * (1.0 - BOTTOM_CROP))))
     sw, sh = src.size
     scale = max(W / sw, H / sh) * 1.0
     src = src.resize((max(W, int(sw * scale)), max(H, int(sh * scale))), Image.LANCZOS)
