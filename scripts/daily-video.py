@@ -39,7 +39,7 @@ def draw_centered(draw, y, text, font, fill, W, spacing=10):
         y += bb[3]-bb[1] + spacing
     return y
 
-def main(dry_run=False):
+def main(dry_run=False, privacy="unlisted"):
     print("=" * 60)
     print(f"  LIGHTHOUSE MEDIA - Daily Video")
     print(f"  {TODAY}")
@@ -231,7 +231,7 @@ def main(dry_run=False):
             'tags': script.get('tags', ['\ubc88\uc544\uc6c3','\uc790\uae30\uacc4\ubc1c','\ud790\ub9c1','shorts']),
             'categoryId': '22', 'defaultLanguage': 'ko',
         },
-        'status': {'privacyStatus': 'public', 'selfDeclaredMadeForKids': False}
+        'status': {'privacyStatus': privacy, 'selfDeclaredMadeForKids': False}
     }
     media = MediaFileUpload(vpath, mimetype='video/mp4', resumable=True)
     req = yt.videos().insert(part='snippet,status', body=body, media_body=media)
@@ -318,13 +318,14 @@ def main(dry_run=False):
 #   한국어 TTS 나레이션 + AI 배경(Ken Burns) + 나레이션 타이밍 자막 + 제목 공식 + 해시태그 3~6개
 #   - 기본은 dry-run: --upload 를 명시하지 않으면 어디에도 올리지 않는다(루브릭 C2).
 #   - 인스타·페이스북 썸네일 게시는 하지 않는다(이미지 도달 ≈ 0 — 제거 '제안', 적용은 JARVIS·오너 승인 후).
-#   - 편당 비용(TTS+이미지) US$0.20 초과면 호출하지 않는다(루브릭 C1). 단가 출처는 lib/fal_tts.py·lib/fal_visuals.py 주석.
+#   - 편당 비용(Claude 대본·TTS·이미지, 재시도 포함) US$0.30 초과면 호출·업로드하지 않는다(루브릭 C1, master 결정 2026-10-15). 단가 출처는 lib/fal_tts.py·lib/fal_visuals.py 주석.
+#   - 실패는 fail-closed: 어떤 단계든 실패하면 업로드하지 않고 사유를 failures.log 에 남긴다(폴백 없음). 공개 범위 기본 unlisted(--privacy).
 #   - 스케줄러가 부르는 기존 방식(플래그 없음)은 그대로 둔다 — 새 방식은 오너 승인 뒤 daily-video.bat 에 --quality --upload 를 넣을 때 켜진다.
 # ════════════════════════════════════════════════════════════════════════════
 QUALITY_DIR = os.path.join(HOME, "lighthouse-media", "output", "youtube", "quality")
-PER_VIDEO_BUDGET_USD = 0.20
+PER_VIDEO_BUDGET_USD = 0.30                  # 편당 상한(US$) — TTS+이미지(재생성 포함)+Claude 대본(재시도 포함) 합계. master 결정 2026-10-15
 TL_LEAD, TL_GAP, TL_TAIL = 0.10, 0.22, 1.2   # 첫 음성 시작·문장 사이 휴지·끝 여운(초)
-SYLLABLES_MIN, SYLLABLES_MAX = 150, 290       # 루브릭 S1 (≈ 30~55초)
+SYLLABLES_MIN, SYLLABLES_MAX = 175, 290       # 루브릭 S1 (≈ 33~55초; 하한 150은 29초대 영상을 만들어 TTS 뒤에 길이 가드에 걸렸다 — R3에서 175로 올림)
 LEN_MIN, LEN_MAX = 30.0, 55.0                 # 루브릭 L1
 CATEGORY_BGM = {"comfort": "trend-comfort", "motivation": "trend-motivation", "growth": "trend-growth", "healing": "trend-healing"}
 RELIGION_WORDS = ["하나님", "하느님", "주님", "예수", "그리스도", "부처", "스님", "불교", "교회", "성경", "찬송", "아멘", "신앙", "은혜", "천국", "축복", "믿음", "구원", "영혼"]
@@ -354,14 +355,17 @@ def recent_titles(n=14):
 
 
 IMAGE_STYLE_SUFFIX = (", soft painterly illustration, bright well-exposed scene with warm natural daylight or warm lamp light (not dark, not night), calm, vertical composition, "
-                      "no text, no letters, no logo, no emblem, no signature, no stamp, no watermark, no visible human faces (people only from behind or far away), "
+                      "no text, no letters, no readable writing on any paper, book, screen or sign, no logo, no emblem, no signature, no stamp, no watermark, "
+                      "no rope, no cord, no cable, no hanging string, no noose, no visible human faces (people only from behind or far away), "
                       "clean empty floor or soft shadow along the bottom edge")
 IMAGE_RETRY_SUFFIX = ", very bright sunny daylight, light pastel colors, high key lighting"
-IMAGE_FALLBACK_PROMPTS = [  # 3번째 시도: 안전·밝은 정물 장면(첫 두 번이 비었거나 검을 때)
-    "a bright sunlit table by a window with a green plant, a coffee cup and an open notebook",
+IMAGE_FALLBACK_PROMPTS = [  # 3번째 시도: 안전·밝은 야외·창가 장면 — 천장 등·끈·책·서류가 들어갈 틈이 없는 소재(R3: 실내 정물 프롬프트에서 올가미 모양 전등줄·가짜 글자가 계속 나왔다)
     "a quiet sunny park path with trees and soft light, seen from far away",
-    "a tidy bright desk with a lamp, a mug and a small plant near a window",
+    "a bright sunlit windowsill with a green potted plant and a plain white mug, soft daylight",
+    "a wide blue sky with soft white clouds above green treetops",
 ]
+OPEN_Q = "'\"‘“"     # 자막 카드 분할 시 '여는 따옴표'로 보는 글자
+CLOSE_Q = "'\"’”"
 IMG_MIN_MEAN, IMG_MIN_STD = 40.0, 15.0      # 축소 회색조 평균·표준편차 기준 — 검은 장면(평균 0)·거의 단색을 거른다
 IMG_MAX_ATTEMPTS = 3
 VIDEO_MIN_SECOND_MEAN = 30.0                # 완성본 초당 샘플 평균 밝기(0~255)가 이보다 낮으면 업로드하지 않는다
@@ -369,7 +373,8 @@ SETTINGS = ["출근길 버스 안", "점심시간 혼자 먹는 식당 구석", 
             "이직 면접 전날 저녁 책상 앞", "카페에서 메신저 알림을 보는 순간", "비 오는 날 정류장 우산 아래", "점심 뒤 사무실 자리", "퇴근 후 현관 신발장 앞", "아침 출근 준비하며 창밖을 보는 순간"]
 SCIENCE_RE = re.compile(r"뇌|호르몬|신경(?!\s*(?:쓰|써))|세로토닌|코르티솔|도파민|심리학|심리적으로|과학적|의학|진단|증상|우울증|불안장애|면역|생리")
 ASSERT_RE = re.compile(r"사실은|사실 .{0,10}(?:거예요|거에요|이에요|입니다)|항상|절대|반드시|누구나|모든 사람|무조건|뿐이에요|뿐입니다|(?:두려운|무서운|겁나는|외로운|불안한|무거운)\s*거(?:예요|에요)")
-BAD_IMAGE_WORDS = re.compile(r"\b(bed|bedroom|sheets?|pillow|blanket|night|midnight|dark|dim|naked|bath|bathroom|shower|body|hospital)\b", re.I)
+BAD_IMAGE_WORDS = re.compile(r"\b(bed|bedroom|sheets?|pillow|blanket|night|midnight|dark|dim|naked|bath|bathroom|shower|body|hospital|"
+                             r"rope|ropes|cord|cords|noose|cable|cables|string|strings|hanging|text|letters?|writing|written|words?|signs?|poster|newspaper|magazine|label|papers?|documents?|folders?|books?|notebooks?|journals?|diary|screens?|laptops?|monitors?|pens?)\b", re.I)
 CLAUDE_PRICE_PER_MTOK = (3.0, 15.0)  # (입력, 출력) US$/백만 토큰 — claude-sonnet-4-6 단가를 이 저장소에서 확인하지 못해 Sonnet 계열 공시가로 가정한 값 [미확인]
 
 
@@ -382,6 +387,9 @@ def _syllables(text):
     return len(re.findall(r"[가-힣]", text))
 
 
+CLAUDE_SPENT = {"input_tokens": 0, "output_tokens": 0, "calls": 0}   # 이 프로세스의 모든 Claude 호출(JSON 파싱 실패·검사 탈락 재시도 포함) 누적 토큰 — 비용 게이트·실패 로그용
+
+
 def claude_json(prompt, tries=3, max_t=3500):
     """Claude 호출 → (JSON 객체, usage). 형식이 깨지면 최대 tries회 재시도. 실패하면 예외."""
     last = None
@@ -390,6 +398,10 @@ def claude_json(prompt, tries=3, max_t=3500):
             "x-api-key": API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json",
         }, json={"model": "claude-sonnet-4-6", "max_tokens": max_t, "messages": [{"role": "user", "content": prompt}]}, timeout=120)
         j = r.json()
+        _u = j.get("usage") or {}
+        CLAUDE_SPENT["calls"] += 1
+        CLAUDE_SPENT["input_tokens"] += _u.get("input_tokens", 0) or 0
+        CLAUDE_SPENT["output_tokens"] += _u.get("output_tokens", 0) or 0
         if "content" not in j:
             last = f"API 응답 이상: {str(j)[:200]}"
             print(f"  Claude 호출 실패({attempt}/{tries}): {last}")
@@ -418,9 +430,9 @@ def quality_prompt(topic, feedback="", recent=(), setting=""):
         "제목 공식 중 하나를 골라라: A) 대상+특징/행동 수('…한 사람들의 3가지 특징') B) 궁금증·숨김('…가 끝까지 숨기는 것') C) 세대·대상 호명('30대에게 꼭 전하고 싶은 말') D) 숫자 약속('…하면 달라지는 하루 습관 3가지'). "
         "제목은 15~30자, 과장·허위 약속 금지. 제목에 숫자가 있으면(예: 3가지) 본론에서 정확히 그만큼의 항목을 '첫째, … 둘째, … 셋째, …'로 말한다. "
         "첫 문장은 제목 문구를 거의 그대로 말하고, title_lines는 제목을 줄여 둘로 나눈 것이다(제목에 없는 말 금지).\n\n"
-        "분량: 문장 8~14개, 문장당 40자 이하(쓴 뒤 글자 수를 세어 40자를 넘으면 반드시 둘로 쪼갠다; 첫 문장은 30자 이하), 전체 한글 음절 150~290개(약 30~55초 나레이션). 소리 내어 읽기 편한 짧은 문장. 숫자는 '3가지'처럼 말로 읽히게 쓴다.\n"
+        "분량: 문장 8~14개, 문장당 40자 이하(쓴 뒤 글자 수를 세어 40자를 넘으면 반드시 둘로 쪼갠다; 첫 문장은 30자 이하), 전체 한글 음절 175~290개(약 33~55초 나레이션). 소리 내어 읽기 편한 짧은 문장. 숫자는 '3가지'처럼 말로 읽히게 쓴다.\n"
         "장면: 5~7장면. 각 장면에 문장 2개 안팎을 묶는다(sentences[].scene = 장면 번호 0부터, 순서대로 같거나 커진다). "
-        "각 장면의 image_prompt는 영어로, 사람 얼굴 없는 구체적이고 **밝은 낮** 장면(창가, 길, 책상, 공원, 카페 등) 한 문장. 밤·어둠·침대·침실·이불·욕실·병원·신체 장면은 쓰지 마라(어둡거나 이미지 안전필터가 빈 이미지를 낼 수 있다).\n\n"
+        "각 장면의 image_prompt는 영어로, 사람 얼굴 없는 구체적이고 **밝은 낮** 장면(창가, 길, 책상, 공원, 카페 등) 한 문장. 밤·어둠·침대·침실·이불·욕실·병원·신체 장면은 쓰지 마라(어둡거나 이미지 안전필터가 빈 이미지를 낼 수 있다). 밧줄·끈·줄·케이블·매달린 물건(rope, cord, noose, cable, string)과 글자가 보이는 물건(text, letters, sign, poster, magazine, newspaper, paper, document, folder, book, notebook, journal, laptop, screen, pen)도 image_prompt에 쓰지 마라(자해를 연상시키거나 이미지에 알아볼 수 없는 가짜 글자가 그려진다). 창가·햇빛·식물·머그컵·의자·길·나무·하늘처럼 글자가 들어갈 수 없는 소재로 그린다.\n\n"
         "JSON만 출력(설명 금지):\n"
         "{\"title\":\"15~30자 제목\",\"title_lines\":[\"화면 위 제목 1줄(14자 이하)\",\"2줄(14자 이하)\"],\"formula\":\"A|B|C|D\","
         "\"category\":\"comfort|motivation|growth|healing\","
@@ -477,15 +489,28 @@ def validate_script(s):
     if m: p.append(f"과학·의학·심리학 단정 표현 '{m.group(0)}'(원인·생리 작용을 말하지 말고 경험 표현으로)")
     m = ASSERT_RE.search(spoken)
     if m: p.append(f"단정 표현 '{m.group(0)}'('~일 수 있어요'·'~해 보세요'로 완화)")
+    meta_txt = " ".join([s.get("description_hook", ""), s.get("description_body", ""), " ".join(s.get("tags", [])), " ".join(s.get("hashtags", []))])
+    for rx, what in ((UNSOURCED_RE, "근거 없는 단정 가능 표현"), (NAMED_PERSON_RE, "실존 인물·인용 표현"), (SCIENCE_RE, "과학·의학·심리학 단정 표현"), (ASSERT_RE, "단정 표현")):
+        m = rx.search(meta_txt)   # 제목은 위 spoken 검사에 이미 들어 있고, 설명·태그·해시태그에도 같은 검사를 건다(R3)
+        if m: p.append(f"설명·태그·해시태그에 {what} '{m.group(0)}'")
     for k, sc in enumerate(s["scenes"]):
         mb = BAD_IMAGE_WORDS.search(sc.get("image_prompt", ""))
         if mb: p.append(f"장면 {k} image_prompt에 '{mb.group(0)}' — 어둡거나 이미지 안전필터가 빈 이미지를 낼 수 있는 소재 금지(밝은 낮의 창가·책상·길·자연)")
     # 제목의 약속을 지키는가(루브릭 H2): 숫자 약속이면 그만큼 항목을 말하고, 첫 문장·화면 제목은 제목과 같은 말이어야 한다
-    m = re.search(r"(\d+)\s*(?:가지|개)", title)
-    if m and 2 <= int(m.group(1)) <= 5:
-        ords = ["첫째", "둘째", "셋째", "넷째", "다섯째"][:int(m.group(1))]
-        miss = [o for o in ords if o not in spoken]
-        if miss: p.append(f"제목이 {m.group(1)}가지를 약속하는데 대본에 {miss}가 없다(항목마다 '첫째, 둘째…'로 말해라)")
+    m = re.search(r"(\d+|두|세|네|다섯)\s*(?:가지|개)", title)
+    if m:
+        n_promise = {"두": 2, "세": 3, "네": 4, "다섯": 5}.get(m.group(1)) or int(m.group(1))
+        if 2 <= n_promise <= 5:
+            all_ords = ["첫째", "둘째", "셋째", "넷째", "다섯째", "여섯째"]
+            ords = all_ords[:n_promise]
+            miss = [o for o in ords if o not in spoken]
+            extra = [o for o in all_ords[n_promise:] if o in spoken]
+            pos = [spoken.find(o) for o in ords if o in spoken]
+            dup = [o for o in ords if spoken.count(o) > 1]
+            if miss: p.append(f"제목이 {n_promise}가지를 약속하는데 대본에 {miss}가 없다(항목마다 '첫째, 둘째…'로 말해라)")
+            if extra: p.append(f"제목이 {n_promise}가지를 약속하는데 대본에 {extra}까지 나온다(약속한 개수와 본문 항목 수가 같아야 한다)")
+            if dup: p.append(f"항목 표시 {dup}가 두 번 이상 나온다")
+            if pos != sorted(pos): p.append("첫째·둘째… 순서가 뒤바뀌었다")
 
     def _bigrams(t):
         t = re.sub(r"[^가-힣]", "", t)
@@ -541,22 +566,184 @@ def image_ok(path):
     return (m >= IMG_MIN_MEAN and sd >= IMG_MIN_STD), m, sd
 
 
+VISION_CALL_RESERVE_USD = 0.012   # 이미지 1장 비전 검사 호출 1회의 예약 비용(실측 토큰은 CLAUDE_SPENT 에 합산된다 — 이 값은 호출 전 게이트용 상한 추정)
+VISION_PROMPT = (
+    "이 이미지는 지친 직장인을 위로하는 쇼츠의 배경 그림이다. 아래를 엄격히 판정해 JSON만 출력하라(설명 금지).\n"
+    "{\"rope_or_noose\": 밧줄·끈·줄·사슬·체인·케이블·전선·매달린 고리·올가미·목을 맨다고 읽힐 수 있는 모양이 하나라도 보이면 true(식물 줄기·창틀·커튼 끈처럼 분명히 무해한 것만 false),"
+    "\"text_or_logo\": 간판·포스터·책 표지·서류·라벨·상표·서명·워터마크에 글자나 글자처럼 보이는 무늬(알아볼 수 없게 뭉개진 것 포함)가 눈에 띄게 보이면 true,"
+    "\"face\": 또렷한 사람 얼굴이 보이면 true,"
+    "\"unsafe_other\": 자해·폭력·무기·피·병원 도구·어둡고 섬뜩한 분위기 중 하나라도 있으면 true,"
+    "\"note\": 근거 한 줄}"
+)
+
+
+def image_vision_problems(path):
+    """생성 이미지를 Claude 비전으로 검사(올가미·밧줄·가짜 글자·얼굴·위험 요소). 반환: 문제 목록(빈 목록 = 통과).
+    호출·파싱이 실패하면 통과로 보지 않는다(fail-closed). 렌더에서 잘려 나가는 아래 12%는 빼고 본다. 토큰은 CLAUDE_SPENT 에 합산."""
+    import base64, io, sys as _sys
+    _sys.path.insert(0, os.path.join(HOME, "lighthouse-media", "scripts", "lib"))
+    import shorts_render as R
+    try:
+        im = Image.open(path).convert("RGB")
+        w, h = im.size
+        im = im.crop((0, 0, w, int(h * (1 - R.BOTTOM_CROP)))).resize((512, int(512 * h * (1 - R.BOTTOM_CROP) / w)))
+        buf = io.BytesIO(); im.save(buf, "JPEG", quality=85)
+        b64 = base64.b64encode(buf.getvalue()).decode()
+        r = requests.post("https://api.anthropic.com/v1/messages", headers={"x-api-key": API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+                          json={"model": "claude-sonnet-4-6", "max_tokens": 300, "messages": [{"role": "user", "content": [
+                              {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": b64}}, {"type": "text", "text": VISION_PROMPT}]}]}, timeout=90)
+        j = r.json()
+        u = j.get("usage") or {}
+        CLAUDE_SPENT["calls"] += 1
+        CLAUDE_SPENT["input_tokens"] += u.get("input_tokens", 0) or 0
+        CLAUDE_SPENT["output_tokens"] += u.get("output_tokens", 0) or 0
+        raw = j["content"][0]["text"]
+        v = json.loads(raw[raw.find("{"):raw.rfind("}") + 1])
+    except Exception as e:
+        return [f"비전 검사 실패({type(e).__name__}: {str(e)[:120]}) — 검사하지 못했으므로 통과로 보지 않는다"]
+    probs = []
+    if v.get("rope_or_noose"): probs.append("밧줄·끈·올가미 형상")
+    if v.get("text_or_logo"): probs.append("글자·로고·서명 형상")
+    if v.get("face"): probs.append("또렷한 얼굴")
+    if v.get("unsafe_other"): probs.append("위험·섬뜩한 요소")
+    if probs: probs.append("근거: " + str(v.get("note", ""))[:100])
+    return probs
+
+
 def video_dark_problems(path, ffmpeg):
     """완성본 관문(M1): ffmpeg blackdetect + 초당 샘플 평균 밝기. 문제 목록(빈 목록 = 통과)."""
     probs = []
     r = subprocess.run([ffmpeg, "-hide_banner", "-nostats", "-i", path, "-an", "-vf", "blackdetect=d=0.5:pic_th=0.90:pix_th=0.15", "-f", "null", "-"],
                        capture_output=True, text=True, encoding="utf-8", errors="ignore")
+    if r.returncode != 0: probs.append(f"blackdetect 실행 실패(ffmpeg 종료 코드 {r.returncode}) — 검사하지 못했으므로 통과로 보지 않는다")
     segs = re.findall(r"black_start:([\d.]+) black_end:([\d.]+)", r.stderr)
     if segs: probs.append(f"blackdetect 검은 구간 {segs}")
     r = subprocess.run([ffmpeg, "-v", "error", "-i", path, "-an", "-vf", "fps=1,scale=16:28,format=gray", "-f", "rawvideo", "-"], capture_output=True)
     fr = 16 * 28
     data = r.stdout
+    if r.returncode != 0 or len(data) < fr: probs.append("초당 밝기 샘플을 얻지 못했다(ffmpeg 실패) — 통과로 보지 않는다")
     dark = []
     for k in range(len(data) // fr):
         chunk = data[k * fr:(k + 1) * fr]
         if sum(chunk) / fr < VIDEO_MIN_SECOND_MEAN: dark.append(k)
     if dark: probs.append(f"초당 평균 밝기 {VIDEO_MIN_SECOND_MEAN:.0f} 미만인 초 {dark}")
     return probs
+
+
+def _ffprobe_bin():
+    return FFMPEG.replace("ffmpeg.exe", "ffprobe.exe") if FFMPEG.endswith("ffmpeg.exe") else "ffprobe"
+
+
+def video_spec_problems(path):
+    """업로드 전 규격 관문: h264 1080x1920 + aac + 길이 LEN_MIN~LEN_MAX. ffprobe 실패도 문제로 본다(fail-closed)."""
+    try:
+        r = subprocess.run([_ffprobe_bin(), "-v", "error", "-show_entries", "stream=codec_type,codec_name,width,height:format=duration", "-of", "json", path],
+                           capture_output=True, text=True, encoding="utf-8", errors="ignore")
+        if r.returncode != 0: return [f"ffprobe 실행 실패(종료 코드 {r.returncode})"]
+        j = json.loads(r.stdout)
+    except Exception as e:
+        return [f"ffprobe 실행 실패: {e}"]
+    probs = []
+    st = j.get("streams", [])
+    v = [x for x in st if x.get("codec_type") == "video"]
+    a = [x for x in st if x.get("codec_type") == "audio"]
+    if not v or v[0].get("codec_name") != "h264" or (v[0].get("width"), v[0].get("height")) != (1080, 1920):
+        probs.append(f"영상 스트림이 h264 1080x1920이 아니다: {v[:1]}")
+    if not a or a[0].get("codec_name") != "aac": probs.append(f"오디오 스트림이 aac가 아니다: {a[:1]}")
+    try:
+        dur = float(j["format"]["duration"])
+        if not (LEN_MIN <= dur <= LEN_MAX): probs.append(f"길이 {dur:.1f}s — {LEN_MIN:.0f}~{LEN_MAX:.0f}초 밖")
+    except Exception:
+        probs.append("길이를 읽지 못했다")
+    return probs
+
+
+def cost_gate(claude_usd, tts_usd, image_usd, budget=None):
+    """편당 비용 게이트: Claude 대본(재시도 포함) + TTS + 이미지(재생성 포함) 합계가 상한을 넘으면 (False, 합계). 상한 이하면 (True, 합계)."""
+    budget = PER_VIDEO_BUDGET_USD if budget is None else budget
+    total = round(claude_usd + tts_usd + image_usd, 5)
+    return total <= budget, total
+
+
+def _log_failure(name, code, reason):
+    """fail-closed 기록 — 업로드하지 않은 이유를 failures.log 에 남긴다(폴백 없음: 그날은 건너뛴다)."""
+    msg = f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {name} exit={code} 업로드 안 함: {reason}"
+    print("  [fail-closed] " + msg)
+    try:
+        os.makedirs(QUALITY_DIR, exist_ok=True)
+        with open(os.path.join(QUALITY_DIR, "failures.log"), "a", encoding="utf-8") as f:
+            f.write(msg + "\n")
+    except OSError:
+        pass
+    return code
+
+
+def finalize_and_upload(final, script, tl, name, dry, privacy, spent_usd, ffmpeg=None, upload_fn=None):
+    """6단계: 완성본 관문(blackdetect·밝기·규격)과 비용 합계를 모두 통과해야만 업로드 함수를 부른다. 반환: 종료 코드.
+    관문이 하나라도 실패하거나 검사 자체가 실패하면 upload_fn 은 호출되지 않는다(fail-closed)."""
+    ffmpeg = ffmpeg or FFMPEG
+    upload_fn = upload_fn or upload_youtube_quality
+    print("\n[6/6] Upload...")
+    try:
+        gate = video_dark_problems(final, ffmpeg) + video_spec_problems(final)
+    except Exception as e:
+        gate = [f"완성본 관문 실행 예외: {e}"]
+    print(f"  [완성본 관문] blackdetect·초당 밝기·규격: {'통과' if not gate else '실패 — ' + '; '.join(gate)}")
+    if gate: return _log_failure(name, 4, "완성본 관문 실패 — " + "; ".join(gate))
+    if spent_usd > PER_VIDEO_BUDGET_USD: return _log_failure(name, 2, f"실제 누적 비용 ${spent_usd:.4f} > 상한 ${PER_VIDEO_BUDGET_USD:.2f}")
+    if dry:
+        print("  DRY-RUN — 업로드 생략(유튜브·인스타·페이스북 모두). 올리려면 --quality --upload (오너 승인 후)")
+        return 0
+    try:
+        upload_fn(final, script, tl, privacy)
+    except Exception as e:
+        return _log_failure(name, 6, f"업로드 호출 예외: {e}")
+    try:  # 올린 제목 기록(다음 대본이 겹치지 않게) — 업로드한 때만
+        h = recent_titles(200) + [script["title"]]
+        json.dump(h, open(HISTORY_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    except OSError:
+        pass
+    print("  (인스타·페이스북 썸네일 게시는 품질 모드에서 하지 않는다)")
+    return 0
+
+
+def split_cards(text, max_lines=2, max_chars=16):
+    """자막 카드 나누기 — shorts_render.split_sentence 와 같은 규칙에 '따옴표 안에서는 카드를 끊지 않는다'를 더했다(R3: "'지금은" 처럼 인용이 카드 사이에서 잘리던 문제).
+    반환: [(카드 텍스트(줄바꿈 포함), 글자수)]."""
+    import sys as _sys
+    _sys.path.insert(0, os.path.join(HOME, "lighthouse-media", "scripts", "lib"))
+    import shorts_render as R
+    lines = R.wrap_chars(text, max_chars)
+    if len(lines) <= max_lines:
+        return [("\n".join(lines), sum(len(x) for x in lines))]
+    n_cards = -(-len(lines) // max_lines)
+    words = text.split()
+    total = sum(len(w) for w in words) or 1
+    groups, cur, acc = [], [], 0
+    quote_open, quote_start = False, 0
+    for w in words:
+        for ch in w:
+            if ch in OPEN_Q and not quote_open:
+                quote_open, quote_start = True, len(cur)
+            elif ch in CLOSE_Q and quote_open:
+                quote_open = False
+        cur.append(w)
+        acc += len(w)
+        if len(groups) < n_cards - 1 and acc >= total * (len(groups) + 1) / n_cards:
+            if quote_open:
+                if quote_start > 0:        # 따옴표가 열린 낱말 앞에서 끊는다
+                    groups.append(cur[:quote_start])
+                    cur, quote_start = cur[quote_start:], 0
+                continue                   # 앞에 낱말이 없으면 따옴표가 닫힐 때까지 미룬다
+            groups.append(cur)
+            cur = []
+    if cur:
+        groups.append(cur)
+    cards = []
+    for g in groups:
+        ls = R.wrap_chars(" ".join(g), max_chars)
+        cards.append(("\n".join(ls), sum(len(x) for x in ls)))
+    return cards
 
 
 def speech_bounds(path, ffmpeg):
@@ -599,7 +786,7 @@ def build_timeline(script, chunks):
     # 자막 카드: 한 문장 안에서 글자 수 비례로 시간 배분(문장이 길어도 음성 구간 밖으로 안 나간다)
     subs = []
     for s in sents:
-        cards = R.split_sentence(s["text"])
+        cards = split_cards(s["text"])
         wsum = sum(c[1] for c in cards) or 1
         cur = s["start"]
         for k, (txt, wn) in enumerate(cards):
@@ -641,7 +828,7 @@ def mux_audio(silent, tl, bgm_path, out_path, ffmpeg):
     return out_path
 
 
-def upload_youtube_quality(vpath, script, tl):
+def upload_youtube_quality(vpath, script, tl, privacy="unlisted"):
     """품질 모드 유튜브 업로드(--upload 명시 때만 호출). 인스타·페이스북은 올리지 않는다."""
     from google.oauth2.credentials import Credentials
     from google.auth.transport.requests import Request
@@ -656,11 +843,11 @@ def upload_youtube_quality(vpath, script, tl):
     tags_line = " ".join(script["hashtags"] + ["#shorts"])
     desc = f"{script['description_hook']}\n\n{script['description_body']}\n\n—\n류선희 | Lighthouse Media\n\n{tags_line}"
     body = {"snippet": {"title": script["title"] + " #shorts", "description": desc, "tags": script["tags"], "categoryId": "22", "defaultLanguage": "ko"},
-            "status": {"privacyStatus": "public", "selfDeclaredMadeForKids": False}}
+            "status": {"privacyStatus": privacy, "selfDeclaredMadeForKids": False}}
     req = yt.videos().insert(part="snippet,status", body=body, media_body=MediaFileUpload(vpath, mimetype="video/mp4", resumable=True))
     resp = None
     while resp is None: _, resp = req.next_chunk()
-    print(f"    https://youtube.com/shorts/{resp['id']}")
+    print(f"    https://youtube.com/shorts/{resp['id']}  (공개 범위: {privacy})")
     return resp["id"]
 
 
@@ -671,7 +858,7 @@ def quality_main(args):
     if args.upload and args.dry_run:
         print("--upload 와 --dry-run 을 함께 줄 수 없다(모순). 하나만 지정한다."); return 2
     dry = not args.upload
-    name = args.name or f"quality-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    name = args.name = args.name or f"quality-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     work = os.path.join(QUALITY_DIR, "work", name)
     os.makedirs(work, exist_ok=True)
     print("=" * 60)
@@ -685,22 +872,23 @@ def quality_main(args):
     setting = SETTINGS[abs(hash_str(name + args.topic)) % len(SETTINGS)]
     print(f"  주제: {args.topic} / 구체 상황 배경 힌트: {setting}")
     script, usage = generate_script(args.topic, setting)
+    usage = {**usage, **{k: CLAUDE_SPENT[k] for k in ("input_tokens", "output_tokens")}, "api_calls": CLAUDE_SPENT["calls"]}   # 재시도·JSON 재요청까지 전부 합친 값
     claude_usd = claude_cost_usd(usage)
     print(f"  Title: {script['title']}  (공식 {script.get('formula')})  Claude 시도 {usage['attempts']}회, 토큰 in/out = {usage['input_tokens']}/{usage['output_tokens']} ≈ ${claude_usd:.4f} (단가 가정 {CLAUDE_PRICE_PER_MTOK} US$/MTok [미확인])")
     n_img = len(script["scenes"])
     tts_chars = sum(len(s["text"].strip()) for s in script["sentences"])
     est = {"tts": T.estimate_tts_cost(tts_chars), "image": round(n_img * fv.IMAGE_MODEL_COST_USD, 5)}
-    est["total"] = round(est["tts"] + est["image"], 5)
-    print(f"  [비용미리보기] TTS {tts_chars}자 ${est['tts']:.4f} + 이미지 {n_img}장 ${est['image']:.4f} = ${est['total']:.4f} (한도 ${PER_VIDEO_BUDGET_USD:.2f})")
-    if est["total"] > PER_VIDEO_BUDGET_USD:
-        print("  [비용게이트] 편당 예산 초과 — 호출하지 않는다. master 보고 대상"); return 2
+    ok_cost, est["total"] = cost_gate(claude_usd, est["tts"], est["image"])
+    print(f"  [비용미리보기] Claude 대본 ${claude_usd:.4f}(API {usage['api_calls']}회) + TTS {tts_chars}자 ${est['tts']:.4f} + 이미지 {n_img}장 ${est['image']:.4f} = ${est['total']:.4f} (상한 ${PER_VIDEO_BUDGET_USD:.2f})")
+    if not ok_cost:
+        return _log_failure(name, 2, f"비용 게이트: 예상 ${est['total']:.4f} > 상한 ${PER_VIDEO_BUDGET_USD:.2f} — TTS·이미지를 호출하지 않았다")
 
     # 2. 나레이션
     print("\n[2/6] Narration (fal TTS)...")
     chunks, err = T.synth_chunks([s["text"].strip() for s in script["sentences"]], os.path.join(work, "tts"), name, PER_VIDEO_BUDGET_USD,
-                                 voice=args.voice, speed=args.speed)
+                                 voice=args.voice, speed=args.speed, spent_usd=claude_usd)
     if not chunks:
-        print("  FAIL:", err); return 1
+        return _log_failure(name, 1, f"TTS 실패: {err}")
     for c in chunks:
         c["dur"] = _ffprobe_duration(c["path"])
         c["off0"], c["off1"] = speech_bounds(c["path"], FFMPEG)
@@ -715,22 +903,22 @@ def quality_main(args):
     odd = [round(x["end"] - x["start"], 1) for x in tl["scenes"] if not (3.0 <= x["end"] - x["start"] <= 10.0)]
     if odd: print(f"  [장면 길이 주의] 3~10초 밖의 장면 {odd}s — 루브릭 G1")
     if not (LEN_MIN <= tl["total"] <= LEN_MAX):
-        print(f"  [길이 경고] {tl['total']:.1f}s — 루브릭 L1은 {LEN_MIN:.0f}~{LEN_MAX:.0f}초. 이미지 호출 전에 중단한다(--speed 조정 또는 대본 재생성)."); return 3
+        print(f"  [길이 경고] {tl['total']:.1f}s — 루브릭 L1은 {LEN_MIN:.0f}~{LEN_MAX:.0f}초. 이미지 호출 전에 중단한다(--speed 조정 또는 대본 재생성)."); return _log_failure(name, 3, f"길이 {tl['total']:.1f}s가 {LEN_MIN:.0f}~{LEN_MAX:.0f}초 밖")
 
     # 4. 배경 이미지
     print("\n[3/6] Background images (fal)...")
     img_dir = os.path.join(work, "img"); os.makedirs(img_dir, exist_ok=True)
     key = fv.load_fal_key()
     if not key:
-        print("  FAIL: FAL_KEY 없음"); return 1
+        return _log_failure(name, 1, "FAL_KEY 없음")
     paths, img_calls, img_log = [], 0, []
     for i, sc in enumerate(script["scenes"]):
         base = sc["image_prompt"].strip().rstrip(".")
         variants = [base + IMAGE_STYLE_SUFFIX, base + IMAGE_RETRY_SUFFIX + IMAGE_STYLE_SUFFIX, IMAGE_FALLBACK_PROMPTS[i % len(IMAGE_FALLBACK_PROMPTS)] + IMAGE_STYLE_SUFFIX]
         out, got = None, None
         for att, prompt in enumerate(variants[:IMG_MAX_ATTEMPTS], 1):
-            if T.estimate_tts_cost(tts_chars) + (img_calls + 1) * fv.IMAGE_MODEL_COST_USD > PER_VIDEO_BUDGET_USD:
-                print(f"  [비용게이트] 이미지 재시도로 편당 예산 ${PER_VIDEO_BUDGET_USD:.2f}을 넘게 되어 중단"); return 2
+            if not cost_gate(claude_cost_usd(CLAUDE_SPENT) + VISION_CALL_RESERVE_USD, est["tts"], (img_calls + 1) * fv.IMAGE_MODEL_COST_USD)[0]:
+                return _log_failure(name, 2, f"비용 게이트: 이미지 재시도 {img_calls + 1}번째 호출이면 상한 ${PER_VIDEO_BUDGET_USD:.2f}을 넘는다(Claude·TTS 포함)")
             img_calls += 1
             outp, err = fv.generate_scene_image(prompt, os.path.join(img_dir, f"scene_{i:02d}.png"), key=key)
             if not outp:
@@ -738,13 +926,19 @@ def quality_main(args):
             ok, m, sd = image_ok(outp)
             img_log.append({"scene": i, "attempt": att, "mean": m, "std": sd, "ok": ok})
             print(f"  장면 {i} 시도 {att}: 평균 {m} 표준편차 {sd} → {'OK' if ok else '불량(검거나 단색) — 다시 만든다'}")
-            if ok:
+            if not ok: continue
+            vp = image_vision_problems(outp)
+            img_log[-1]["vision"] = vp
+            print(f"    비전 검사: {'통과' if not vp else '불량 — ' + ' / '.join(vp) + ' — 다시 만든다'}")
+            if not vp:
                 out = outp; break
         if not out:
-            print(f"  FAIL 장면 {i}: {IMG_MAX_ATTEMPTS}번 모두 빈/검은 이미지이거나 실패 — 업로드하지 않고 중단"); return 1
+            return _log_failure(name, 1, f"장면 {i}: {IMG_MAX_ATTEMPTS}번 모두 빈/검은 이미지·비전 검사 탈락(올가미·가짜 글자 등)이거나 생성 실패")
         paths.append(out)
     est["image"] = round(img_calls * fv.IMAGE_MODEL_COST_USD, 5)
-    est["total"] = round(est["tts"] + est["image"], 5)
+    claude_usd = claude_cost_usd(CLAUDE_SPENT)   # 대본 + 이미지 비전 검사까지 실측 토큰으로 다시 계산
+    usage = {**usage, "input_tokens": CLAUDE_SPENT["input_tokens"], "output_tokens": CLAUDE_SPENT["output_tokens"], "api_calls": CLAUDE_SPENT["calls"]}
+    est["total"] = cost_gate(claude_usd, est["tts"], est["image"])[1]
     print(f"  이미지 호출 {img_calls}회(장면 {n_img}장 + 재생성 {img_calls - n_img}회) = ${est['image']:.4f}")
     fv.log_run_cost("quality_image_batch", fv.IMAGE_MODEL, img_calls, est["image"], reel_name=name)
     for sc, pth in zip(tl["scenes"], paths): sc["image"] = pth
@@ -763,32 +957,27 @@ def quality_main(args):
     final = os.path.join(QUALITY_DIR, name + ".mp4")
     mux_audio(silent, tl, os.path.join(bgm_dir, bgm), final, FFMPEG)
     print(f"  OK {final}  {os.path.getsize(final) / 1048576:.1f}MB")
-    gate = video_dark_problems(final, FFMPEG)
-    print(f"  [완성본 관문] blackdetect·초당 밝기: {'통과' if not gate else '실패 — ' + '; '.join(gate)}")
-
     report = {"name": name, "topic": args.topic, "script": script, "timeline": {k: v for k, v in tl.items() if k != "sentences"},
               "sentences": [{k: v for k, v in s.items() if k != "audio"} for s in tl["sentences"]],
               "voice": {"model": T.TTS_MODEL, "voice": args.voice or T.DEFAULT_VOICE, "speed": args.speed if args.speed is not None else T.DEFAULT_SPEED,
                         "voice_sec": round(voice_s, 2), "span_sec": round(span, 2), "syllables": syl, "syll_per_s": round(syl / span, 2), "syll_per_s_excl_gaps": round(syl / voice_s, 2)},
               "cost_usd": {**est, "image_calls": img_calls, "claude_tokens": usage, "claude_usd_est": claude_usd, "claude_price_assumed_per_mtok": CLAUDE_PRICE_PER_MTOK,
-                           "total_incl_claude": round(est["total"] + claude_usd, 4), "pricing": T.TTS_PRICING_SOURCE},
-              "setting_hint": setting, "image_checks": img_log, "gate_problems": gate, "bgm": bgm, "dry_run": dry}
+                           "total_incl_claude": est["total"], "budget_usd": PER_VIDEO_BUDGET_USD, "pricing": T.TTS_PRICING_SOURCE},
+              "setting_hint": setting, "image_checks": img_log, "bgm": bgm, "dry_run": dry, "privacy": args.privacy}
+    code = finalize_and_upload(final, script, tl, name, dry, args.privacy, est["total"])
+    report["gate_exit_code"] = code
     json.dump(report, open(os.path.join(QUALITY_DIR, name + ".json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    return code
 
-    print("\n[6/6] Upload...")
-    if gate:
-        print("  완성본 관문 실패 — 업로드하지 않는다."); return 4
-    if dry:
-        print("  DRY-RUN — 업로드 생략(유튜브·인스타·페이스북 모두). 올리려면 --quality --upload (오너 승인 후)")
-        return 0
-    upload_youtube_quality(final, script, tl)
-    try:  # 올린 제목 기록(다음 대본이 겹치지 않게) — 업로드한 때만
-        h = recent_titles(200) + [script["title"]]
-        json.dump(h, open(HISTORY_PATH, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    except OSError:
-        pass
-    print("  (인스타·페이스북 썸네일 게시는 품질 모드에서 하지 않는다)")
-    return 0
+
+def run_quality(args):
+    """fail-closed 최상위: 어떤 예외든 업로드 없이 사유를 남기고 비영 종료 코드를 돌려준다(폴백 없음 — 그날은 건너뛴다)."""
+    name = args.name or "quality-unnamed"
+    try:
+        return quality_main(args)
+    except BaseException as e:   # noqa: B036 — KeyboardInterrupt 포함, 어떤 중단이든 업로드로 이어지지 않는다
+        cs = CLAUDE_SPENT
+        return _log_failure(name, 5, f"{type(e).__name__}: {str(e)[:300]} (Claude 호출 {cs['calls']}회, 토큰 in/out {cs['input_tokens']}/{cs['output_tokens']} ≈ ${claude_cost_usd(cs):.4f})")
 
 
 def parse_args(argv=None):
@@ -801,6 +990,7 @@ def parse_args(argv=None):
     ap.add_argument("--voice", default=None)
     ap.add_argument("--speed", type=float, default=None)
     ap.add_argument("--name", default=None)
+    ap.add_argument("--privacy", choices=["public", "unlisted", "private"], default="unlisted", help="유튜브 공개 범위(기본 unlisted=일부공개). 기존 방식·--quality 업로드 둘 다에 적용")
     return ap.parse_args(argv)
 
 
@@ -809,9 +999,9 @@ if __name__ == "__main__":
     if _a.quality:
         if _a.upload and _a.dry_run:
             print("--upload 와 --dry-run 을 함께 줄 수 없다(모순). 하나만 지정한다."); sys.exit(2)
-        sys.exit(quality_main(_a))
+        sys.exit(run_quality(_a))
     if _a.upload and _a.dry_run:
         print("--upload 와 --dry-run 을 함께 줄 수 없다(모순)."); sys.exit(2)
     if _a.upload:
         print("--upload 는 --quality 와 함께만 쓴다(기존 방식은 플래그 없이 올린다)."); sys.exit(2)
-    main(dry_run=_a.dry_run)
+    main(dry_run=_a.dry_run, privacy=_a.privacy)
