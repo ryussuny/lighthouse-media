@@ -423,26 +423,28 @@ def quality_prompt(topic, feedback="", recent=(), setting=""):
         "타겟: 지친 20~40대 직장인(공감하는 말투). 톤: 따뜻하고 지적이며 실용적. 존댓말(~해요/~입니다) 한 가지로 통일.\n"
         "브랜드 원칙: 종교 색 없이 보편적인 자기돌봄 조언. 하나님·기도·부처·스님·교회·신앙 같은 말 금지.\n"
         "근거 원칙: 통계·퍼센트·'연구에 따르면'·박사/교수/전문가·실존 인물의 말 인용·'~하면 낫는다/성공한다' 같은 보장 표현은 쓰지 마라(출처 없는 단정 금지). "
-        "과학·의학·심리학 단정도 금지: 뇌·호르몬·신경·심리학·과학적으로 같은 말로 원인이나 몸의 작용을 설명하지 말고, 사람의 경험과 가능성('~일 수 있어요', '~해 보세요')으로만 말한다. "
-        "속마음을 단정하지 마라('사실은 ~거예요', '항상', '절대', '누구나', '무조건' 금지).\n\n"
-        "구성(감정곡선): ① 첫 문장 = 제목의 약속을 그대로 말하는 훅(30자 이내, 인사·자기소개 금지) ② 공감 ③ 구체적 상황 1곳(시간·장소·행동이 있는 장면 문장 1개 — 배경은 '" + (setting or "일상의 한 장면") + "'로 한다. '일요일 밤'은 이미 많이 써서 쓰지 마라) "
+        "과학·의학·심리학 단정도 금지: 뇌·호르몬·신경·세로토닌·코르티솔·도파민·심리학·심리적으로·과학적·의학·진단·증상·우울증·불안장애·면역·생리 같은 말로 원인이나 몸의 작용을 설명하지 말고, 사람의 경험과 가능성('~일 수 있어요', '~해 보세요')으로만 말한다. "
+        "위 낱말은 대본·제목·설명·태그 어디에도 쓰지 마라('신경 쓰다'도 '마음에 두다'로, '증상'은 '모습'으로 바꾼다). "
+        "다음 낱말도 대본·제목·설명·태그에 쓰지 마라: 퍼센트·%·연구·조사·통계·박사·교수·논문·실험·전문가·과학자. "
+        "속마음을 단정하지 마라('사실은', '항상', '절대', '반드시', '누구나', '모든 사람', '무조건', '~뿐이에요', '~뿐입니다', '두려운/무서운/겁나는/외로운/불안한/무거운 거예요' 금지).\n\n"
+        "구성(감정곡선): ① 첫 문장 = 제목의 약속을 그대로 말하는 훅(공백 포함 25자 이내를 목표로 써라 — 30자를 넘으면 탈락한다. 제목이 길면 앞부분만 말하고, 인사·자기소개 금지) ② 공감 ③ 구체적 상황 1곳(시간·장소·행동이 있는 장면 문장 1개 — 배경은 '" + (setting or "일상의 한 장면") + "'로 한다. '일요일 밤'은 이미 많이 써서 쓰지 마라) "
         "④ 관점 전환(위로) ⑤ 오늘 할 수 있는 실천 1개(한 가지 행동, 동사로 끝나게) ⑥ 짧은 마무리 한 줄.\n"
         "제목 공식 중 하나를 골라라: A) 대상+특징/행동 수('…한 사람들의 3가지 특징') B) 궁금증·숨김('…가 끝까지 숨기는 것') C) 세대·대상 호명('30대에게 꼭 전하고 싶은 말') D) 숫자 약속('…하면 달라지는 하루 습관 3가지'). "
         "제목은 15~30자, 과장·허위 약속 금지. 제목에 숫자가 있으면(예: 3가지) 본론에서 정확히 그만큼의 항목을 '첫째, … 둘째, … 셋째, …'로 말한다. "
         "첫 문장은 제목 문구를 거의 그대로 말하고, title_lines는 제목을 줄여 둘로 나눈 것이다(제목에 없는 말 금지).\n\n"
-        "분량: 문장 8~14개, 문장당 40자 이하(쓴 뒤 글자 수를 세어 40자를 넘으면 반드시 둘로 쪼갠다; 첫 문장은 30자 이하), 전체 한글 음절 175~290개(약 33~55초 나레이션). 소리 내어 읽기 편한 짧은 문장. 숫자는 '3가지'처럼 말로 읽히게 쓴다.\n"
+        "분량: 문장 8~14개, 문장당 공백 포함 35자 이내를 목표로 써라(40자를 넘으면 탈락한다; 첫 문장은 25자 이내가 목표, 30자 초과 탈락). 쓴 뒤 문장마다 글자 수를 세어 확인한다. 전체 한글 음절은 175~290개(약 33~55초 나레이션). 소리 내어 읽기 편한 짧은 문장. 숫자는 '3가지'처럼 말로 읽히게 쓴다.\n"
         "장면: 5~7장면. 각 장면에 문장 2개 안팎을 묶는다(sentences[].scene = 장면 번호 0부터, 순서대로 같거나 커진다). "
         "각 장면의 image_prompt는 영어로, 사람 얼굴 없는 구체적이고 **밝은 낮** 장면(창가, 길, 책상, 공원, 카페 등) 한 문장. 밤·어둠·침대·침실·이불·욕실·병원·신체 장면은 쓰지 마라(어둡거나 이미지 안전필터가 빈 이미지를 낼 수 있다). 밧줄·끈·줄·케이블·매달린 물건(rope, cord, noose, cable, string)과 글자가 보이는 물건(text, letters, sign, poster, magazine, newspaper, paper, document, folder, book, notebook, journal, laptop, screen, pen)도 image_prompt에 쓰지 마라(자해를 연상시키거나 이미지에 알아볼 수 없는 가짜 글자가 그려진다). 창가·햇빛·식물·머그컵·의자·길·나무·하늘처럼 글자가 들어갈 수 없는 소재로 그린다.\n\n"
         "JSON만 출력(설명 금지):\n"
         "{\"title\":\"15~30자 제목\",\"title_lines\":[\"화면 위 제목 1줄(14자 이하)\",\"2줄(14자 이하)\"],\"formula\":\"A|B|C|D\","
         "\"category\":\"comfort|motivation|growth|healing\","
         "\"sentences\":[{\"text\":\"나레이션 한 문장\",\"scene\":0},...],"
-        "\"situation_idx\":구체적 상황 문장의 인덱스,\"practice_idx\":실천 문장의 인덱스,"
+        "\"situation_idx\":구체적 상황 문장의 인덱스(0부터),"
         "\"scenes\":[{\"image_prompt\":\"English one-sentence scene\"},...],"
         "\"description_hook\":\"설명 첫 줄(훅 한 줄)\",\"description_body\":\"설명 본문 2~3줄\","
         "\"hashtags\":[\"#해시태그\",...3~5개, #shorts 제외],\"tags\":[\"검색 키워드\",...8~12개]}\n"
         + (f"\n최근에 올린 제목(같은 제목·같은 훅 금지): {' / '.join(recent)}\n" if recent else "")
-        + (f"\n지난 시도의 문제(반드시 고쳐라): {feedback}\n" if feedback else "")
+        + (f"\n지난 시도의 문제 — 아래 항목만 정확히 고치고, 통과한 부분(제목·구성·다른 문장)은 되도록 그대로 유지해라:\n{feedback}\n" if feedback else "")
     )
 
 
@@ -457,45 +459,54 @@ def validate_script(s):
     except Exception as e:
         return [f"필드 누락/형식 오류: {e}"]
     syl = sum(_syllables(t) for t in sents)
-    if not (SYLLABLES_MIN <= syl <= SYLLABLES_MAX): p.append(f"한글 음절 {syl}개 — {SYLLABLES_MIN}~{SYLLABLES_MAX}이어야 한다")
+    if syl < SYLLABLES_MIN: p.append(f"한글 음절 {syl}개 — {SYLLABLES_MIN}~{SYLLABLES_MAX}이어야 한다 → 최소 {SYLLABLES_MIN - syl}음절(문장 1~2개 분량) 늘려라(공감·상황 장면 문장을 더하는 식으로)")
+    elif syl > SYLLABLES_MAX: p.append(f"한글 음절 {syl}개 — {SYLLABLES_MIN}~{SYLLABLES_MAX}이어야 한다 → 최소 {syl - SYLLABLES_MAX}음절(문장 1~2개 분량) 줄여라(겹치는 위로 문장을 빼는 식으로)")
     if not (8 <= len(sents) <= 14): p.append(f"문장 {len(sents)}개 — 8~14개")
-    long_ = [i for i, t in enumerate(sents) if len(t) > 40]
-    if long_: p.append(f"40자 넘는 문장 {long_}")
-    if sents and len(sents[0]) > 30: p.append(f"첫 문장 {len(sents[0])}자 — 30자 이하")
+    for i, t in enumerate(sents):
+        if i == 0 and len(t) > 30:
+            p.append(f"첫 문장({len(t)}자) \"{t}\" → 30자 이하로 줄여라(제목 문구를 거의 그대로 말하되 군더더기를 뺀다)")
+        elif i > 0 and len(t) > 40:
+            p.append(f"{i + 1}번째 문장({len(t)}자) \"{t}\" → 40자 이하 두 문장으로 나눠라(쉼표나 '~고/~서/~지만' 뒤에서 끊는다)")
     if not (15 <= len(title) <= 30): p.append(f"제목 {len(title)}자 — 15~30자")
     tl = s.get("title_lines") or []
-    if not (1 <= len(tl) <= 2) or any(len(x) > 14 for x in tl): p.append("title_lines는 1~2줄, 줄당 14자 이하")
+    if not (1 <= len(tl) <= 2) or any(len(x) > 14 for x in tl):
+        p.append(f"title_lines는 1~2줄, 줄당 14자 이하여야 한다 → 현재 {[(x, len(x)) for x in tl]} — 제목 '{title}'을 14자 이하 두 줄로 나눠라")
     if not (5 <= n_scenes <= 7): p.append(f"장면 {n_scenes}개 — 5~7개")
     if scene_ids != sorted(scene_ids) or (scene_ids and (scene_ids[0] != 0 or scene_ids[-1] != n_scenes - 1 or set(scene_ids) != set(range(n_scenes)))):
         p.append("sentences[].scene이 0..장면수-1을 순서대로 모두 덮지 않는다")
-    for k in ("situation_idx", "practice_idx"):
-        v = s.get(k)
-        if not isinstance(v, int) or not (0 <= v < len(sents)): p.append(f"{k} 없음/범위 밖")
-    if s.get("situation_idx") == s.get("practice_idx"): p.append("구체 상황 문장과 실천 문장이 같다")
-    pi = s.get("practice_idx")
-    if isinstance(pi, int) and 0 <= pi < len(sents) and not re.search(r"(?:보세요|하세요|봐요|써 보|적어 보|해요)[.!]?$", sents[pi]):
-        p.append("practice_idx 문장이 실천을 권하는 문장('~해 보세요')이 아니다")
+    v = s.get("situation_idx")
+    if not isinstance(v, int) or not (0 <= v < len(sents)): p.append("situation_idx(구체적 상황 문장의 번호, 0부터)가 없거나 범위 밖이다")
+    pi = s.get("practice_idx")   # 실천 문장은 모델이 고르지 않고 코드가 assign_practice_idx()로 지정한다(R4)
+    if not isinstance(pi, int) or not (0 <= pi < len(sents)):
+        p.append("'~해 보세요'로 끝나는 실천 문장이 하나도 없다 → 오늘 할 수 있는 행동 하나를 '~해 보세요.'로 끝나는 한 문장으로 써라(예: '창문을 열고 숨을 세 번 쉬어 보세요.')")
+    elif v == pi:
+        p.append("구체 상황 문장과 실천 문장이 같다 — 서로 다른 문장이어야 한다")
     blob = " ".join(sents + [title, s.get("description_hook", ""), s.get("description_body", ""), " ".join(s.get("tags", [])), " ".join(x.get("image_prompt", "") for x in s["scenes"])])
     for w in RELIGION_WORDS:
         if w in blob: p.append(f"종교 용어 '{w.strip()}'")
     m = RELIGION_RE.search(blob)
     if m: p.append(f"종교 용어 '{m.group(0)}'")
     spoken = " ".join(sents + [title])
-    m = UNSOURCED_RE.search(spoken)
-    if m: p.append(f"근거 없는 단정 가능 표현 '{m.group(0)}'")
-    m = NAMED_PERSON_RE.search(spoken)
-    if m: p.append(f"실존 인물·인용 표현 '{m.group(0)}'")
-    m = SCIENCE_RE.search(spoken)
-    if m: p.append(f"과학·의학·심리학 단정 표현 '{m.group(0)}'(원인·생리 작용을 말하지 말고 경험 표현으로)")
-    m = ASSERT_RE.search(spoken)
-    if m: p.append(f"단정 표현 '{m.group(0)}'('~일 수 있어요'·'~해 보세요'로 완화)")
-    meta_txt = " ".join([s.get("description_hook", ""), s.get("description_body", ""), " ".join(s.get("tags", [])), " ".join(s.get("hashtags", []))])
+    # 안전 검사(정규식·대상 텍스트는 R3와 같다 — R4는 '어디에서 걸렸는지'를 메시지에 더했을 뿐 완화하지 않았다)
+    named = [(f"{i + 1}번째 문장", t) for i, t in enumerate(sents)] + [("제목", title)]
+    for rx, what, fix in ((UNSOURCED_RE, "근거 없는 단정 가능 표현", "통계·연구·전문가 같은 출처 주장을 빼고 경험 표현으로"),
+                          (NAMED_PERSON_RE, "실존 인물·인용 표현", "인물 인용을 빼고"),
+                          (SCIENCE_RE, "과학·의학·심리학 단정 표현", "원인·생리 작용을 말하지 말고 경험 표현('~일 수 있어요')으로"),
+                          (ASSERT_RE, "단정 표현", "'~일 수 있어요'·'~해 보세요'로 완화")):
+        for where, txt in named:
+            m = rx.search(txt)
+            if m:
+                p.append(f"{where} \"{txt}\"에 {what} '{m.group(0)}' → {fix} 고쳐라")
+    meta_fields = (("description_hook", s.get("description_hook", "")), ("description_body", s.get("description_body", "")),
+                   ("tags", " ".join(s.get("tags", []))), ("hashtags", " ".join(s.get("hashtags", []))))
     for rx, what in ((UNSOURCED_RE, "근거 없는 단정 가능 표현"), (NAMED_PERSON_RE, "실존 인물·인용 표현"), (SCIENCE_RE, "과학·의학·심리학 단정 표현"), (ASSERT_RE, "단정 표현")):
-        m = rx.search(meta_txt)   # 제목은 위 spoken 검사에 이미 들어 있고, 설명·태그·해시태그에도 같은 검사를 건다(R3)
-        if m: p.append(f"설명·태그·해시태그에 {what} '{m.group(0)}'")
+        for fname, txt in meta_fields:   # 제목은 위 검사에 이미 들어 있고, 설명·태그·해시태그에도 같은 검사를 건다(R3)
+            m = rx.search(txt)
+            if m:
+                p.append(f"{fname}에 {what} '{m.group(0)}' → 이 표현을 빼고 일상어로 다시 써라(현재: \"{txt[:60]}\")")
     for k, sc in enumerate(s["scenes"]):
         mb = BAD_IMAGE_WORDS.search(sc.get("image_prompt", ""))
-        if mb: p.append(f"장면 {k} image_prompt에 '{mb.group(0)}' — 어둡거나 이미지 안전필터가 빈 이미지를 낼 수 있는 소재 금지(밝은 낮의 창가·책상·길·자연)")
+        if mb: p.append(f"{k + 1}번째 장면 image_prompt에 '{mb.group(0)}' → 이 단어를 빼고 창가·햇빛·식물·머그컵·의자·길·나무·하늘 같은 소재로 다시 써라(현재: \"{sc.get('image_prompt', '')[:90]}\")")
     # 제목의 약속을 지키는가(루브릭 H2): 숫자 약속이면 그만큼 항목을 말하고, 첫 문장·화면 제목은 제목과 같은 말이어야 한다
     m = re.search(r"(\d+|두|세|네|다섯)\s*(?:가지|개)", title)
     if m:
@@ -525,23 +536,113 @@ def validate_script(s):
     return p
 
 
-def generate_script(topic, setting=""):
-    """대본을 만들고 검사한다(최대 5회). 반환: (대본, 누적 usage {input_tokens, output_tokens, attempts})."""
+CONNECTIVE_ENDS = ("고", "며", "면서", "지만", "는데", "은데", "인데", "서", "니까", "다가", "거나", "으면", "라면")
+NOT_CONNECTIVE_ENDS = ("에서", "에게서", "로서", "께서", "부터서")     # 조사 '~에서' 등은 절 경계가 아니다
+FIRST_MAX, SENT_MAX, SPLIT_MIN_PART = 30, 40, 8
+MAX_SENTENCES = 14
+
+
+def _quotes_balanced(t):
+    return sum(t.count(c) for c in "'\"") % 2 == 0
+
+
+def _split_candidates(text):
+    """한 문장을 공백 경계에서 둘로 나누는 후보 [(왼쪽, 오른쪽, 종류)]. 종류: comma(쉼표 뒤) / conn(연결어미 뒤). 따옴표 안·너무 짧은 조각은 제외."""
+    words = text.split(" ")
+    out = []
+    for k in range(len(words) - 1):
+        w = words[k]
+        if w.endswith(","): kind = "comma"
+        elif w.endswith(CONNECTIVE_ENDS) and not w.endswith(NOT_CONNECTIVE_ENDS): kind = "conn"
+        else: continue
+        left = " ".join(words[:k + 1]).rstrip(",").strip()
+        right = " ".join(words[k + 1:]).strip()
+        if len(left) < SPLIT_MIN_PART or len(right) < SPLIT_MIN_PART: continue
+        if not (_quotes_balanced(left) and _quotes_balanced(right)): continue
+        out.append((left, right, kind))
+    return out
+
+
+def _best_split(text, limit, prefer_long_left):
+    cands = _split_candidates(text)
+    ok_left = [c for c in cands if len(c[0]) <= limit]
+    if not ok_left: return None
+    commas = [c for c in ok_left if c[2] == "comma"]
+    if commas: ok_left = commas      # 쉼표가 자연스러운 끊는 자리라 있으면 연결어미보다 먼저 쓴다
+    both = [c for c in ok_left if len(c[1]) <= limit]
+    if both and not prefer_long_left:
+        return min(both, key=lambda c: max(len(c[0]), len(c[1])) - (3 if c[2] == "comma" else 0))
+    return max(ok_left, key=lambda c: len(c[0]) + (3 if c[2] == "comma" else 0))
+
+
+def autofix_style(s):
+    """문체 기준(문장 길이 40자·첫 문장 30자)만 결정론으로 교정한다 — 쉼표·연결어미 뒤에서 문장을 둘로 나눈다(낱말·의미는 그대로, 따옴표 안은 안 끊음).
+    안전 기준(과학·단정·종교·이미지 소재)은 건드리지 않는다. 장면 번호는 나뉜 두 조각이 같이 물려받고 situation_idx 는 밀린 만큼 보정한다.
+    반환: (같은 객체, 교정 기록 목록). 나눌 곳이 없거나 문장이 14개를 넘게 되면 그 문장은 그대로 두어 검사기가 사유를 되먹임한다."""
+    fixes = []
+    try:
+        sents = s["sentences"]
+        for x in sents: x["text"] = x["text"].strip()
+    except Exception:
+        return s, fixes
+    i = 0
+    while i < len(sents):
+        limit = FIRST_MAX if i == 0 else SENT_MAX
+        t = sents[i]["text"]
+        if len(t) > limit and len(sents) < MAX_SENTENCES:
+            c = _best_split(t, limit, prefer_long_left=(i == 0))
+            if c:
+                left, right, kind = c
+                sc = sents[i].get("scene", 0)
+                sents[i]["text"] = left
+                sents.insert(i + 1, {"text": right, "scene": sc})
+                si = s.get("situation_idx")
+                if isinstance(si, int) and si > i: s["situation_idx"] = si + 1
+                fixes.append(f"{i + 1}번째 문장({len(t)}자)을 {kind} 뒤에서 {len(left)}자+{len(right)}자로 분할")
+                continue   # 오른쪽 조각이 아직 길면 다음 반복에서 다시 본다
+        i += 1
+    return s, fixes
+
+
+PRACTICE_END_RE = re.compile(r"(?:보세요|하세요|봐요|써 보|적어 보|해요)[.!]?$")
+
+
+def assign_practice_idx(s):
+    """실천 문장 지정(R4): 모델이 고르지 않고 코드가 찾는다 — '~해 보세요'(보세요)로 끝나는 마지막 문장, 없으면 '~하세요', 없으면 기존 느슨한 어미.
+    하나도 없으면 practice_idx 를 None 으로 둬서 검사기가 그것만 되먹임하게 한다."""
+    sents = [x["text"].strip() for x in s.get("sentences", [])]
+    for pat in (r"보세요[.!]?$", r"하세요[.!]?$"):
+        hits = [i for i, t in enumerate(sents) if re.search(pat, t)]
+        if hits:
+            s["practice_idx"] = hits[-1]; return s
+    hits = [i for i, t in enumerate(sents) if PRACTICE_END_RE.search(t)]
+    s["practice_idx"] = hits[-1] if hits else None
+    return s
+
+
+def generate_script(topic, setting="", max_attempts=5, trace=None):
+    """대본을 만들고 검사한다. 매 시도: Claude → 문체 자동 교정(autofix_style) → 실천 문장 지정 → 검사(validate_script).
+    탈락하면 구체적 사유(몇 번째 문장 몇 자·무엇을 바꿀지)를 다음 프롬프트에 되먹임한다. trace 목록을 주면 시도마다 {attempt, fixes, problems} 를 기록한다.
+    반환: (대본, 누적 usage {input_tokens, output_tokens, attempts})."""
     feedback = ""
     recent = recent_titles()
     total = {"input_tokens": 0, "output_tokens": 0, "attempts": 0}
-    for attempt in range(1, 6):
-        print(f"  대본 생성 {attempt}/5 ...")
+    for attempt in range(1, max_attempts + 1):
+        print(f"  대본 생성 {attempt}/{max_attempts} ...")
         s, usage = claude_json(quality_prompt(topic, feedback, recent, setting))
         total["attempts"] += 1
         total["input_tokens"] += usage.get("input_tokens", 0) or 0
         total["output_tokens"] += usage.get("output_tokens", 0) or 0
+        s, fixes = autofix_style(s)
+        s = assign_practice_idx(s)
+        if fixes: print("    자동 교정: " + " / ".join(fixes))
         probs = validate_script(s)
+        if trace is not None: trace.append({"attempt": attempt, "fixes": fixes, "problems": probs})
         if not probs:
             return s, total
-        feedback = " / ".join(probs)
-        print(f"    검사 미통과: {feedback}")
-    raise RuntimeError("대본이 5회 모두 기준을 통과하지 못했다: " + feedback)
+        feedback = "\n".join(f"  {k + 1}) {x}" for k, x in enumerate(probs))
+        print(f"    검사 미통과: {' / '.join(probs)}")
+    raise RuntimeError(f"대본이 {max_attempts}회 모두 기준을 통과하지 못했다: " + " / ".join(probs))
 
 
 def claude_cost_usd(tokens):
@@ -970,6 +1071,44 @@ def quality_main(args):
     return code
 
 
+def script_only_main(args):
+    """--script-only: 대본만 생성·검사한다(fal·이미지·TTS·업로드 없음). 주제별 통과 여부·시도 횟수·탈락 사유·Claude 비용을 표로 남긴다.
+    --topics-n 개의 주제를 TOPICS 에서 고르고(--topic 을 주면 그 하나), --attempts 안에 통과하면 합격. 누적 Claude 비용이 --cost-cap 을 넘을 것 같으면 남은 주제는 건너뛴다."""
+    n = 1 if args.topic else args.topics_n
+    topics = [args.topic] if args.topic else [TOPICS[(k * 3) % len(TOPICS)] for k in range(n)]
+    rows = []
+    t0 = dict(CLAUDE_SPENT)
+    for k, topic in enumerate(topics):
+        spent_before = claude_cost_usd(CLAUDE_SPENT)
+        if spent_before + 0.04 > args.cost_cap:
+            rows.append({"topic": topic, "passed": None, "note": f"비용 상한 ${args.cost_cap:.2f} 때문에 건너뜀"}); continue
+        setting = SETTINGS[abs(hash_str(f"script-only-{k}" + topic)) % len(SETTINGS)]
+        print(f"\n=== [{k + 1}/{len(topics)}] {topic}  (배경 힌트: {setting}) ===")
+        trace = []
+        row = {"topic": topic, "setting": setting, "trace": trace}
+        try:
+            script, usage = generate_script(topic, setting, max_attempts=args.attempts, trace=trace)
+            row.update({"passed": True, "attempts": usage["attempts"], "title": script["title"]})
+        except RuntimeError as e:
+            row.update({"passed": False, "attempts": len(trace), "error": str(e)[:300]})
+        row["claude_usd"] = round(claude_cost_usd(CLAUDE_SPENT) - spent_before, 4)
+        rows.append(row)
+    total_usd = claude_cost_usd({k: CLAUDE_SPENT[k] - t0[k] for k in ("input_tokens", "output_tokens")})
+    ran = [r for r in rows if r.get("passed") is not None]
+    ok = [r for r in ran if r["passed"]]
+    print("\n" + "=" * 70)
+    print(f"  --script-only 결과: {len(ok)}/{len(ran)} 통과 (한도 {args.attempts}회 이내)  Claude ${total_usd:.4f} [단가 가정 {CLAUDE_PRICE_PER_MTOK}]")
+    for r in rows:
+        if r.get("passed") is None: print(f"  - {r['topic']}: {r['note']}"); continue
+        first = r["trace"][0]["problems"] if r["trace"] else []
+        print(f"  - {'PASS' if r['passed'] else 'FAIL'} {r['attempts']}회 ${r['claude_usd']:.4f} {r['topic']} | 1회차 사유: {len(first)}건")
+    os.makedirs(QUALITY_DIR, exist_ok=True)
+    out = os.path.join(QUALITY_DIR, f"script-only-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json")
+    json.dump({"attempts_limit": args.attempts, "cost_cap": args.cost_cap, "claude_usd": total_usd, "passed": len(ok), "ran": len(ran), "rows": rows}, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(f"  기록: {out}")
+    return 0 if len(ok) == len(ran) and ran else 1
+
+
 def run_quality(args):
     """fail-closed 최상위: 어떤 예외든 업로드 없이 사유를 남기고 비영 종료 코드를 돌려준다(폴백 없음 — 그날은 건너뛴다)."""
     name = args.name or "quality-unnamed"
@@ -990,12 +1129,18 @@ def parse_args(argv=None):
     ap.add_argument("--voice", default=None)
     ap.add_argument("--speed", type=float, default=None)
     ap.add_argument("--name", default=None)
+    ap.add_argument("--script-only", action="store_true", help="대본만 생성·검사(이미지·TTS·업로드 없음)해서 통과율을 잰다")
+    ap.add_argument("--topics-n", type=int, default=5, help="--script-only 에서 시험할 주제 수(--topic 을 주면 그 하나)")
+    ap.add_argument("--attempts", type=int, default=5, help="--script-only 에서 주제당 최대 시도 횟수(합격 기준)")
+    ap.add_argument("--cost-cap", type=float, default=0.60, help="--script-only 누적 Claude 비용 상한(US$)")
     ap.add_argument("--privacy", choices=["public", "unlisted", "private"], default="unlisted", help="유튜브 공개 범위(기본 unlisted=일부공개). 기존 방식·--quality 업로드 둘 다에 적용")
     return ap.parse_args(argv)
 
 
 if __name__ == "__main__":
     _a = parse_args()
+    if _a.script_only:
+        sys.exit(script_only_main(_a))
     if _a.quality:
         if _a.upload and _a.dry_run:
             print("--upload 와 --dry-run 을 함께 줄 수 없다(모순). 하나만 지정한다."); sys.exit(2)
