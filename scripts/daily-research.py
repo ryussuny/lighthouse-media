@@ -4,7 +4,7 @@ import json, os, requests
 from datetime import datetime
 
 API_KEY = ""
-with open(os.path.join(os.path.expanduser("~"), "lighthouse-media", ".env")) as f:
+with open(os.path.join(os.path.expanduser("~"), "lighthouse-media", ".env"), encoding="utf-8") as f:
     for line in f:
         if line.startswith("ANTHROPIC_API_KEY="):
             API_KEY = line.strip().split("=",1)[1]
