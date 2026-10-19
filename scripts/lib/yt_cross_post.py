@@ -28,8 +28,10 @@ CHANNEL_LINE = "류선희 | Lighthouse Media"
 RISKY_TERMS = [
     "완치", "치료", "낫는다", "낫습니다", "낫게", "반드시낫", "확실히낫", "병이낫", "기적", "100%", "100퍼",
     "무조건", "진단", "처방", "약끊", "약을끊", "우울증이사라", "우울증사라", "우울증이없어", "효과보장", "보장",
-    "cure", "miracle", "guarantee", "diagnos", "100%",
+    "100%",
 ]
+# 영어는 낱말 경계로만 본다(secure·obscure 가 cure 에 걸리지 않게)
+RISKY_EN = re.compile(r"(cures?|cured|miracles?|miraculous|guarantee[sd]?|diagnos\w*)")
 PRIVACY_BY_SWITCH = {"public": "public", "unlisted": "unlisted"}
 
 
@@ -43,7 +45,9 @@ def switch():
 
 def risky_hits(*texts):
     squashed = re.sub(r"\s+", "", " ".join(t for t in texts if t)).lower()
-    return sorted({t for t in RISKY_TERMS if t in squashed})
+    hits = {t for t in RISKY_TERMS if t in squashed}
+    hits.update(m.group(1) for m in RISKY_EN.finditer(" ".join(t for t in texts if t).lower()))
+    return sorted(hits)
 
 
 def _norm(p):
