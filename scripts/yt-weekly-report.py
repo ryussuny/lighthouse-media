@@ -23,8 +23,10 @@ def youtube():
     c = Credentials.from_authorized_user_file(TOKEN)
     if c.expired and c.refresh_token:
         c.refresh(Request())
-        with open(TOKEN, "w", encoding="utf-8") as f:
+        tmp = TOKEN + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
             f.write(c.to_json())
+        os.replace(tmp, TOKEN)
     return build("youtube", "v3", credentials=c)
 
 
@@ -74,16 +76,24 @@ def main():
         "videos_7d": rows,
         "top": sorted(rows, key=lambda r: -r["views"])[:3],
     }
-    hist = []
+    snap["top_all_time"] = [{"views": b[0], "title": b[1], "privacy": b[2]} for b in best[:3]]
+    hist, can_write = [], True
     if os.path.exists(STATS):
         try:
             hist = json.load(open(STATS, encoding="utf-8"))
-        except json.JSONDecodeError:
-            hist = []
-    prev = hist[-1] if hist else None
-    hist.append(snap)
-    os.makedirs(os.path.dirname(STATS), exist_ok=True)
-    json.dump(hist, open(STATS, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+            if not isinstance(hist, list):
+                raise ValueError("목록이 아님")
+        except (OSError, ValueError):   # 깨진 기록은 덮어쓰지 않는다(보고는 계속)
+            hist, can_write = [], False
+            print(f"  ⚠ {STATS} 를 읽을 수 없어 이번 스냅샷은 저장하지 않는다(기존 파일 보존)")
+    past = [h for h in hist if h.get("date") != snap["date"]]   # 같은 날 재실행은 덮어쓴다
+    prev = past[-1] if past else None
+    if can_write:
+        os.makedirs(os.path.dirname(STATS), exist_ok=True)
+        tmp = STATS + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(past + [snap], f, ensure_ascii=False, indent=1)
+        os.replace(tmp, STATS)
 
     def diff(k):
         return f" ({snap[k] - prev[k]:+d})" if prev and k in prev else ""
@@ -95,9 +105,6 @@ def main():
         print(f"   - {r['date']} [{PRIVACY_KO.get(r['privacy'], r['privacy'])}] 조회 {r['views']} · 좋아요 {r['likes']} | {r['title'][:50]}")
     if not rows:
         print("   (최근 7일 업로드 없음)")
-    snap["top_all_time"] = [{"views": b[0], "title": b[1], "privacy": b[2]} for b in best[:3]]
-    hist[-1] = snap
-    json.dump(hist, open(STATS, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print("  채널 전체 조회 상위 3개")
     for b in best[:3]:
         print(f"   - 조회 {b[0]} [{PRIVACY_KO.get(b[2], b[2])}] | {b[1][:50]}")
@@ -105,4 +112,8 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except Exception as e:   # 토큰 만료 등 — 트레이스백 대신 한 줄 사유
+        print(f"유튜브 주간 점검 실패: {type(e).__name__}: {e}")
+        sys.exit(1)

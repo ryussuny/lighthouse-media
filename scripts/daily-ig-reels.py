@@ -1152,11 +1152,14 @@ def main():
     print(f"  IG Reels: {'OK (' + str(ig) + ')' if ig else 'Failed or processing'}")
 
     # 같은 영상을 유튜브 쇼츠로도 공개 업로드(2026-10-20 조회수 성장 1차). 실패해도 인스타 게시는 이미 끝났다.
-    try:
-        from lib import yt_cross_post
-        yt_cross_post.cross_post(vpath, (ai_content or {}).get("hook") if source == "AI" else "", caption)
-    except Exception as e:
-        print(f"  유튜브 쇼츠 교차 게시 실패(무시, 인스타·페이스북 영향 없음): {e}")
+    if not ig:   # 인스타가 실패·미확인이면 유튜브도 올리지 않는다(순서 어긋남 방지)
+        print("  유튜브 쇼츠 교차 게시 건너뜀: 인스타 릴스 게시가 확인되지 않음")
+    else:
+        try:
+            from lib import yt_cross_post
+            yt_cross_post.cross_post(vpath, (ai_content or {}).get("hook") if source == "AI" else "", caption)
+        except Exception as e:
+            print(f"  유튜브 쇼츠 교차 게시 실패(무시, 인스타·페이스북 영향 없음): {type(e).__name__}: {e}")
 
     print(f"\n{'=' * 60}")
     print(f"  DAILY REELS DONE! (source: {source})")
