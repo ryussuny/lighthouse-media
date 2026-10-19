@@ -31,7 +31,7 @@ RISKY_TERMS = [
     "100%",
 ]
 # 영어는 낱말 경계로만 본다(secure·obscure 가 cure 에 걸리지 않게)
-RISKY_EN = re.compile(r"(cures?|cured|miracles?|miraculous|guarantee[sd]?|diagnos\w*)")
+RISKY_EN = re.compile(r"\b(cures?|cured|miracles?|miraculous|guarantee[sd]?|diagnos\w*)\b")
 PRIVACY_BY_SWITCH = {"public": "public", "unlisted": "unlisted"}
 
 
