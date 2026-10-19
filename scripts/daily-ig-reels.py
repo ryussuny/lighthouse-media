@@ -1127,6 +1127,11 @@ def main():
     if dry_run:
         print("\n  [4/4] DRY-RUN — 업로드 생략")
         print(f"  캡션 미리보기:\n{caption}")
+        try:   # 유튜브 쇼츠 교차 게시 점검(업로드 안 함) — 실패해도 영향 없음
+            from lib import yt_cross_post
+            yt_cross_post.cross_post(vpath, (ai_content or {}).get("hook") if source == "AI" else "", caption, dry_run=True)
+        except Exception as e:
+            print(f"  유튜브 교차 게시 점검 실패(무시): {e}")
         return
 
     # 게시 전에 기록(같은 주제 반복 방지 · 예비 릴스 사용일)
@@ -1145,6 +1150,13 @@ def main():
     print("  Uploading to Instagram Reels...")
     ig = upload_ig_reels(vpath, caption)
     print(f"  IG Reels: {'OK (' + str(ig) + ')' if ig else 'Failed or processing'}")
+
+    # 같은 영상을 유튜브 쇼츠로도 공개 업로드(2026-10-20 조회수 성장 1차). 실패해도 인스타 게시는 이미 끝났다.
+    try:
+        from lib import yt_cross_post
+        yt_cross_post.cross_post(vpath, (ai_content or {}).get("hook") if source == "AI" else "", caption)
+    except Exception as e:
+        print(f"  유튜브 쇼츠 교차 게시 실패(무시, 인스타·페이스북 영향 없음): {e}")
 
     print(f"\n{'=' * 60}")
     print(f"  DAILY REELS DONE! (source: {source})")
