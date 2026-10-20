@@ -6,7 +6,7 @@
 - Usage: py scripts/yt-weekly-report.py
 """
 import sys; sys.stdout.reconfigure(encoding='utf-8')
-import os, json
+import os, json, re
 from datetime import datetime, timedelta, timezone
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
@@ -17,6 +17,35 @@ REPO = os.path.join(HOME, "lighthouse-media")
 TOKEN = os.path.join(HOME, "OneDrive", "바탕 화면", "03_사업_마케팅", "lighthouse_media", "token_lighthouse.json")
 STATS = os.path.join(REPO, "data", "yt-stats.json")
 PRIVACY_KO = {"public": "공개", "unlisted": "일부공개", "private": "비공개"}
+SELFCHECK_WORDS = ("신호", "이상이면")   # 자가점검형 제목 표지(10/23~10/27 주제 실험, 커밋 b450b0b)
+SHORTS_MAX_SEC = 180   # 유튜브 쇼츠 상한(3분). contentDetails.duration 으로 판정
+
+
+def is_selfcheck(title):
+    """제목에 '신호' 또는 '이상이면' 이 있으면 자가점검형."""
+    return any(w in (title or "") for w in SELFCHECK_WORDS)
+
+
+def duration_sec(iso):
+    """ISO 8601 길이(PT1M5S 등) -> 초. 해석 못 하면 None."""
+    m = re.fullmatch(r"P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?", iso or "")
+    if not m:
+        return None
+    d, h, mi, se = (int(x or 0) for x in m.groups())
+    return d * 86400 + h * 3600 + mi * 60 + se
+
+
+def format_compare_lines(shorts):
+    """공개 쇼츠 목록(dict: title, views) -> 형식별 비교 한글 줄 목록."""
+    grp = {True: [], False: []}
+    for r in shorts:
+        grp[is_selfcheck(r["title"])].append(r["views"])
+    out = ["  형식별 비교 (최근 14일 공개 쇼츠 — 자가점검형: 제목에 '신호'·'이상이면')"]
+    for key, name in ((True, "자가점검형"), (False, "그 밖")):
+        v = grp[key]
+        avg = f"{sum(v) / len(v):.1f}" if v else "-"
+        out.append(f"   - {name}: 영상 {len(v)}개 · 조회 합계 {sum(v)} · 평균 조회 {avg}")
+    return out
 
 
 def youtube():
@@ -52,7 +81,7 @@ def main():
             break
     vids = []
     for i in range(0, len(allv), 50):
-        vids += yt.videos().list(part="snippet,statistics,status", id=",".join(allv[i:i + 50])).execute().get("items", [])
+        vids += yt.videos().list(part="snippet,statistics,status,contentDetails", id=",".join(allv[i:i + 50])).execute().get("items", [])
     rows = []
     for v in vids:
         pub = datetime.strptime(v["snippet"]["publishedAt"][:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
@@ -63,6 +92,13 @@ def main():
                      "privacy": v["status"]["privacyStatus"], "views": int(s.get("viewCount", 0)),
                      "likes": int(s.get("likeCount", 0) or 0), "comments": int(s.get("commentCount", 0) or 0)})
     rows.sort(key=lambda r: r["date"])
+    since14 = datetime.now(timezone.utc) - timedelta(days=14)
+    shorts14 = []
+    for v in vids:   # 형식별 비교용(스냅샷에는 저장하지 않는다): 최근 14일 공개 + 길이 3분 이하
+        pub = datetime.strptime(v["snippet"]["publishedAt"][:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=timezone.utc)
+        dur = duration_sec(v.get("contentDetails", {}).get("duration"))
+        if pub >= since14 and v["status"]["privacyStatus"] == "public" and dur is not None and dur <= SHORTS_MAX_SEC:
+            shorts14.append({"title": v["snippet"]["title"], "views": int(v["statistics"].get("viewCount", 0))})
     best = sorted(((int(v["statistics"].get("viewCount", 0)), v["snippet"]["title"], v["status"]["privacyStatus"]) for v in vids), reverse=True)
 
     snap = {
@@ -108,6 +144,8 @@ def main():
     print("  채널 전체 조회 상위 3개")
     for b in best[:3]:
         print(f"   - 조회 {b[0]} [{PRIVACY_KO.get(b[2], b[2])}] | {b[1][:50]}")
+    for line in format_compare_lines(shorts14):
+        print(line)
     return 0
 
 
