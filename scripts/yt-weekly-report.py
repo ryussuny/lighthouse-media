@@ -22,8 +22,9 @@ SHORTS_MAX_SEC = 180   # 유튜브 쇼츠 상한(3분). contentDetails.duration 
 
 
 def is_selfcheck(title):
-    """제목에 '신호' 또는 '이상이면' 이 있으면 자가점검형."""
-    return any(w in (title or "") for w in SELFCHECK_WORDS)
+    """제목에 '신호' 또는 '이상이면' 이 있으면 자가점검형. 단 '신호등' 안의 '신호'는 세지 않는다."""
+    t = (title or "").replace("신호등", "")
+    return any(w in t for w in SELFCHECK_WORDS)
 
 
 def duration_sec(iso):
