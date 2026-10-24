@@ -944,6 +944,10 @@ def upload_youtube_quality(vpath, script, tl, privacy="unlisted"):
         creds.refresh(Request())
         with open(ytp, "w", encoding="utf-8") as f: f.write(creds.to_json())
     yt = build("youtube", "v3", credentials=creds)
+    # 채널 확인(2026-10-24: 재인증 때 동산감리교회 채널을 골라 라이트하우스 영상이 교회 채널에 올라간 일 재발 방지)
+    ch = yt.channels().list(part="snippet", mine=True).execute()["items"][0]["snippet"]["title"]
+    if ch != "Lighthouse Media":
+        raise RuntimeError(f"토큰이 '{ch}' 채널을 가리킨다 — Lighthouse Media가 아니면 올리지 않는다(youtube-reauth.py로 다시 연결)")
     tags_line = " ".join(script["hashtags"] + ["#shorts"])
     desc = f"{script['description_hook']}\n\n{script['description_body']}\n\n—\n류선희 | Lighthouse Media\n\n{tags_line}"
     body = {"snippet": {"title": script["title"] + " #shorts", "description": desc, "tags": script["tags"], "categoryId": "22", "defaultLanguage": "ko"},

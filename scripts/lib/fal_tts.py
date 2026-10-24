@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fal_visuals as fv  # noqa: E402  (load_fal_key, _post, log_run_cost 재사용)
+from ko_numbers import speakable  # noqa: E402  ('3가지'→'세 가지' — 2026-10-24 오너 지시)
 
 # ═══════════════════════════════════════════════════════════════
 # 모델·가격 (출처: fal.ai get_pricing MCP 실측 조회, 2026-10-15 — worker-3)
@@ -51,7 +52,7 @@ def synth_chunk(text, out_path, voice=None, speed=None, key=None, emotion=None):
     if emotion:
         vs["emotion"] = emotion
     body = {
-        "prompt": text,
+        "prompt": speakable(text),   # 자막은 원문 그대로, 읽기만 사람처럼
         "voice_setting": vs,
         "language_boost": "Korean",
         "output_format": "url",
