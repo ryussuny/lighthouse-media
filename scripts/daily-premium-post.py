@@ -1,6 +1,7 @@
 """Lighthouse Media — 하루 1개 프리미엄 콘텐츠 (음악 포함 릴스)
 매일 저녁 7시, 신중하고 깊이 있는 콘텐츠 1개만."""
 import sys; sys.stdout.reconfigure(encoding='utf-8')
+from lib.redact import install as _redact_install; _redact_install()
 import os, json, requests, time, base64, subprocess, shutil, random
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont

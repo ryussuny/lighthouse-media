@@ -15,6 +15,7 @@
 - 캡션은 한국어 중심, 해시태그 5개 이내
 """
 import sys; sys.stdout.reconfigure(encoding='utf-8')
+from lib.redact import install as _redact_install; _redact_install()
 import os, json, re, requests, time, base64, subprocess, shutil, random, hashlib
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont

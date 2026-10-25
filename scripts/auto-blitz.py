@@ -1,5 +1,6 @@
 """전체 자동 마케팅 블리츠: 릴스형 5개 + FB 텍스트 3개 + 해시태그 리서치"""
 import sys; sys.stdout.reconfigure(encoding='utf-8')
+from lib.redact import install as _redact_install; _redact_install()
 import os, json, requests, time, base64
 from PIL import Image, ImageDraw, ImageFont
 

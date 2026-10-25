@@ -1,5 +1,6 @@
 """배경음악 포함 릴스 영상 5편 제작 + 인스타/페이스북 업로드"""
 import sys; sys.stdout.reconfigure(encoding='utf-8')
+from lib.redact import install as _redact_install; _redact_install()
 import os, json, requests, time, base64, subprocess, shutil, random
 from PIL import Image, ImageDraw, ImageFont
 

@@ -4,6 +4,7 @@
 - 실행: python scripts/refresh-ig-token.py
 """
 import sys; sys.stdout.reconfigure(encoding='utf-8')
+from lib.redact import install as _redact_install; _redact_install()
 import os, json, requests
 from datetime import datetime, timedelta
 

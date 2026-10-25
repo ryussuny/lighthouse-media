@@ -1,5 +1,6 @@
 """인스타 댓글 자동 답변 + 전자책 링크 자동 발송"""
 import sys; sys.stdout.reconfigure(encoding='utf-8')
+from lib.redact import install as _redact_install; _redact_install()
 import os, json, requests, time, re
 from datetime import datetime
 

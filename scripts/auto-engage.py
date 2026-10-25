@@ -1,5 +1,6 @@
 """자동 참여: 유사 계정 게시물에 댓글 + 우리 게시물 댓글 자동 답변"""
 import sys; sys.stdout.reconfigure(encoding='utf-8')
+from lib.redact import install as _redact_install; _redact_install()
 import os, json, requests, time, random
 from datetime import datetime
 
