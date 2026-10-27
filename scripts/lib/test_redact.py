@@ -53,6 +53,17 @@ class Google(unittest.TestCase):
         for t in ("http://x/1//" + "a" * 30, "xya29." + "b" * 30):
             self.assertEqual(redact(t), t)
 
+    def test_after_slash_access(self):
+        self.assertEqual(redact("https://x/" + self.ACCESS), "https://x/ya29.***")
+
+    def test_after_slash_refresh(self):
+        self.assertEqual(redact("...?t=/" + self.REFRESH + "&a=1"), "...?t=/1//***&a=1")
+        self.assertEqual(redact("https://x/" + self.REFRESH), "https://x/1//***")
+
+    def test_refresh_must_start_1_slash_slash_0(self):
+        for t in ("a 1//2 비율", "a 1//" + "b" * 30, "https://x/1//" + "9" * 30, "1//" + "z" * 25):
+            self.assertEqual(redact(t), t)
+
     def test_json_form_still_masked(self):
         self.assertEqual(redact('{"refresh_token": "' + self.REFRESH + '"}'), '{"refresh_token": "***"}')
 
