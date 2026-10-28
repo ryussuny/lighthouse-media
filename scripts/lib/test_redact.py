@@ -50,8 +50,19 @@ class Google(unittest.TestCase):
             self.assertEqual(redact(t), t)
 
     def test_no_match_inside_path_or_word(self):
-        for t in ("http://x/1//" + "a" * 30, "xya29." + "b" * 30):
+        for t in ("http://x/1//" + "a" * 30,):
             self.assertEqual(redact(t), t)
+
+    def test_ya29_after_alnum_or_sep(self):
+        for pre in ("Bearer", "tok_", "x.", "key-", "a1"):
+            self.assertEqual(redact(pre + self.ACCESS), pre + "ya29.***")
+
+    def test_ya29_short_or_word_not_masked(self):
+        for t in ("ya29.abc", "tok_ya29.abc", "ya29", "Bearerya29 only", "ya29." + "a" * 19):
+            self.assertEqual(redact(t), t)
+
+    def test_ya29_20_chars_boundary(self):
+        self.assertEqual(redact("x" + "ya29." + "a" * 20), "xya29.***")
 
     def test_after_slash_access(self):
         self.assertEqual(redact("https://x/" + self.ACCESS), "https://x/ya29.***")
