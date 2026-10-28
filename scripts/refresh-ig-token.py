@@ -71,8 +71,12 @@ def inspect_token(token):
     if not isinstance(data, dict):
         err = body.get('error') if isinstance(body.get('error'), dict) else {}
         msg = str(err.get('message', '응답 없음'))[:80]
-        if err.get('code') == 190:
-            # 같은 토큰으로 debug_token 을 부르므로 만료/무효 토큰은 data 없이 190(OAuthException)으로 온다
+        try:
+            code = int(err.get('code'))
+        except (TypeError, ValueError):
+            code = None
+        if code in (190, 102):
+            # 같은 토큰으로 debug_token 을 부르므로 만료/무효 토큰은 data 없이 190(OAuthException)·102(세션 만료)로 온다
             return {'ok': True, 'valid': False, 'expires_at': None, 'data_access_expires_at': None, 'reason': msg}
         return {'ok': False, 'reason': f"조회 실패(HTTP {r.status_code}: {msg})"}
     out = {'ok': True, 'valid': bool(data.get('is_valid')),

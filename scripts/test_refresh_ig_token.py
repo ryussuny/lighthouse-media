@@ -44,6 +44,24 @@ class InspectTokenTest(unittest.TestCase):
         self.assertFalse(r["valid"])
         self.assertEqual(r["reason"], long_msg[:80])
 
+    def test_code_190_as_string_is_invalid(self):
+        self._fake(_Resp({"error": {"message": "expired", "code": "190"}}, 400))
+        r = rit.inspect_token(FAKE)
+        self.assertTrue(r["ok"])
+        self.assertFalse(r["valid"])
+
+    def test_code_102_is_invalid(self):
+        self._fake(_Resp({"error": {"message": "API Session", "code": 102}}, 400))
+        r = rit.inspect_token(FAKE)
+        self.assertTrue(r["ok"])
+        self.assertFalse(r["valid"])
+
+    def test_non_numeric_code_is_unknown(self):
+        self._fake(_Resp({"error": {"message": "weird", "code": "abc"}}, 400))
+        self.assertFalse(rit.inspect_token(FAKE)["ok"])
+        self._fake(_Resp({"error": {"message": "no code"}}, 400))
+        self.assertFalse(rit.inspect_token(FAKE)["ok"])
+
     def test_valid_token(self):
         self._fake(_Resp({"data": {"is_valid": True, "expires_at": 0, "data_access_expires_at": 0}}))
         r = rit.inspect_token(FAKE)
