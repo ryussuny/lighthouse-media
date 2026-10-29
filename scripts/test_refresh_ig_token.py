@@ -62,6 +62,26 @@ class InspectTokenTest(unittest.TestCase):
         self._fake(_Resp({"error": {"message": "no code"}}, 400))
         self.assertFalse(rit.inspect_token(FAKE)["ok"])
 
+    def test_overflow_codes_are_unknown_not_exception(self):
+        for bad in (float("inf"), float("-inf"), 1e400):
+            self._fake(_Resp({"error": {"message": "x", "code": bad}}, 400))
+            r = rit.inspect_token(FAKE)          # 예외가 밖으로 나가면 여기서 실패
+            self.assertFalse(r["ok"], bad)
+
+    def test_fmt_ts_unparseable_is_unknown(self):
+        for bad in ("abc", float("inf"), float("nan"), 1e20, -1e20, [1], {"a": 1}):
+            self.assertEqual(rit._fmt_ts(bad), ("알 수 없음", None), bad)
+
+    def test_fmt_ts_zero_and_none_mean_no_expiry(self):
+        for z in (0, None, ""):
+            self.assertEqual(rit._fmt_ts(z), ("만료 없음", None))
+
+    def test_fmt_ts_normal_epoch_unchanged(self):
+        import time
+        txt, left = rit._fmt_ts(int(time.time()) + 10 * 86400 + 3600)
+        self.assertRegex(txt, r"^\d{4}-\d{2}-\d{2}$")
+        self.assertEqual(left, 10)
+
     def test_valid_token(self):
         self._fake(_Resp({"data": {"is_valid": True, "expires_at": 0, "data_access_expires_at": 0}}))
         r = rit.inspect_token(FAKE)

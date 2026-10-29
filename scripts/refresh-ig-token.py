@@ -73,7 +73,7 @@ def inspect_token(token):
         msg = str(err.get('message', '응답 없음'))[:80]
         try:
             code = int(err.get('code'))
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             code = None
         if code in (190, 102):
             # 같은 토큰으로 debug_token 을 부르므로 만료/무효 토큰은 data 없이 190(OAuthException)·102(세션 만료)로 온다
@@ -88,10 +88,13 @@ def inspect_token(token):
     return out
 
 def _fmt_ts(ts):
-    """epoch 초 → (표시 문자열, 남은 일수|None). 0/없음 = 만료 없음."""
+    """epoch 초 → (표시 문자열, 남은 일수|None). 0/없음 = 만료 없음, 해석 불가(문자열·inf·범위 밖) = 알 수 없음."""
     if not ts:
         return "만료 없음", None
-    dt = datetime.fromtimestamp(int(ts))
+    try:
+        dt = datetime.fromtimestamp(int(ts))
+    except (TypeError, ValueError, OverflowError, OSError):
+        return "알 수 없음", None
     return dt.strftime('%Y-%m-%d'), (dt - datetime.now()).days
 
 def main():
@@ -128,7 +131,7 @@ def main():
             da_left_txt = ""
         else:
             da_left_txt = f" (남은 {da_left}일)" if da_left >= 0 else f" ({-da_left}일 전 지남)"
-        print(f"    {name}: 유효 — 토큰 {'만료 없음' if days_left is None else '만료 ' + exp_txt}{left_txt} / 데이터 접근 만료 {da_txt}{da_left_txt}")
+        print(f"    {name}: 유효 — 토큰 {exp_txt if days_left is None else '만료 ' + exp_txt}{left_txt} / 데이터 접근 만료 {da_txt}{da_left_txt}")
 
         if days_left is not None and days_left <= 7:
             print(f"      ⚠ 곧 만료 — 갱신 시도")
