@@ -2,7 +2,7 @@
 수집: 스케줄러 최근 실행 결과, 동산교회 백업 시각, 오늘 콘텐츠 발행 수, 교회 서버 상태
 """
 import sys; sys.stdout.reconfigure(encoding='utf-8')
-import os, json, re, subprocess, datetime, glob
+import os, json, re, subprocess, datetime, glob, time
 import urllib.request
 
 HOME = os.path.expanduser("~")
@@ -129,6 +129,17 @@ def cys_schedule():
     except Exception:
         return []
 
+def news_briefing():
+    """news-briefing.py가 만든 아침 브리핑(data/news-briefing.json). 30시간 지난 건 보내지 않는다."""
+    try:
+        path = os.path.join(HOME, "lighthouse-media", "data", "news-briefing.json")
+        if not os.path.exists(path) or time.time() - os.path.getmtime(path) > 30 * 3600:
+            return None
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
 def main():
     payload = {
         "host": os.environ.get("COMPUTERNAME", "JARVIS-PC"),
@@ -141,6 +152,7 @@ def main():
         "cys_fleet": cys_fleet(),
         "cys_defects": cys_defects(),
         "cys_schedule": cys_schedule(),
+        "news_briefing": news_briefing(),
     }
     req = urllib.request.Request(TOWER, data=json.dumps(payload).encode(),
                                  headers={"Content-Type": "application/json"})

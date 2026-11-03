@@ -1,0 +1,17 @@
+{
+  "_doc": "아침 뉴스 브리핑 검색어 (scripts/news-briefing.py). 검색어를 바꾸려면 keywords만 고치면 된다.",
+  "hours": 26,
+  "max_items": 7,
+  "briefings": [
+    {
+      "id": "church",
+      "name": "교회·기독교 소식",
+      "keywords": ["한국교회", "기독교", "감리교", "목회", "교황"]
+    },
+    {
+      "id": "business",
+      "name": "라이트하우스 사업 동향",
+      "keywords": ["AI 영상 제작", "유튜브 쇼츠", "전자책 출판", "인스타그램 릴스", "AI 음악"]
+    }
+  ]
+}
