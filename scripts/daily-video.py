@@ -370,7 +370,8 @@ IMAGE_FALLBACK_PROMPTS = [  # 3번째 시도: 안전·밝은 야외·창가 장�
 OPEN_Q = "'\"‘“"     # 자막 카드 분할 시 '여는 따옴표'로 보는 글자
 CLOSE_Q = "'\"’”"
 IMG_MIN_MEAN, IMG_MIN_STD = 40.0, 15.0      # 축소 회색조 평균·표준편차 기준 — 검은 장면(평균 0)·거의 단색을 거른다
-IMG_MAX_ATTEMPTS = 3
+IMG_MAX_ATTEMPTS = 4   # 2026-11-04: 3→4. 10/30·10/31·11/03 가짜 글자 탈락으로 무산 — 마지막 시도는 책·서류가 들어갈 틈 없는 하늘 장면(IMAGE_LAST_RESORT)
+IMAGE_LAST_RESORT = "a wide soft blue sky with a few white clouds, nothing else in the frame"
 VIDEO_MIN_SECOND_MEAN = 30.0                # 완성본 초당 샘플 평균 밝기(0~255)가 이보다 낮으면 업로드하지 않는다
 SETTINGS = ["출근길 버스 안", "점심시간 혼자 먹는 식당 구석", "회의가 끝난 빈 회의실", "야근 뒤 편의점 앞", "주말 오전 거실 소파", "퇴근길 엘리베이터 안",
             "이직 면접 전날 저녁 책상 앞", "카페에서 메신저 알림을 보는 순간", "비 오는 날 정류장 우산 아래", "점심 뒤 사무실 자리", "퇴근 후 현관 신발장 앞", "아침 출근 준비하며 창밖을 보는 순간"]
@@ -1022,7 +1023,7 @@ def quality_main(args):
     paths, img_calls, img_log = [], 0, []
     for i, sc in enumerate(script["scenes"]):
         base = sc["image_prompt"].strip().rstrip(".")
-        variants = [base + IMAGE_STYLE_SUFFIX, base + IMAGE_RETRY_SUFFIX + IMAGE_STYLE_SUFFIX, IMAGE_FALLBACK_PROMPTS[i % len(IMAGE_FALLBACK_PROMPTS)] + IMAGE_STYLE_SUFFIX]
+        variants = [base + IMAGE_STYLE_SUFFIX, base + IMAGE_RETRY_SUFFIX + IMAGE_STYLE_SUFFIX, IMAGE_FALLBACK_PROMPTS[i % len(IMAGE_FALLBACK_PROMPTS)] + IMAGE_STYLE_SUFFIX, IMAGE_LAST_RESORT + IMAGE_STYLE_SUFFIX]
         out, got = None, None
         for att, prompt in enumerate(variants[:IMG_MAX_ATTEMPTS], 1):
             if not cost_gate(claude_cost_usd(CLAUDE_SPENT) + VISION_CALL_RESERVE_USD, est["tts"], (img_calls + 1) * fv.IMAGE_MODEL_COST_USD)[0]:
