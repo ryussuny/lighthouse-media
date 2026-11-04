@@ -21,6 +21,7 @@ HOME = os.path.expanduser("~")
 REPO = os.path.join(HOME, "lighthouse-media")
 CONFIG = os.path.join(REPO, "config")
 LEDGER = os.path.join(CONFIG, "ig-video-posts.json")
+FB_LEDGER = os.path.join(CONFIG, "fb-posts.json")
 STATE = os.path.join(CONFIG, "church-yt-ig-state.json")
 LOCAL_MAP = os.path.join(CONFIG, "church-yt-local-files.json")
 WORD_DIR = r"D:\동산교회\유튜브\output"
@@ -76,7 +77,8 @@ def caption_from_youtube(sn, vid):
 def main():
     dry = "--dry-run" in sys.argv[1:]
     ledger, state = jload(LEDGER, {}), jload(STATE, {})
-    cand = {v: e for v, e in candidates().items() if f"yt-{v}" not in ledger}
+    fb = jload(FB_LEDGER, {})   # 2026-11-04: 교회 페이스북 페이지에도 함께(post-video-to-ig.py 가 fb-church-yt-<id> 로 올림)
+    cand = {v: e for v, e in candidates().items() if f"yt-{v}" not in ledger or f"fb-church-yt-{v}" not in fb}
     if not cand:
         print("  올릴 후보 없음")
         return 0
@@ -91,7 +93,7 @@ def main():
             print(f"  [{vid}] {st.get('privacyStatus')} — 공개 전이라 건너뜀 ({sn['title'][:40]})")
             continue
         s = state.get(vid, {"tries": 0})
-        if s.get("gave_up"):
+        if s.get("gave_up") and f"fb-church-yt-{vid}" in fb:
             continue
         if not os.path.exists(e["file"]):
             print(f"  [{vid}] 로컬 영상 없음: {e['file']} — 건너뜀")

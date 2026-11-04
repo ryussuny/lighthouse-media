@@ -12,6 +12,8 @@
 """
 import os, sys, json, time, argparse, subprocess, datetime
 import requests
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+import fb_post  # noqa: E402  (2026-11-04 페이스북 교차게시)
 
 sys.stdout.reconfigure(encoding="utf-8")
 HOME = os.path.expanduser("~")
@@ -120,6 +122,7 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--account", choices=["lighthouse", "church"], default="lighthouse",
                     help="church = 동산교회 @garden___church (2026-11-04)")
+    ap.add_argument("--no-facebook", action="store_true", help="같은 계정의 페이스북 페이지에는 올리지 않음")
     a = ap.parse_args()
     global IG_ID
     tokens = json.load(open(os.path.join(CONFIG, "tokens.json"), encoding="utf-8"))
@@ -132,6 +135,13 @@ def main():
     if len(caption) > 2200:
         raise SystemExit(f"  중단: 캡션 {len(caption)}자(인스타 한도 2200자)")
     ledger = load_ledger()
+    # 2026-11-04 오너 지시: 인스타에 올리는 영상은 같은 계정의 페이스북 페이지에도(교회→교회 페이지, 라이트하우스→라이트하우스 페이지).
+    # 인스타 성공 여부와 따로 간다(교회 인스타 릴스가 API 2207085 로 막혀도 페북은 올라가게). 중복은 fb-posts.json 이 막는다.
+    if not a.no_facebook:
+        try:
+            fb_post.post_video(a.account, a.video, caption, f"fb-{a.account}-{key}", dry=a.dry_run)
+        except Exception as e:
+            print(f"  [페북] 오류(인스타 게시와 무관): {e}")
     if key in ledger:
         print(f"  이미 게시됨({ledger[key]['at']}, media {ledger[key]['media_id']}) — 건너뜀")
         return 0

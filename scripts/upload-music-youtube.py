@@ -236,6 +236,14 @@ def main():
         while resp is None: _, resp = req.next_chunk()
         t["youtube"] = resp["id"]
         print(f"   ✅ https://youtu.be/{resp['id']}")
+        # 2026-11-04 오너 지시: 라이트하우스 유튜브에 올린 것은 Lighthouse 페이스북 페이지에도(유튜브 링크 게시, fb-posts.json 중복 방지)
+        try:
+            sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+            import fb_post
+            fb_post.post_link("lighthouse", f"🎧 {t['title']} — Lighthouse Worship\n쉼이 필요한 당신을 위한 묵상 워십\n\n#worship #ccm #찬양 #LighthouseWorship",
+                              f"https://youtu.be/{resp['id']}", f"fb-lighthouse-yt-{resp['id']}")
+        except Exception as e:
+            print(f"   페이스북 오류(유튜브는 올라감): {e}")
         done += 1
         save_board(board)  # 곡마다 저장 (중단 대비)
 
