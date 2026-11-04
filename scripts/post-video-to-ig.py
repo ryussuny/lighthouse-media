@@ -27,7 +27,7 @@ FFPROBE = FFMPEG.replace("ffmpeg.exe", "ffprobe.exe") if FFMPEG.endswith(".exe")
 
 
 def probe(path):
-    out = subprocess.run([FFPROBE, "-v", "error", "-show_entries", "stream=codec_type,codec_name,width,height,sample_rate",
+    out = subprocess.run([FFPROBE, "-v", "error", "-show_entries", "stream=codec_type,codec_name,width,height,sample_rate,pix_fmt",
                           "-show_entries", "format=duration", "-of", "json", path], capture_output=True, text=True, check=True)
     return json.loads(out.stdout)
 
