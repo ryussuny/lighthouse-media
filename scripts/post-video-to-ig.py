@@ -41,6 +41,14 @@ def prepare(path):
     print(f"  원본: {v['width']}x{v['height']} {v['codec_name']} · {dur:.1f}초 · 오디오 {a and a.get('sample_rate')}Hz")
     if not (3 <= dur <= 900):
         raise SystemExit(f"  중단: 길이 {dur:.1f}초는 릴스 범위(3~900초) 밖")
+    # 2026-11-04: yuv444p(High 4:4:4) 영상은 컨테이너는 FINISHED 인데 media_publish 가 2207085 로 거절됐다 → 영상도 yuv420p 로
+    if v.get("pix_fmt") != "yuv420p":
+        fixed = os.path.splitext(path)[0] + "_ig.mp4"
+        subprocess.run([FFMPEG, "-y", "-v", "error", "-i", path, "-c:v", "libx264", "-profile:v", "high", "-pix_fmt", "yuv420p",
+                        "-crf", "20", "-preset", "medium", "-r", "30", "-c:a", "aac", "-ar", "48000", "-b:a", "192k",
+                        "-movflags", "+faststart", fixed], check=True)
+        print(f"  영상 yuv420p·오디오 48kHz로 변환: {fixed}")
+        return fixed
     if a and int(a.get("sample_rate", 0)) > 48000:
         fixed = os.path.splitext(path)[0] + "_ig.mp4"
         subprocess.run([FFMPEG, "-y", "-v", "error", "-i", path, "-c:v", "copy", "-c:a", "aac", "-ar", "48000",
@@ -94,6 +102,8 @@ def upload_ig_reels(vpath, caption, token):
         if st == "FINISHED":
             r2 = requests.post(f"https://graph.facebook.com/v21.0/{IG_ID}/media_publish",
                                data={"creation_id": cid, "access_token": token}, timeout=30).json()
+            if "id" not in r2:
+                print(f"  게시(publish) 거절: {r2.get('error', r2)}")
             return r2.get("id")
         if st == "ERROR":
             print("  IG 처리 오류")
@@ -108,7 +118,15 @@ def main():
     ap.add_argument("--caption-file", required=True)
     ap.add_argument("--key", help="중복 방지 키(기본: 영상 파일명)")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--account", choices=["lighthouse", "church"], default="lighthouse",
+                    help="church = 동산교회 @garden___church (2026-11-04)")
     a = ap.parse_args()
+    global IG_ID
+    tokens = json.load(open(os.path.join(CONFIG, "tokens.json"), encoding="utf-8"))
+    if a.account == "church":
+        IG_ID, token = tokens["church_ig_id"], tokens["church_page"]
+    else:
+        token = tokens["instagram"]
     key = a.key or os.path.basename(a.video)
     caption = open(a.caption_file, encoding="utf-8").read().strip()
     if len(caption) > 2200:
@@ -123,7 +141,6 @@ def main():
     if a.dry_run:
         print("  --dry-run: 게시하지 않음")
         return 0
-    token = json.load(open(os.path.join(CONFIG, "tokens.json"), encoding="utf-8"))["instagram"]
     mid = upload_ig_reels(vpath, caption, token)
     if not mid:
         print("  게시 실패")
