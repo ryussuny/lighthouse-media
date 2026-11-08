@@ -951,7 +951,7 @@ def upload_youtube_quality(vpath, script, tl, privacy="unlisted"):
         raise RuntimeError(f"토큰이 '{ch}' 채널을 가리킨다 — Lighthouse Media가 아니면 올리지 않는다(youtube-reauth.py로 다시 연결)")
     tags_line = " ".join(script["hashtags"] + ["#shorts"])
     desc = f"{script['description_hook']}\n\n{script['description_body']}\n\n—\n류선희 | Lighthouse Media\n\n{tags_line}"
-    body = {"snippet": {"title": script["title"] + " #shorts", "description": desc, "tags": script["tags"], "categoryId": "22", "defaultLanguage": "ko"},
+    body = {"snippet": {"title": script["title"] + " #shorts", "description": desc, "tags": script["tags"], "categoryId": "22", "defaultLanguage": "ko", "defaultAudioLanguage": "ko"},
             "status": {"privacyStatus": privacy, "selfDeclaredMadeForKids": False}}
     req = yt.videos().insert(part="snippet,status", body=body, media_body=MediaFileUpload(vpath, mimetype="video/mp4", resumable=True))
     resp = None
