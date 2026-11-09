@@ -18,6 +18,7 @@ OUT = os.path.join(ROOT, "data", "yt-token-health.json")
 FILES = ("token_lighthouse.json", "token_dongsan.json")
 LIFETIME_DAYS = 7
 WARN_DAYS = 2
+REFRESH_TIMEOUT = 10
 
 
 def _sidecar():
@@ -48,7 +49,13 @@ def _refresh_ok(path):
         creds = Credentials.from_authorized_user_file(path)
         if not creds.refresh_token:
             return False, "refresh_token 없음"
-        creds.refresh(Request())  # 메모리에서만 갱신, 저장 안 함
+        import requests
+
+        class _Capped(requests.Session):  # google-auth 기본 timeout 120초 → 10초 상한(heartbeat 지연 방지)
+            def request(self, *a, **k):
+                k["timeout"] = min(k.get("timeout") or REFRESH_TIMEOUT, REFRESH_TIMEOUT)
+                return super().request(*a, **k)
+        creds.refresh(Request(_Capped()))  # 메모리에서만 갱신, 저장 안 함
         return True, ""
     except Exception as e:
         msg = str(e).replace("\n", " ")
