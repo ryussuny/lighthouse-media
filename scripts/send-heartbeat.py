@@ -140,6 +140,15 @@ def news_briefing():
     except Exception:
         return None
 
+def yt_tokens():
+    try:
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+        import yt_token_health
+        return yt_token_health.check()
+    except Exception as e:
+        return {"error": str(e)[:120]}
+
+
 def main():
     payload = {
         "host": os.environ.get("COMPUTERNAME", "JARVIS-PC"),
@@ -153,6 +162,7 @@ def main():
         "cys_defects": cys_defects(),
         "cys_schedule": cys_schedule(),
         "news_briefing": news_briefing(),
+        "yt_tokens": yt_tokens(),
     }
     req = urllib.request.Request(TOWER, data=json.dumps(payload).encode(),
                                  headers={"Content-Type": "application/json"})
