@@ -325,8 +325,8 @@ try:
     ' "body_insight": "인사이트 문단 — 오늘의 심리학 렌즈 기반 연구/근거 1개를 자연스럽게 녹인 새 관점 (3-4문장)",\n'
     ' "body_action": "실천 문단 — 마이크로 액션과 그 과학적 효과 (3-4문장, 구체적이고 즉시 실행 가능)",\n'
     ' "body_depth": "반전 문단 — 관점이 뒤집히는 순간. \'그런데 정말은...\' (2-3문장, 역설/반전 필수)",\n'
-    ' "hashtags_kr": "#힐링 #자기계발 #번아웃 #직장인 #마음관리 #위로 #공감 #멘탈케어 #일상 #하루 #에세이 #깊은생각",\n'
-    ' "hashtags_en": "#LighthouseMedia #SelfCare #Motivation #Healing #Mindfulness #DeepThoughts #InnerPeace",\n'
+    ' "hashtags_kr": "오늘의 인물·주제에 맞는 한국어 해시태그 2개 (매번 같은 조합 금지, 영어 1개와 합쳐 총 3개 이하)",\n'
+    ' "hashtags_en": "#LighthouseMedia",\n'
     ' "caption": "인스타 캡션 에세이 (아래 구조 준수, 500-700자)"}\n\n'
     "=== 캡션 구조 (반드시 이 순서) ===\n"
     "1) hook_quote (인용구로 시작)\n"
@@ -768,6 +768,8 @@ if thumb_url:
         )
     # 2026-09-28 릴스 중심 전환: 이미지 대신 완성 영상을 릴스로 게시(이미지 평균 도달≈1, 릴스≈38).
     # 영상 업로드가 실패하면 기존처럼 썸네일 이미지로 대체한다.
+    if _rx is not None:
+        caption = _rx.limit_hashtags(caption)  # 2026-11-11 해시태그 3개 이하 강제(승인대기판 7번)
     ig_ok = False
     reel_id = upload_premium_reel(vpath, caption)
     if reel_id:

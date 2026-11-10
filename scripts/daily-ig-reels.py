@@ -336,6 +336,23 @@ def get_today_category(override=None):
     return DAY_THEME_MAP[weekday], date_str
 
 
+MAX_HASHTAGS = 3  # 2026-11-11 오너 승인(승인대기판 7번): 캡션 해시태그 3개 이하 강제 — AI·예비·프리미엄 공통 최종 관문
+
+
+def limit_hashtags(text, n=MAX_HASHTAGS):
+    """캡션에서 해시태그를 앞에서부터 n개만 남기고 나머지는 지운다(본문 줄바꿈은 유지)."""
+    if not text:
+        return text
+    cnt = [0]
+    def _keep(m):
+        cnt[0] += 1
+        return m.group(0) if cnt[0] <= n else ""
+    out = re.sub(r"#[^\s#]+", _keep, text)
+    out = re.sub(r"[ \t]+\n", "\n", out)  # 지운 자리의 줄끝 공백 정리
+    out = re.sub(r"\n{3,}", "\n\n", out).rstrip()
+    return out
+
+
 # ═══════════════════════════════════════════════════════════════
 # AI 릴스 콘텐츠 생성
 # ═══════════════════════════════════════════════════════════════
@@ -381,7 +398,7 @@ def _generate_reel_once(category, date_str, recent_hooks=(), extra_note=""):
 - caption_kr은 공감형 에세이 (300-500자), 마지막에 반드시 "이 말이 필요한 사람에게 보내주세요" 포함
 - caption_kr 첫 줄은 피드에서 잘리지 않는 25자 이내 공감 문장(훅을 반복하지 말고 확장)
 - caption_en은 따뜻하고 시적인 영어 1문장
-- hashtags는 한국어 위주 5개 이내(대형 태그 1개 + 틈새 태그 4개, 예: #직장인위로 #번아웃회복)
+- hashtags는 한국어 위주 3개 이내(대형 태그 1개 + 틈새 태그 2개, 예: #직장인위로 #번아웃회복)
 - 구체성(필수): 화면에 보이는 대본(hook·scenes의 text/sub·closing) 안에 ①구체 상황 1곳(시간·장소·숫자 중 1개 이상, 예: "퇴근길 지하철", "밤 11시", "5분")과 ②오늘 당장 할 수 있는 실천 1개(예: "물 한 잔 마시기", "3번 깊게 숨쉬기")가 글자 그대로 들어가야 합니다. 추상적 위로만 이어지는 대본 금지.
 - concrete_detail에는 ①의 구절을, action에는 ②의 구절을 화면 대본에 쓴 그대로(글자 그대로) 적습니다. 화면 대본에 없는 표현을 적으면 안 됩니다.
 - 한글 맞춤법·띄어쓰기를 정확히 지키고 비표준 표현(예: "천천해도")을 쓰지 않습니다.
@@ -1057,6 +1074,7 @@ def main():
         source = "FALLBACK"
         scenes = fallback["scenes"]
         caption = fallback["cap"]
+    caption = limit_hashtags(caption)  # 2026-11-11 해시태그 3개 이하 강제(AI·예비 공통)
 
     # BGM 선택 — 카테고리 분위기에 맞춰 후보군을 좁힌 뒤 랜덤 선택
     # 2026-09-29 worker-2: 1단계 품질기준표(00-benchmark-and-rubric.md) 항목5②
