@@ -130,7 +130,7 @@
 </header>
 
 <div class="wrap">
-  <div class="sub" id="orgSub">FORGE(콘텐츠)+MINT(수익화) 통합 가상회사 v2 — 19개 부서 · 200역할. 1~3그룹은 수익 창출 전용, 목회지원본부는 회사 KPI 제외. 2026-09-27 200명 체계로 확장(역할마다 전문 스킬 장착).</div>
+  <div class="sub" id="orgSub">FORGE(콘텐츠)+MINT(수익화) 통합 가상회사 v2 — 22개 부서 · 216역할. 1~3그룹은 수익 창출 전용, 목회지원본부는 회사 KPI 제외. 2026-09-27 200명 체계로 확장(역할마다 전문 스킬 장착).</div>
 
   <div class="hq">
     <div class="row">
@@ -141,9 +141,9 @@
   </div>
 
   <div class="stationbar">
-    <div class="stat"><div class="n">19</div><div class="l">본부/사업부</div></div>
-    <div class="stat"><div class="n">200</div><div class="l">직책(역할)</div></div>
-    <div class="stat"><div class="n">295</div><div class="l">장착 전문 스킬</div></div>
+    <div class="stat"><div class="n">22</div><div class="l">본부/사업부</div></div>
+    <div class="stat"><div class="n">216</div><div class="l">직책(역할)</div></div>
+    <div class="stat"><div class="n">296</div><div class="l">장착 전문 스킬</div></div>
     <div class="stat"><div class="n">QA</div><div class="l">만든이≠검증자</div></div>
   </div>
 
@@ -153,12 +153,15 @@
     <select id="deptSelect">
       <option>경영전략실</option>
       <option>재무회계본부</option>
+      <option>자산운용실(자동매매 감독)</option>
       <option>법무·컴플라이언스실</option>
       <option>인사·스킬개발실</option>
       <option>비서실(JARVIS)</option>
+      <option>출시추진실(막힌 걸음 해결)</option>
       <option>콘텐츠제작본부(FORGE)</option>
       <option>음악사업부(Lighthouse Worship)</option>
       <option>출판사업부(전자책)</option>
+      <option>맞춤출판사업부(믿음의 발자취)</option>
       <option>콘텐츠마케팅사업부(실버애드센스/브랜드커넥트)</option>
       <option>커머스사업부(쇼핑쇼츠)</option>
       <option>비전코칭·교육사업부</option>
@@ -182,11 +185,11 @@
   <div class="sub" style="margin-bottom:12px;">제출한 지시는 아래 목록에 쌓이고, JARVIS가 다음 대화 시작 시 pending 항목을 확인해 처리합니다.</div>
   <div class="directive-list" id="directiveList"><div class="empty-directive">불러오는 중…</div></div>
 
-  <h2>부서 조직도 <span class="count">19개 부서 · 200명 · 클릭해서 펼치기 · ⚠=스크립트 리뷰 후 실행</span></h2>
+  <h2>부서 조직도 <span class="count">22개 부서 · 216명 · 클릭해서 펼치기 · ⚠=스크립트 리뷰 후 실행</span></h2>
   <input class="dept-search" id="deptSearch" type="text" placeholder="부서명·직책·업무로 검색…" oninput="filterDepts()">
 
   <div class="dept-grid" id="deptGrid">
-  <div class="group-band">경영·지원 그룹 · 42명</div>
+  <div class="group-band">경영·지원 그룹 · 51명</div>
   <details class="dept" open data-dept="경영전략실">
     <summary><span class="title">1. 경영전략실 (Executive &amp; Strategy)</span><span class="dept-count">10명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
@@ -231,8 +234,25 @@
       <div class="chip"><div class="role">가격전략분석가</div><div class="duty">상품별 가격·할인 정책</div><div class="map">pricing, pricing-strategy, discount-marketing</div></div>
     </div>
   </details>
+  <details class="dept" data-dept="자산운용실(자동매매 감독)">
+    <summary><span class="title">3. 자산운용실 — 자동매매 감독 (Asset Management)</span><span class="dept-count">4명</span><span class="arrow">▶</span></summary>
+    <div class="dept-meta">
+      <div class="dept-mission">통제실 자동매매(한국투자증권 실계좌) 감독·손실한도·기록. 매매 규칙 변경·투입금 증액은 오너 승인</div>
+      <div class="dept-current" id="cur-자산운용실(자동매매 감독)">현재 대기 중(지시 없음)</div>
+      <a class="dept-jump" href="/jarvis.html#sec-revenue">관제탑에서 현황 보기 →</a>
+    </div>
+    <div class="head-band">
+      <span class="head-tag">부서장</span>
+      <div class="head-info"><div class="role">실장</div><div class="duty">운용 원칙·손실한도·중단 판단</div><div class="map">control-room/trading (매일 09:31 실행) · ⚠careful, guard</div></div>
+    </div>
+    <div class="members">
+      <div class="chip"><div class="role">전략·백테스트 분석가</div><div class="duty">전략 검증·과최적화 점검</div><div class="map">trading/backtest.py · timesfm-forecasting, korean-stock-search</div></div>
+      <div class="chip"><div class="role">리스크 감시담당</div><div class="duty">손절·중단 상태·이상 거래 감시</div><div class="map">data/trade_state.json, trade-run.log · ⚠canary, ⚠health</div></div>
+      <div class="chip"><div class="role">매매기록·세무담당</div><div class="duty">거래 기록·수익률·세금 자료</div><div class="map">data/trade_log.json · tracking, korean-law-search</div></div>
+    </div>
+  </details>
   <details class="dept" data-dept="법무·컴플라이언스실">
-    <summary><span class="title">3. 법무·컴플라이언스실 (Legal &amp; Compliance)</span><span class="dept-count">8명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">4. 법무·컴플라이언스실 (Legal &amp; Compliance)</span><span class="dept-count">8명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">약관·개인정보·광고표시·저작권·상표·인허가·정부지원</div>
       <div class="dept-current" id="cur-법무·컴플라이언스실">현재 대기 중(지시 없음)</div>
@@ -253,7 +273,7 @@
     </div>
   </details>
   <details class="dept" data-dept="인사·스킬개발실">
-    <summary><span class="title">4. 인사·스킬개발실 (Talent &amp; Skills)</span><span class="dept-count">6명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">5. 인사·스킬개발실 (Talent &amp; Skills)</span><span class="dept-count">6명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">역할·스킬 체계·온보딩·자율운영 설계</div>
       <div class="dept-current" id="cur-인사·스킬개발실">현재 대기 중(지시 없음)</div>
@@ -272,7 +292,7 @@
     </div>
   </details>
   <details class="dept" data-dept="비서실(JARVIS)">
-    <summary><span class="title">5. 비서실 — JARVIS 오퍼레이션 (Chief of Staff Office)</span><span class="dept-count">10명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">6. 비서실 — JARVIS 오퍼레이션 (Chief of Staff Office)</span><span class="dept-count">10명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">전 부서 지휘·라우팅·보고·기억</div>
       <div class="dept-current" id="cur-비서실(JARVIS)">현재 대기 중(지시 없음)</div>
@@ -294,9 +314,27 @@
       <div class="chip"><div class="role">작업라우터(디스패처)</div><div class="duty">요청 분류·역할 배정·이슈화</div><div class="map">.jarvis/org/roles.json · triage, to-issues</div></div>
     </div>
   </details>
-  <div class="group-band">사업부 그룹 · 77명</div>
+  <details class="dept" data-dept="출시추진실(막힌 걸음 해결)">
+    <summary><span class="title">7. 출시추진실 — 막힌 걸음 해결 (Launch Desk)</span><span class="dept-count">5명</span><span class="arrow">▶</span></summary>
+    <div class="dept-meta">
+      <div class="dept-mission">다 만든 상품의 마지막 제출(DistroKid·KDP·애드센스 재심사 등)을 오너 5분 작업으로 줄여 첫 매출을 만든다</div>
+      <div class="dept-current" id="cur-출시추진실(막힌 걸음 해결)">현재 대기 중(지시 없음)</div>
+      <a class="dept-jump" href="/jarvis.html#sec-revenue">관제탑에서 현황 보기 →</a>
+    </div>
+    <div class="head-band">
+      <span class="head-tag">부서장</span>
+      <div class="head-info"><div class="role">실장</div><div class="duty">막힌 걸음 목록·우선순위·완료 추적</div><div class="map">수익_막힌걸음_20261110.md · triage, tracking</div></div>
+    </div>
+    <div class="members">
+      <div class="chip"><div class="role">제출자료 준비담당</div><div class="duty">곡정보·원고·표지·소개글을 붙여넣기 순서대로 정리</div><div class="map">⚠document-release, handoff</div></div>
+      <div class="chip"><div class="role">오너세션 진행담당</div><div class="duty">목사님과 함께 화면 열고 로그인·확인만 받기</div><div class="map">handoff, ⚠careful</div></div>
+      <div class="chip"><div class="role">심사·반려 대응담당</div><div class="duty">심사 결과·반려 사유 확인 후 재제출</div><div class="map">verification-before-completion, hallucination-guard</div></div>
+      <div class="chip"><div class="role">주간 수익보고 담당</div><div class="duty">이번 주 들어온 돈·막힌 걸음·5분짜리 일 3가지 보고</div><div class="map">tracking, ⚠retro</div></div>
+    </div>
+  </details>
+  <div class="group-band">사업부 그룹 · 84명</div>
   <details class="dept" data-dept="콘텐츠제작본부(FORGE)">
-    <summary><span class="title">6. 콘텐츠제작본부 — FORGE (FORGE Production)</span><span class="dept-count">14명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">8. 콘텐츠제작본부 — FORGE (FORGE Production)</span><span class="dept-count">14명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">말씀카드·영상·SNS 매일 자동 생산</div>
       <div class="dept-current" id="cur-콘텐츠제작본부(FORGE)">현재 대기 중(지시 없음)</div>
@@ -323,7 +361,7 @@
     </div>
   </details>
   <details class="dept" data-dept="음악사업부(Lighthouse Worship)">
-    <summary><span class="title">7. 음악사업부 — Lighthouse Worship (Music)</span><span class="dept-count">9명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">9. 음악사업부 — Lighthouse Worship (Music)</span><span class="dept-count">9명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">AI CCM 워십 음원 제작·발매·수익화</div>
       <div class="dept-current" id="cur-음악사업부(Lighthouse Worship)">현재 대기 중(지시 없음)</div>
@@ -345,7 +383,7 @@
     </div>
   </details>
   <details class="dept" data-dept="출판사업부(전자책)">
-    <summary><span class="title">8. 출판사업부 — 전자책 (Publishing)</span><span class="dept-count">10명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">10. 출판사업부 — 전자책 (Publishing)</span><span class="dept-count">10명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">전자책 기획·집필·유통</div>
       <div class="dept-current" id="cur-출판사업부(전자책)">현재 대기 중(지시 없음)</div>
@@ -367,8 +405,28 @@
       <div class="chip"><div class="role">편집디자이너</div><div class="duty">본문 레이아웃·PDF 출판</div><div class="map">⚠make-pdf, ⚠document-generate</div></div>
     </div>
   </details>
+  <details class="dept" data-dept="맞춤출판사업부(믿음의 발자취)">
+    <summary><span class="title">11. 맞춤출판사업부 — 믿음의 발자취 (Life-Story Books)</span><span class="dept-count">7명</span><span class="arrow">▶</span></summary>
+    <div class="dept-meta">
+      <div class="dept-mission">부모님·권사님 신앙 인생 인터뷰 → 기록책 제작(건당 9.9만~49만원). 동산교회 성도 대상 영업 금지</div>
+      <div class="dept-current" id="cur-맞춤출판사업부(믿음의 발자취)">현재 대기 중(지시 없음)</div>
+      <a class="dept-jump" href="/jarvis.html#sec-revenue">관제탑에서 현황 보기 →</a>
+    </div>
+    <div class="head-band">
+      <span class="head-tag">부서장</span>
+      <div class="head-info"><div class="role">사업부장</div><div class="duty">상품·가격·첫 고객 확보 총괄</div><div class="map">상품기획_30일계획.md · product-launch, pricing-strategy</div></div>
+    </div>
+    <div class="members">
+      <div class="chip"><div class="role">인터뷰어</div><div class="duty">질문지로 구술 인터뷰 진행·녹음</div><div class="map">인터뷰질문지.md · customer-stories, transcription</div></div>
+      <div class="chip"><div class="role">구술정리 작가</div><div class="duty">녹취를 1인칭 이야기 원고로</div><div class="map">writing-shape, korean-humanizer</div></div>
+      <div class="chip"><div class="role">편집·교정자</div><div class="duty">사실 확인·맞춤법·가족 확인본</div><div class="map">edit-article, korean-spell-check</div></div>
+      <div class="chip"><div class="role">사진 정리담당</div><div class="duty">옛 사진 스캔본 보정·배치(얼굴 생성·변형 금지)</div><div class="map">image-optimization</div></div>
+      <div class="chip"><div class="role">조판·인쇄담당</div><div class="duty">본문 조판·PDF·인쇄 견적</div><div class="map">⚠make-pdf, ⚠document-generate</div></div>
+      <div class="chip"><div class="role">고객관리·개인정보담당</div><div class="duty">가족 소통·동의서·개인정보 보관</div><div class="map">가족안내문.md · faq, korean-privacy-terms</div></div>
+    </div>
+  </details>
   <details class="dept" data-dept="콘텐츠마케팅사업부(실버애드센스/브랜드커넥트)">
-    <summary><span class="title">9. 콘텐츠마케팅사업부 — 실버 애드센스 / 브랜드커넥트 (Content Marketing)</span><span class="dept-count">11명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">12. 콘텐츠마케팅사업부 — 실버 애드센스 / 브랜드커넥트 (Content Marketing)</span><span class="dept-count">11명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">시니어 생활정보 블로그·제휴 수익</div>
       <div class="dept-current" id="cur-콘텐츠마케팅사업부(실버애드센스/브랜드커넥트)">현재 대기 중(지시 없음)</div>
@@ -392,7 +450,7 @@
     </div>
   </details>
   <details class="dept" data-dept="커머스사업부(쇼핑쇼츠)">
-    <summary><span class="title">10. 커머스사업부 — 쇼핑쇼츠 (Commerce)</span><span class="dept-count">8명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">13. 커머스사업부 — 쇼핑쇼츠 (Commerce)</span><span class="dept-count">8명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">제품 소싱·쇼핑쇼츠·쿠팡파트너스</div>
       <div class="dept-current" id="cur-커머스사업부(쇼핑쇼츠)">현재 대기 중(지시 없음)</div>
@@ -413,7 +471,7 @@
     </div>
   </details>
   <details class="dept" data-dept="비전코칭·교육사업부">
-    <summary><span class="title">11. 비전코칭·교육사업부 (Vision Coaching &amp; Education)</span><span class="dept-count">16명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">14. 비전코칭·교육사업부 (Vision Coaching &amp; Education)</span><span class="dept-count">16명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">최윤식 박사 미래준비학교 체계 기반 비전·진로·재정 코칭과 강의 상품화 (수익 3라인 중 &#x27;강의&#x27;)</div>
       <div class="dept-current" id="cur-비전코칭·교육사업부">현재 대기 중(지시 없음)</div>
@@ -442,7 +500,7 @@
     </div>
   </details>
   <details class="dept" data-dept="영업팀">
-    <summary><span class="title">12. 영업팀 (Sales) (Sales)</span><span class="dept-count">9명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">15. 영업팀 (Sales) (Sales)</span><span class="dept-count">9명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">리드→주문 전환 파이프라인</div>
       <div class="dept-current" id="cur-영업팀">현재 대기 중(지시 없음)</div>
@@ -465,7 +523,7 @@
   </details>
   <div class="group-band">전사 지원 그룹 · 65명</div>
   <details class="dept" data-dept="성장마케팅본부">
-    <summary><span class="title">13. 성장마케팅본부 (Growth Marketing)</span><span class="dept-count">15명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">16. 성장마케팅본부 (Growth Marketing)</span><span class="dept-count">15명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">SEO·GEO·광고·전환·이메일·소셜 전사 지원</div>
       <div class="dept-current" id="cur-성장마케팅본부">현재 대기 중(지시 없음)</div>
@@ -493,7 +551,7 @@
     </div>
   </details>
   <details class="dept" data-dept="웹·앱개발본부">
-    <summary><span class="title">14. 웹·앱개발본부 (Product &amp; Engineering)</span><span class="dept-count">12명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">17. 웹·앱개발본부 (Product &amp; Engineering)</span><span class="dept-count">12명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">기획→화면명세→작업분해→감독관 검증→자율빌드</div>
       <div class="dept-current" id="cur-웹·앱개발본부">현재 대기 중(지시 없음)</div>
@@ -518,7 +576,7 @@
     </div>
   </details>
   <details class="dept" data-dept="기술운영본부">
-    <summary><span class="title">15. 기술운영본부 (IT/인프라) (Tech Operations)</span><span class="dept-count">11명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">18. 기술운영본부 (IT/인프라) (Tech Operations)</span><span class="dept-count">11명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">서버·배포·보안·백업·모니터링</div>
       <div class="dept-current" id="cur-기술운영본부">현재 대기 중(지시 없음)</div>
@@ -542,7 +600,7 @@
     </div>
   </details>
   <details class="dept" data-dept="AI미디어연구소">
-    <summary><span class="title">16. AI미디어연구소 (AI Media Lab)</span><span class="dept-count">9명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">19. AI미디어연구소 (AI Media Lab)</span><span class="dept-count">9명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">생성형 이미지·영상·음성·아바타 R&amp;D (fal.ai 가동)</div>
       <div class="dept-current" id="cur-AI미디어연구소">현재 대기 중(지시 없음)</div>
@@ -564,7 +622,7 @@
     </div>
   </details>
   <details class="dept" data-dept="리서치·미래전략연구소">
-    <summary><span class="title">17. 리서치·미래전략연구소 (Research &amp; Foresight Institute)</span><span class="dept-count">10명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">20. 리서치·미래전략연구소 (Research &amp; Foresight Institute)</span><span class="dept-count">10명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">밀레니엄 프로젝트 미래연구 방법론·딥리서치·공공데이터 분석</div>
       <div class="dept-current" id="cur-리서치·미래전략연구소">현재 대기 중(지시 없음)</div>
@@ -587,7 +645,7 @@
     </div>
   </details>
   <details class="dept" data-dept="품질보증·감사실">
-    <summary><span class="title">18. 품질보증·감사실 (Quality Assurance &amp; Audit)</span><span class="dept-count">8명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">21. 품질보증·감사실 (Quality Assurance &amp; Audit)</span><span class="dept-count">8명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">만든 이≠검증자 원칙의 전사 품질 게이트</div>
       <div class="dept-current" id="cur-품질보증·감사실">현재 대기 중(지시 없음)</div>
@@ -609,7 +667,7 @@
   </details>
   <div class="group-band">목회지원 그룹 (회사 수익범위 밖 · KPI 제외) · 16명</div>
   <details class="dept" data-dept="목회지원본부(SHEPHERD)">
-    <summary><span class="title">19. 목회지원본부 — SHEPHERD (Ministry Support)</span><span class="dept-count">16명</span><span class="arrow">▶</span></summary>
+    <summary><span class="title">22. 목회지원본부 — SHEPHERD (Ministry Support)</span><span class="dept-count">16명</span><span class="arrow">▶</span></summary>
     <div class="dept-meta">
       <div class="dept-mission">설교·말씀묵상·신학 연구 지원 (동산교회 · 회사 KPI 제외)</div>
       <div class="dept-current" id="cur-목회지원본부(SHEPHERD)">현재 대기 중(지시 없음)</div>
