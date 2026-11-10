@@ -9,6 +9,9 @@
 - 게시는 post-video-to-ig.py --account church --key yt-<video_id> (같은 키는 두 번 올리지 않는다).
 - 한 영상당 최대 3번 시도. 3번 모두 실패하면 더 시도하지 않고, 폰에서 직접 올리도록
   OneDrive\\인스타 올릴 영상\\ 에 영상과 글을 넣어 둔다(2026-11-04 교회 계정 API 릴스 2207085 대비).
+- 2026-11-10 오너 지시: 말씀 쇼츠(kind=word)는 인스타에 올리지 않고 폰 폴더(인스타 올릴 영상)에도 넣지 않는다 —
+  인스타는 config/church-yt-local-files.json 에 등록한 찬양 영상만. 말씀 쇼츠의 교회 페이스북 페이지 게시는
+  예전과 똑같이 이어간다(fb_post.post_video 를 직접 호출, 같은 키 fb-church-yt-<id>, 중복은 fb-posts.json 이 막음).
 - 토큰 값은 출력하지 않는다.
 
   py scripts/church-yt-to-ig.py            # 실제 게시
@@ -78,7 +81,12 @@ def main():
     dry = "--dry-run" in sys.argv[1:]
     ledger, state = jload(LEDGER, {}), jload(STATE, {})
     fb = jload(FB_LEDGER, {})   # 2026-11-04: 교회 페이스북 페이지에도 함께(post-video-to-ig.py 가 fb-church-yt-<id> 로 올림)
-    cand = {v: e for v, e in candidates().items() if f"yt-{v}" not in ledger or f"fb-church-yt-{v}" not in fb}
+    def pending(v, e):
+        # 말씀 쇼츠는 페북만 남았는지, 찬양 영상은 인스타·페북 중 하나라도 남았는지
+        if e["kind"] == "word":
+            return f"fb-church-yt-{v}" not in fb
+        return f"yt-{v}" not in ledger or f"fb-church-yt-{v}" not in fb
+    cand = {v: e for v, e in candidates().items() if pending(v, e)}
     if not cand:
         print("  올릴 후보 없음")
         return 0
@@ -102,6 +110,16 @@ def main():
         if not cap:
             cap = os.path.join(WORK, f"{vid}_caption.txt")
             open(cap, "w", encoding="utf-8").write(caption_from_youtube(sn, vid))
+        if e["kind"] == "word":
+            # 2026-11-10: 말씀 쇼츠는 인스타·폰 폴더 제외, 페북 교회 페이지에만(기존과 같은 글·같은 키)
+            print(f"  [{vid}] 말씀 쇼츠 — 인스타 제외, 페북만 {'(dry-run)' if dry else ''}: {sn['title'][:50]}")
+            try:
+                sys.path.insert(0, os.path.join(REPO, "scripts", "lib"))
+                import fb_post
+                fb_post.post_video("church", e["file"], open(cap, encoding="utf-8").read().strip(), f"fb-church-yt-{vid}", dry=dry)
+            except Exception as ex:
+                print(f"  [페북] 오류(인스타와 무관): {ex}")
+            continue
         print(f"  [{vid}] 공개됨 → 인스타 게시 {'(dry-run)' if dry else ''}: {sn['title'][:50]}")
         cmd = [sys.executable, "-u", os.path.join(REPO, "scripts", "post-video-to-ig.py"), e["file"],
                "--caption-file", cap, "--account", "church", "--key", f"yt-{vid}"] + (["--dry-run"] if dry else [])
