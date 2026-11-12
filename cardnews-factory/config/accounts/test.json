@@ -1,0 +1,19 @@
+{
+  "account_id": "test",
+  "is_virtual": true,
+  "ig_user_id": null,
+  "token_ref": null,
+  "topic": "생활 정보·정부 지원 제도 (시험용 가상 계정)",
+  "seed_keywords": ["정부지원금", "생활꿀팁", "건강보험", "국민연금", "기초연금", "연말정산", "에너지바우처"],
+  "trend_categories": {"youtube": ["26", "25"], "google_trends_geo": "KR"},
+  "daily_post_cap": 1,
+  "post_times": ["12:30"],
+  "paused": false,
+  "banned_topics_extra": [],
+  "brand": {
+    "primary_color": "#1F3A5F",
+    "accent_color": "#F2A541",
+    "font": "Pretendard",
+    "logo_path": null
+  }
+}

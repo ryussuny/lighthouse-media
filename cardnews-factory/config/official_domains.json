@@ -1,0 +1,10 @@
+{
+  "_note": "G1 공식 출처 도메인 목록. 출처 url 의 호스트가 suffix 중 하나로 끝나거나 exact 와 같으면 공식 출처로 본다.",
+  "version": 1,
+  "suffixes": [".go.kr", ".or.kr", ".re.kr", ".ac.kr", ".mil.kr"],
+  "exact": [
+    "law.go.kr", "korea.kr", "gov.kr", "data.go.kr", "kosis.kr",
+    "nhis.or.kr", "nps.or.kr", "hira.or.kr", "kosaf.go.kr",
+    "bok.or.kr", "fss.or.kr", "kostat.go.kr", "kma.go.kr"
+  ]
+}
