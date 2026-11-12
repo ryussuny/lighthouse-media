@@ -52,7 +52,7 @@ def run(acc, banned, today=None, now=None, fetchers=None, generate=None, classif
     stop_kw = {"stop_file": stop_file} if stop_file else {}
     c0, g0 = _usage_snapshot()
     inj = {"calls": 0}
-    gates, state = [], {"kw": None, "stage": "start"}
+    gates, state = [], {"kw": None, "stage": "start", "attempts": 1}
 
     def count(fn):
         def w(*a, **k):
@@ -67,6 +67,7 @@ def run(acc, banned, today=None, now=None, fetchers=None, generate=None, classif
         cost = {"anthropic": {"calls": inj["calls"] + (c1["calls"] - c0["calls"]) + (g1["calls"] - g0["calls"]),
                               "input_tokens": (c1["input_tokens"] - c0["input_tokens"]) + (g1["input_tokens"] - g0["input_tokens"]),
                               "output_tokens": (c1["output_tokens"] - c0["output_tokens"]) + (g1["output_tokens"] - g0["output_tokens"])},
+                "attempts": state["attempts"],
                 "higgsfield": {"calls": 0, "credits": 0, "note": "배경은 data/backgrounds 라이브러리 재사용"}}
         ledger.append("cost_ledger", {"date": day, "account_id": acc["account_id"], "kw": state["kw"], "status": status, "rehearsal": rehearsal, **cost}, ledger_dir)
         ledger.append("run_ledger", {"date": day, "account_id": acc["account_id"], "kw": state["kw"], "status": status,
@@ -114,25 +115,41 @@ def run(acc, banned, today=None, now=None, fetchers=None, generate=None, classif
         sc = {s["kw"]: s for s in trec.get("scores", [])}.get(state["kw"])
         if not rehearsal and (rrec.get("evidence") == "none" or (sc is not None and sc.get("evidence") is False)):
             hold("research", None, [("EVIDENCE", False, "지표 근거 없는 주제(evidence=none)")], "지표 근거 없는 주제(evidence=none)")
-        urls = set(rrec.get("source_urls", []))
-        latest = {}
-        for s in ledger.read("source_ledger", ledger_dir):
-            if s.get("kw") == state["kw"] and s.get("url") in urls:
-                latest[s["url"]] = s
-        sources = list(latest.values())
-        # 3) compose
-        checkgate("compose")
-        try:
-            draft = compose.compose(state["kw"], sources, account_id=acc["account_id"], generate=gen, today=today)
-        except compose.ComposeError as e:
-            hold("compose", None, [("COMPOSE", False, str(e))], f"글 생성 실패: {e}")
-        # 4) verify G1·G2
-        checkgate("verify")
-        v = verify.run(draft, sources, ledger_dir)
-        gates.append({"gate": "G1", "pass": v["G1"][0], "reason": v["G1"][1]})
-        gates.append({"gate": "G2", "pass": v["G2"][0], "reason": v["G2"][1]})
-        if not v["pass"]:
-            hold("verify", draft, [("G1", *v["G1"]), ("G2", *v["G2"])], f"G1: {v['G1'][1]} / G2: {v['G2'][1]}")
+        sources = research.sources_for_run(rrec, ledger_dir)   # 이번 실행(run_id) 몫만
+        # 3~4) compose → verify G1·G2. G2 만 실패하면 verify 사유를 피드백으로 넘겨 같은 출처로 딱 1회 다시 쓴다(전 관문 처음부터).
+        #      G1 실패·compose 실패는 재작성 없이 바로 보류. (G3 는 아래 guard — 금칙이라 재작성하지 않는다.)
+        feedback = None
+        for attempt in (1, 2):
+            state["attempts"] = attempt
+            checkgate("compose")
+            try:
+                draft = compose.compose(state["kw"], sources, account_id=acc["account_id"], generate=gen, today=today,
+                                        feedback=feedback)
+            except compose.ComposeError as e:
+                hold("compose", None, [("COMPOSE", False, str(e))], f"글 생성 실패({attempt}차): {e}")
+            checkgate("verify")
+            v = verify.run(draft, sources, ledger_dir)
+            if v["pass"]:
+                gates.append({"gate": "G1", "pass": v["G1"][0], "reason": v["G1"][1]})
+                gates.append({"gate": "G2", "pass": v["G2"][0], "reason": v["G2"][1]})
+                break
+            if v["G1"][0] and attempt == 1:   # G2 만 실패 → 재작성 1회
+                gates.append({"gate": "G2(1차 — 재작성됨)", "pass": False, "reason": v["G2"][1]})
+                # 감사 기록: 다시 쓰기 전에 1차 초안 + 실패 사유를 남긴다(보류함 목록과 섞이지 않게 _attempts/ 아래)
+                audit = os.path.join(out_root if rehearsal else hold_root, "_attempts", day,
+                                     guard._hold_name(draft, now))
+                os.makedirs(audit, exist_ok=True)
+                with open(os.path.join(audit, "draft_attempt1.json"), "w", encoding="utf-8") as f:
+                    json.dump({"attempt": 1, "gate": "G2", "reason": v["G2"][1], "draft": draft}, f, ensure_ascii=False, indent=1)
+                ledger.append("run_ledger", {"date": day, "account_id": acc["account_id"], "kw": state["kw"], "attempt": 1,
+                                             "gate": "G2", "reason": str(v["G2"][1]).replace("\n", " ")[:300],
+                                             "audit_path": audit, "rehearsal": rehearsal}, ledger_dir)
+                feedback = v["G2"][1]
+                continue
+            gates.append({"gate": "G1", "pass": v["G1"][0], "reason": v["G1"][1]})
+            gates.append({"gate": "G2", "pass": v["G2"][0], "reason": v["G2"][1]})
+            hold("verify", draft, [("G1", *v["G1"]), ("G2", *v["G2"])],
+                 f"G1: {v['G1'][1]} / G2: {v['G2'][1]}" + (" (재작성 후에도 실패)" if attempt == 2 else ""))
         # 5) guard G3·G5·G7(글·캡션) — G4(배경·글꼴)·G7(이미지 실측)은 design 이 채운 뒤 재확인
         checkgate("guard")
         gr = guard.run_guards(draft, acc, banned, classify=clf, alert_send=notify, ledger_dir=ledger_dir, hold_dir=hold_root,

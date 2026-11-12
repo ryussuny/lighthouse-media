@@ -219,9 +219,13 @@ def g7(draft, max_hashtags=CAP.MAX_HASHTAGS, strict=False):
 
 
 # ---------- 실행 ----------
-def _hold(draft, results, hold_dir, now):
+def _hold_name(draft, now):
     safe = re.sub(r"[^\w가-힣-]+", "_", f"{draft.get('account_id', 'x')}_{draft.get('kw', 'x')}")[:60]
-    d = os.path.join(hold_dir, now.date().isoformat(), f"{safe}_{now.strftime('%H%M%S')}")
+    return f"{safe}_{now.strftime('%H%M%S')}"
+
+
+def _hold(draft, results, hold_dir, now):
+    d = os.path.join(hold_dir, now.date().isoformat(), _hold_name(draft, now))
     os.makedirs(d, exist_ok=True)
     with open(os.path.join(d, "draft.json"), "w", encoding="utf-8") as f:
         json.dump(draft, f, ensure_ascii=False, indent=1)

@@ -81,12 +81,23 @@ def _font(path, size, bold=False):
     return f
 
 
+_HOLD = chr(0)  # 숫자 표현 안의 공백을 줄바꿈 후보에서 숨기는 표식
+
+
+def _words(para):
+    """공백 단위 낱말. verify.NUM_RE 가 잡는 숫자 표현('36만 7000원'·'144만 가구')은 안의 공백까지 한 덩어리."""
+    from .verify import NUM_RE
+    prot = NUM_RE.sub(lambda m: m.group(0).replace(" ", _HOLD), para)
+    return [w.replace(_HOLD, " ") for w in prot.split(" ")]
+
+
 def wrap(draw, text, font, max_w):
-    """단어(공백) 단위로 줄바꿈, 한 단어가 폭보다 길면 글자 단위로 쪼갠다. 원문 글자는 하나도 버리지 않음."""
+    """단어(공백) 단위로 줄바꿈, 한 단어가 폭보다 길면 글자 단위로 쪼갠다. 원문 글자는 하나도 버리지 않음.
+    숫자 표현은 중간에서 끊지 않는다(덩어리가 한 줄보다 길 때만 글자 단위로 쪼갬)."""
     lines = []
     for para in text.split("\n"):
         cur = ""
-        for word in para.split(" "):
+        for word in _words(para):
             cand = word if not cur else cur + " " + word
             if draw.textlength(cand, font=font) <= max_w:
                 cur = cand

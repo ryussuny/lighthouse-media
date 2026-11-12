@@ -21,6 +21,27 @@ def _norm(s):
     return "".join(s.split()).lower()
 
 
+PORTAL_LABELS = {"korea.kr": "정책브리핑(korea.kr)"}
+
+
+def display_sources(records):
+    """source_ledger 레코드 → 캡션·draft 용 [{url, org}]. 기관 미상(org_known=false 이거나 org 가 호스트명)은
+    포털명 '정책브리핑(korea.kr)'(또는 '기관 미확인(호스트)')으로 표기하고, 확인된 기관 출처 뒤에 둔다(원래 순서 유지).
+    표기는 draft['sources'] 와 캡션 줄이 같은 문자열이라 verify 의 캡션 면제(출처 줄 정확 일치)와 맞는다."""
+    from urllib.parse import urlparse
+    from .research import org_is_known
+    known, unknown = [], []
+    for r in records:
+        if org_is_known(r):
+            known.append({"url": r["url"], "org": r["org"]})
+            continue
+        host = (urlparse(r["url"]).hostname or "").lower()
+        host = host[4:] if host.startswith("www.") else host
+        base = ".".join(host.split(".")[-2:]) if host else ""
+        unknown.append({"url": r["url"], "org": PORTAL_LABELS.get(base) or f"기관 미확인({host})"})
+    return known + unknown
+
+
 def source_lines(sources):
     return [f"출처: {s['org']} {s['url']}" for s in sources]
 

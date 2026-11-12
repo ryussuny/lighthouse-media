@@ -2,6 +2,7 @@
 """T-04/T-04b 수용 기준. 네트워크 없음(가짜 discover·가짜 fetcher)."""
 import datetime as dt
 import hashlib
+import json
 import os
 import sys
 import tempfile
@@ -672,6 +673,341 @@ class TestResearch(unittest.TestCase):
 
     def test_cache_dir_default_is_data_source_cache(self):
         self.assertTrue(R.CACHE_DIR.replace("\\", "/").endswith("data/source_cache"))
+
+    # --- T-04g: 금융위·산업통상부 + 총 상한 ---
+    FSC_LIST_HTML = ('<a href="/no010101/88133?srchCtgry=&curPage=" title="x">가상자산사업자 보안 강화. 금일 등록된 게시글</a>'
+                     '<a href="/no010101/88133?srchCtgry=">dup</a>'
+                     '<a href="/no010101/88125?srchCtgry="><span>금융회사 지배구조 개선</span></a>').encode("utf-8")
+
+    @staticmethod
+    def fsc_view(body, day="2026-11-12", subject="가상자산사업자 보안 강화"):
+        return ('<html><div class="board-view-wrap"><div class="header"><div class="subject">' + subject +
+                '</div><div class="day"><span>' + day + '</span><span>조회수 : 1</span></div></div>'
+                '<div class="cont"><script>var x=1;</script>' + body + '</div>이전글 다른 글 제목</div></html>').encode("utf-8")
+
+    MOTIR_LIST_HTML = ('<a href="/kor/article/ATCL3f49a5a8c/172401/view?mno=&pageIndex=1"> 팀코리아 점검회의 개최 </a>'
+                       '<a href="/kor/article/ATCL3f49a5a8c/172400/view?mno=&pageIndex=1">충청권 착공식</a>'
+                       '<a href="/kor/article/ATCL3f49a5a8c/172401/view">dup</a>').encode("utf-8")
+
+    @staticmethod
+    def motir_view(body, day="2026-11-12"):
+        return ('<html><h3 class="cont-tit">보도·참고자료</h3><ul><li><em>등록일</em><span>' + day + '</span></li></ul>'
+                '<div>' + body + '</div>이전글 어떤 글</html>').encode("utf-8")
+
+    def test_fsc_parsers(self):
+        self.assertEqual(R.parse_fsc_list(self.FSC_LIST_HTML),
+                         [(R.FSC_VIEW + "88133", "가상자산사업자 보안 강화"), (R.FSC_VIEW + "88125", "금융회사 지배구조 개선")])
+        e = R.parse_fsc_view(self.fsc_view("본문 내용 가상자산 100억원"), R.FSC_VIEW + "88133")
+        self.assertEqual((e["org"], e["org_known"], e["published"], e["title"]), ("금융위원회", True, "2026-11-12", "가상자산사업자 보안 강화"))
+        text = R.body_text(e["content"])
+        self.assertIn("본문 내용 가상자산 100억원", text)
+        self.assertNotIn("다른 글 제목", text)  # 이전글 이후(내비)는 저장본에 없음
+        self.assertNotIn("var x", text)
+        self.assertIsNone(R.parse_fsc_view("<html>구조 모름</html>".encode("utf-8"), R.FSC_VIEW + "1"))
+        self.assertIsNone(R.parse_fsc_view(self.fsc_view("x", day="날짜 없음"), R.FSC_VIEW + "1")["published"])
+
+    def test_motir_parsers(self):
+        self.assertEqual(R.parse_motir_list(self.MOTIR_LIST_HTML),
+                         [(R.MOTIR_VIEW + "172401/view", "팀코리아 점검회의 개최"), (R.MOTIR_VIEW + "172400/view", "충청권 착공식")])
+        e = R.parse_motir_view(self.motir_view("원전 2027년 4월 건설허가"), R.MOTIR_VIEW + "172401/view", "제목")
+        self.assertEqual((e["org"], e["org_known"], e["published"]), ("산업통상부", True, "2026-11-12"))
+        self.assertIn("원전 2027년 4월 건설허가", R.body_text(e["content"]))
+        self.assertNotIn("어떤 글", R.body_text(e["content"]))
+        self.assertIsNone(R.parse_motir_view(b"<html>x</html>", "u", "t"))
+
+    def agency_fetcher(self, routes):
+        class Fake:
+            count = {}
+            urls = []
+
+            def get(s, url):
+                s.urls.append(url)
+                return routes[url], url
+        return Fake()
+
+    def test_fsc_and_motir_providers_refresh_into_cache_new_urls_only(self):
+        routes = {R.FSC_LIST: self.FSC_LIST_HTML, R.FSC_VIEW + "88133": self.fsc_view("가상자산 본문 " * 5),
+                  R.FSC_VIEW + "88125": self.fsc_view("지배구조 본문 " * 5, subject="금융회사 지배구조 개선"),
+                  R.MOTIR_LIST: self.MOTIR_LIST_HTML,
+                  R.MOTIR_VIEW + "172401/view": self.motir_view("점검회의 본문 " * 5),
+                  R.MOTIR_VIEW + "172400/view": self.motir_view("착공식 본문 " * 5, day="2026-11-11")}
+        cache = R.SourceCache(os.path.join(self.tmp.name, "c"))
+        f = self.agency_fetcher(routes)
+        for P in (R.FscProvider, R.MotirProvider):
+            P(f).refresh(cache, TODAY)
+        self.assertEqual(len([e for e in cache.entries.values() if e.get("saved_path")]), 4)
+        orgs = sorted({e["org"] for e in cache.entries.values()})
+        self.assertEqual(orgs, ["금융위원회", "산업통상부"])
+        for e in cache.entries.values():  # 저장본 sha256 일치
+            self.assertEqual(hashlib.sha256(open(e["saved_path"], "rb").read()).hexdigest(), e["sha256"])
+        got = cache.match("점검회의", TODAY)
+        self.assertEqual([(g["org"], g["published"]) for g in got], [("산업통상부", "2026-11-12")])
+        # 둘째 실행: 목록만 다시 받고 상세는 재요청 없음
+        f.urls.clear()
+        for P in (R.FscProvider, R.MotirProvider):
+            P(f).refresh(cache, TODAY)
+        self.assertEqual(sorted(f.urls), sorted([R.FSC_LIST, R.MOTIR_LIST]))
+
+    def test_new_providers_legacy_call_and_relevance(self):
+        routes = {R.FSC_LIST: self.FSC_LIST_HTML, R.FSC_VIEW + "88133": self.fsc_view("가상자산 " * 5), R.FSC_VIEW + "88125": self.fsc_view("다른 내용", subject="금융회사 지배구조 개선")}
+        res = R.FscProvider(self.agency_fetcher(routes))("가상자산")
+        self.assertEqual(len(res), 1)
+        self.assertTrue(res[0]["relevance"][0])
+        self.assertEqual(res[0]["org"], "금융위원회")
+
+    def test_robots_block_skips_agency_without_detail_requests(self):
+        routes = {"https://www.fsc.go.kr/robots.txt": (200, "User-agent: *\nDisallow: /no010101", None),
+                  "https://www.motir.go.kr/robots.txt": (200, "User-agent: *\nDisallow: /kor/article", None)}
+        f, calls, slept, fake = self.fetcher_env(routes)
+        cache = R.SourceCache(os.path.join(self.tmp.name, "c"))
+        with mock.patch("requests.get", fake):
+            R.FscProvider(f).refresh(cache, TODAY)
+            R.MotirProvider(f).refresh(cache, TODAY)
+        self.assertEqual(cache.entries, {})
+        fetched = [c[0] for c in calls]
+        self.assertFalse(any(u.startswith((R.FSC_LIST, R.MOTIR_LIST)) for u in fetched))  # 목록도 요청하지 않음
+        self.assertEqual(sorted(fetched), ["https://www.fsc.go.kr/robots.txt", "https://www.motir.go.kr/robots.txt"])
+
+    def test_total_cap_and_host_shares(self):
+        self.assertLessEqual(sum(R.HOST_CAPS.values()), R.TOTAL_MAX_PAGES)
+        self.assertEqual(R.TOTAL_MAX_PAGES, 200)
+        routes = {"https://www.korea.kr/robots.txt": self.ALLOW, "https://www.mohw.go.kr/robots.txt": self.ALLOW}
+        for h in ("www.fsc.go.kr", "www.motir.go.kr", "www.moel.go.kr"):
+            routes[f"https://{h}/robots.txt"] = self.ALLOW
+        f, calls, slept, fake = self.fetcher_env(routes)
+        f.max_total = 5
+        f.host_caps = {}
+        f.max_pages = 40
+        routes.update({f"https://www.korea.kr/p{i}": (200, "x", None) for i in range(10)})
+        with mock.patch("requests.get", fake):
+            n = 0
+            with self.assertRaises(RuntimeError) as cm:
+                for i in range(10):
+                    f.get(f"https://www.korea.kr/p{i}")
+                    n += 1
+        self.assertIn("총 상한", str(cm.exception))
+        self.assertEqual(f.total, 5)  # robots 1 + 페이지 4
+        self.assertEqual(n, 4)
+
+    def test_full_default_discover_stays_within_caps(self):
+        """모든 provider 가 최대로 쓰려 해도(큰 사이트맵·목록) 실행당 200·호스트별 몫을 넘지 않는다."""
+        art = kr_article("정책 본문 " * 20)
+        sm = ("<urlset>" + "".join(f'<url><lastmod>2026-11-11</lastmod><loc>https://www.korea.kr/news/policyNewsView.do?newsId={i}</loc></url>'
+                                   for i in range(100)) + "</urlset>").encode("utf-8")
+        smb = ("<urlset>" + "".join(f'<url><lastmod>2026-11-11</lastmod><loc>https://www.korea.kr/briefing/policyBriefingView.do?newsId={i}</loc></url>'
+                                    for i in range(100)) + "</urlset>").encode("utf-8")
+        rss = ("<rss><channel>" + "".join(
+            f"<item><title>t{i}</title><link>https://www.mohw.go.kr/b{i}</link><description>d{i}</description><pubDate>Thu, 12 Nov 2026 07:07:00 GMT</pubDate></item>"
+            for i in range(30)) + "</channel></rss>").encode("utf-8")
+        moel_list = "".join(f'<a href="enewsView.do?news_seq={i}" title="t">x</a>' for i in range(100, 140)).encode("utf-8")
+        moel_view = ('<div class="b_info"><dl><dt>등록일</dt><dd>2026-11-10</dd></dl><div class="b_content">본문</div></div>'
+                     '<div class="synap_view"></div>').encode("utf-8")
+        fsc_list = "".join(f'<a href="/no010101/{i}">t{i}</a>' for i in range(900, 940)).encode("utf-8")
+        motir_list = "".join(f'<a href="/kor/article/ATCL3f49a5a8c/{i}/view">t{i}</a>' for i in range(100, 140)).encode("utf-8")
+
+        class Resp:
+            def __init__(s, body):
+                s.status_code, s.headers, s.content, s.ok = 200, {}, body, True
+                s.text = body.decode("utf-8", "replace")
+
+            def raise_for_status(s):
+                pass
+
+        def fake_get(url, headers=None, timeout=0, allow_redirects=True):
+            if url.endswith("/robots.txt"):
+                return Resp(b"User-agent: *\nAllow: /")
+            if url.endswith("sitemap_policy.xml"):
+                return Resp(sm)
+            if url.endswith("sitemap_briefing.xml"):
+                return Resp(smb)
+            if "korea.kr" in url:
+                return Resp(art)
+            if url == R.MOHW_RSS:
+                return Resp(rss)
+            if url == R.MOEL_LIST:
+                return Resp(moel_list)
+            if "moel.go.kr" in url:
+                return Resp(moel_view)
+            if url == R.FSC_LIST:
+                return Resp(fsc_list)
+            if "fsc.go.kr" in url:
+                return Resp(self.fsc_view("본문 " * 10))
+            if url == R.MOTIR_LIST:
+                return Resp(motir_list)
+            return Resp(self.motir_view("본문 " * 10))
+        f = R.PoliteFetcher(sleep=lambda x: None)
+        with mock.patch("requests.get", fake_get):
+            d = R.default_discover(f, cache=R.SourceCache(os.path.join(self.tmp.name, "c")), today=TODAY)
+            d("본문")
+        self.assertLessEqual(f.total, R.TOTAL_MAX_PAGES)
+        for host, n in f.count.items():
+            self.assertLessEqual(n, R.HOST_CAPS.get(host, R.MAX_PAGES), host)
+        self.assertEqual(sorted(f.count), ["fsc.go.kr", "korea.kr", "moel.go.kr", "mohw.go.kr", "motir.go.kr"])
+        self.assertEqual(d.summary()["requests_total"], f.total)
+
+    # --- 후속: run_id · 산업부 공유버튼 ---
+    def test_run_id_in_return_ledgers_and_sources_for_run(self):
+        r1 = self.go([A, B])
+        r2 = self.go([A, B])  # 같은 키워드 재실행 → source_ledger 에 같은 줄이 또 쌓인다
+        self.assertTrue(r1["run_id"].startswith("research-") and r2["run_id"].startswith("research-"))
+        self.assertNotEqual(r1["run_id"], r2["run_id"])
+        led = ledger.read("source_ledger", self.ld)
+        self.assertEqual(len(led), 4)  # 2+2 줄
+        self.assertEqual({x["run_id"] for x in led}, {r1["run_id"], r2["run_id"]})
+        for rec in self.tries():
+            self.assertIn(rec["run_id"], (r1["run_id"], r2["run_id"]))
+        mine = R.sources_for_run(r2, self.ld)
+        self.assertEqual(len(mine), 2)
+        self.assertTrue(all(x["run_id"] == r2["run_id"] for x in mine))
+        self.assertEqual(R.sources_for_run({"run_id": None}, self.ld), [])  # run_id 없으면 아무것도 안 돌려줌
+
+    def test_sources_for_run_dedupes_url_sha(self):
+        rid = "research-x"
+        for _ in range(2):  # 같은 run_id 안에서 같은 줄이 두 번 쓰였다고 가정
+            ledger.append("source_ledger", {"url": "u", "sha256": "s", "run_id": rid, "kw": "k"}, self.ld)
+        ledger.append("source_ledger", {"url": "u", "sha256": "s", "run_id": "other", "kw": "k"}, self.ld)
+        self.assertEqual(len(R.sources_for_run({"run_id": rid}, self.ld)), 1)
+
+    def test_gated_has_no_run_id_and_explicit_run_id_kept(self):
+        stop = os.path.join(self.tmp.name, "STOP")
+        open(stop, "w").close()
+        r = R.run(self.acc, today=TODAY, fetchers={"discover": lambda kw: []}, ledger_dir=self.ld, sources_dir=self.sd, stop_file=stop)
+        self.assertEqual(r["status"], "gated")
+        os.remove(stop)
+        r = R.run(self.acc, today=TODAY, fetchers={"discover": lambda kw: [A, B]}, ledger_dir=self.ld, sources_dir=self.sd,
+                  stop_file=stop, run_id="research-fixed")
+        self.assertEqual(r["run_id"], "research-fixed")
+        self.assertEqual({x["run_id"] for x in ledger.read("source_ledger", self.ld)}, {"research-fixed"})
+
+    MOTIR_REAL_LIKE = (
+        '<html><h3 class="cont-tit"><i>보도·참고자료</i></h3>'
+        '<!-- page share --><div class="page-share"><div class="page-share-sns"><button type="button" class="share-btn-sns"><i>페이지 공유</i></button>'
+        '<div class="share-list"><a href="x" class="sns-facebook"><i>페이스북</i></a><a class="sns-twitter"><i>X</i></a>'
+        '<a class="share-btn-close">sns 공유닫기</a></div></div><div><button type="button" class="share-btn-print"><i>프린트</i></button></div></div>'
+        '<!-- //page share --></div><!-- //컨텐츠 Header --><!-- 컨텐츠 본문 영역 --><!-- 본문 시작 -->'
+        '<link type="text/css" rel="stylesheet" href="/a.css"><form action="/k"><input type="hidden" name="mno" value=""/></form>'
+        '<ul><li><em>담당자</em><span>이수정</span></li><li><em>등록일</em><span>2026-11-12</span></li></ul>'
+        '<div>원전 2027년 4월 건설허가 신청 계획을 점검했다. 기업간 공유하고 지원한다.</div>이전글 다른 글</html>').encode("utf-8")
+
+    def test_motir_share_button_text_removed_from_body_and_head(self):
+        e = R.parse_motir_view(self.MOTIR_REAL_LIKE, R.MOTIR_VIEW + "1/view", "제목")
+        text = R.body_text(e["content"])
+        for junk in ("페이지 공유", "프린트", "페이스북", "sns 공유닫기", "본문 시작", "class=", "page-share"):
+            self.assertNotIn(junk, text, junk)
+        self.assertIn("기업간 공유하고 지원한다", text)  # 본문 속 '공유' 는 그대로
+        self.assertTrue(text.startswith("담당자"))  # 첫 300자는 본문 정보부터 시작
+        self.assertEqual(e["published"], "2026-11-12")
+        self.assertNotIn("다른 글", text)
+
+    def test_body_text_has_no_tag_fragment_prefix(self):
+        t = R.body_text('<div class="b_content">본문 시작 글</div>'.encode("utf-8"))
+        self.assertEqual(t, "본문 시작 글")
+        self.assertEqual(R.body_text('<div class="view_cont" id="a">내용</div>'.encode("utf-8")), "내용")
+
+    # --- T-R7a: 호스트 예외 격리 · 캐시 무결성 ---
+    @staticmethod
+    def _r7_lines(path):
+        with open(path, encoding="utf-8") as f:
+            return [json.loads(x) for x in f if x.strip()]
+
+    def _r7_setup(self, kw="기초연금"):
+        self.top = [kw]
+        self.fresh()
+        self.seed_trend(top=[kw])
+        return dict(ledger_dir=self.ld, sources_dir=self.sd, notify=lambda *a: None)
+
+    def test_r7_one_host_exception_others_continue(self):
+        cdir = os.path.join(self.tmp.name, "c")
+        u1, a1 = self.kr(1, "기초연금 안내 " + "가" * 50 + " 기초연금", "보건복지부")
+        sm = b'<urlset><url><lastmod>2026-11-11</lastmod><loc>' + u1.encode() + b'</loc></url></urlset>'
+        fake, _ = self.cache_env({"_sm": sm, u1: a1})
+        kw = self._r7_setup()
+        with mock.patch.object(R.MohwRssProvider, "refresh", side_effect=ValueError("boom")):
+            d = R.default_discover(fake, cache=R.SourceCache(cdir), today=TODAY)
+            r = R.run(self.acc, today=TODAY, fetchers={"discover": d}, **kw)
+        self.assertNotEqual(r["status"], "error")  # korea.kr 쪽은 계속 돌았다(기관 1곳이라 hold)
+        self.assertEqual(r["status"], "hold")
+        self.assertEqual(r["cache"]["entries"], 1)
+        self.assertIn("MohwRssProvider", r["cache"]["host_errors"])
+        hosts = [x for x in ledger.read("research_ledger", self.ld) if x.get("type") == "host_error"]
+        self.assertEqual([h["host"] for h in hosts], ["MohwRssProvider"])
+        self.assertIn("boom", hosts[0]["reason"])
+
+    def test_r7_all_hosts_fail_status_error(self):
+        cdir = os.path.join(self.tmp.name, "c")
+        fake, _ = self.cache_env({"_sm": b"<urlset></urlset>"})
+        kw = self._r7_setup()
+        names = ("KoreaKrProvider", "MohwRssProvider", "MoelProvider", "FscProvider", "MotirProvider")
+        patches = [mock.patch.object(getattr(R, n), "refresh", side_effect=RuntimeError(n)) for n in names]
+        for pt in patches:
+            pt.start()
+        try:
+            d = R.default_discover(fake, cache=R.SourceCache(cdir), today=TODAY)
+            r = R.run(self.acc, today=TODAY, fetchers={"discover": d}, **kw)
+        finally:
+            for pt in patches:
+                pt.stop()
+        self.assertEqual(r["status"], "error")
+        self.assertIn("모든 수집처 실패", r["reason"])
+        hosts = [x for x in ledger.read("research_ledger", self.ld) if x.get("type") == "host_error"]
+        self.assertEqual(len(hosts), 5)
+
+    def test_r7_index_published_forged_uses_saved_date(self):
+        cdir = os.path.join(self.tmp.name, "c")
+        u1, a1 = self.kr(1, "기초연금 안내 " + "가" * 50, "보건복지부", "2026-09-01T10:00:00+09:00")  # 실제로는 오래된 글
+        fake, _ = self.cache_env({"_sm": b"<urlset></urlset>"})
+        c = R.SourceCache(cdir)
+        e = R.KoreaKrProvider(fake).parse_page(a1, u1)
+        c.add(e)
+        # index 의 published 를 최근 날짜로 위조(저장본은 그대로)
+        lines = self._r7_lines(c.index)
+        lines[-1]["published"] = "2026-11-11"
+        with open(c.index, "w", encoding="utf-8") as f:
+            for x in lines:
+                f.write(json.dumps(x, ensure_ascii=False) + "\n")
+        c2 = R.SourceCache(cdir)
+        self.assertEqual(c2.within(TODAY), [])  # 저장본 날짜(09-01)는 30일 밖
+        self.assertEqual(c2.match("기초연금", TODAY), [])
+        # 반대: index 가 오래된 날짜로 적혀 있어도 저장본이 최근이면 저장본 날짜 사용
+        u2, a2 = self.kr(2, "기초연금 개편 " + "나" * 50, "보건복지부", "2026-11-10T10:00:00+09:00")
+        c2.add(R.KoreaKrProvider(fake).parse_page(a2, u2))
+        lines = self._r7_lines(c2.index)
+        lines[-1]["published"] = "2026-01-01"
+        with open(c2.index, "w", encoding="utf-8") as f:
+            for x in lines:
+                f.write(json.dumps(x, ensure_ascii=False) + "\n")
+        got = R.SourceCache(cdir).within(TODAY)
+        self.assertEqual([x["url"] for x in got], [u2])
+        self.assertEqual(got[0]["published"], "2026-11-10")
+
+    def test_r7_undatable_saved_file_excluded_from_window(self):
+        cdir = os.path.join(self.tmp.name, "c")
+        c = R.SourceCache(cdir)
+        c.add({"url": "https://www.korea.kr/news/policyNewsView.do?newsId=9", "org": "보건복지부", "org_known": True,
+               "published": "2026-11-11", "title": "t", "content": "<html><body>날짜 없는 본문 기초연금</body></html>".encode()})
+        self.assertEqual(R.SourceCache(cdir).within(TODAY), [])
+
+    def test_r7_saved_path_relative_roundtrip_and_legacy_absolute(self):
+        cdir = os.path.join(self.tmp.name, "c")
+        c = R.SourceCache(cdir)
+        content = "<html><body><p>게시일: 2026-11-11</p>기초연금 본문</body></html>".encode()
+        rec = c.add({"url": "https://www.korea.kr/news/policyNewsView.do?newsId=5", "org": "보건복지부", "org_known": True,
+                     "published": "2026-11-11", "title": "t", "content": content})
+        raw_line = self._r7_lines(c.index)[-1]
+        self.assertFalse(os.path.isabs(raw_line["saved_path"]))
+        self.assertTrue(raw_line["saved_path"].startswith("files/"))
+        self.assertTrue(os.path.isabs(rec["saved_path"]) and os.path.exists(rec["saved_path"]))
+        c2 = R.SourceCache(cdir)
+        e = c2.entries["https://www.korea.kr/news/policyNewsView.do?newsId=5"]
+        self.assertEqual(os.path.normcase(e["saved_path"]), os.path.normcase(rec["saved_path"]))
+        self.assertEqual(len(c2.match("기초연금", TODAY)), 1)
+        # 옛 절대경로 줄도 읽힌다
+        legacy = {**raw_line, "url": "https://www.korea.kr/news/policyNewsView.do?newsId=6", "saved_path": rec["saved_path"]}
+        with open(c.index, "a", encoding="utf-8") as f:
+            f.write(json.dumps(legacy, ensure_ascii=False) + "\n")
+        c3 = R.SourceCache(cdir)
+        self.assertEqual(c3.entries[legacy["url"]]["saved_path"], rec["saved_path"])
+        self.assertEqual(len(c3.within(TODAY)), 2)
 
     # --- provider ---
     def test_sitemap_parse_and_korea_kr_provider(self):

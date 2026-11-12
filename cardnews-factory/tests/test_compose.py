@@ -93,6 +93,91 @@ class ComposeTest(unittest.TestCase):
         self.assertIn("아라비아 숫자+단위", p)
         self.assertIn("단위 없는 숫자는 쓰지 않는다", p)
 
+    # ---- 응답 잘림(리허설 실측 반영) ----
+    def _resp(self, text, stop_reason="end_turn", out_tokens=100):
+        class R:
+            ok = True
+            status_code = 200
+
+            @staticmethod
+            def json():
+                return {"content": [{"type": "text", "text": text}], "stop_reason": stop_reason,
+                        "usage": {"input_tokens": 10, "output_tokens": out_tokens}}
+        return R()
+
+    def test_max_tokens_is_4000(self):
+        from unittest import mock
+        seen = {}
+
+        def post(url, headers=None, json=None, timeout=None):
+            seen["mt"] = json["max_tokens"]
+            return self._resp("{}")
+        with mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "x"}), mock.patch("requests.post", side_effect=post):
+            CP.default_generate("p")
+        self.assertEqual(seen["mt"], 4000)
+
+    def test_default_generate_truncated_raises_clear_error(self):
+        from unittest import mock
+        with mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "x"}), \
+                mock.patch("requests.post", return_value=self._resp('{"cards": [{"title": "a"', "max_tokens", 4000)):
+            with self.assertRaises(CP.TruncatedError) as cm:
+                CP.default_generate("p")
+        self.assertIn("응답 잘림", str(cm.exception))
+
+    def test_truncated_response_held_with_clear_reason_after_one_retry(self):
+        calls = []
+
+        def gen(prompt):
+            calls.append(prompt)
+            raise CP.TruncatedError("응답 잘림(stop_reason=max_tokens)")
+        with self.assertRaises(CP.ComposeError) as cm:
+            CP.compose("기초연금", self.srcs, generate=gen, today=TODAY)
+        self.assertIn("응답 잘림", str(cm.exception))
+        self.assertNotIn("JSON 해석 실패", str(cm.exception))
+        self.assertEqual(len(calls), 2)                 # 최초 1 + 재시도 1
+        self.assertEqual(calls[0], calls[1])            # 같은 프롬프트
+
+    def test_truncation_then_success_on_retry(self):
+        calls = []
+
+        def gen(prompt):
+            calls.append(1)
+            if len(calls) == 1:
+                raise CP.TruncatedError("응답 잘림")
+            return gen_ok(prompt)
+        d = CP.compose("기초연금", self.srcs, generate=gen, today=TODAY)
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(len(d["cards"]), 5)
+
+    def test_non_truncation_error_not_retried(self):
+        calls = []
+
+        def gen(prompt):
+            calls.append(1)
+            raise CP.ComposeError("HTTP 500")
+        with self.assertRaises(CP.ComposeError):
+            CP.compose("기초연금", self.srcs, generate=gen, today=TODAY)
+        self.assertEqual(len(calls), 1)
+
+    def test_parse_uses_first_brace_to_last_brace_only(self):
+        raw = "앞말 {not json} 설명 " + json.dumps({"cards": [{"title": "t", "body": "b"}] * 5, "caption_body": "c", "hashtags": []}, ensure_ascii=False) + " 뒷말 } 끝"
+        # 첫 { 부터 마지막 } 까지를 잡으므로 앞뒤 군말이 JSON 안에 섞이면 해석 실패(보류)여야 하고, 군말이 { } 밖이면 통과
+        with self.assertRaises(CP.ComposeError):
+            CP.parse_generated(raw)
+        clean = "다음과 같습니다:\n```json\n" + json.dumps({"cards": [{"title": "t", "body": "b"}] * 5, "caption_body": "c", "hashtags": []}, ensure_ascii=False) + "\n```\n이상입니다."
+        cards, cap, tags = CP.parse_generated(clean)
+        self.assertEqual(len(cards), 5)
+
+    def test_feedback_added_to_prompt_only_when_given(self):
+        CP.compose("기초연금", self.srcs, generate=gen_ok, today=TODAY)
+        self.assertNotIn("검증(G2)에서 보류", gen_ok.prompt)
+        CP.compose("기초연금", self.srcs, generate=gen_ok, today=TODAY, feedback="원문에서 못 찾은 값: 4")
+        p = gen_ok.prompt
+        self.assertIn("원문에서 못 찾은 값: 4", p)
+        self.assertIn("이 값들은 원문에 없거나 단위가 없다", p)
+        self.assertIn("원문 숫자만 단위와 함께 쓰라", p)
+        self.assertLess(p.index("검증(G2)에서 보류"), p.index("<source "))   # 피드백은 출처 발췌 앞
+
 
 if __name__ == "__main__":
     unittest.main()

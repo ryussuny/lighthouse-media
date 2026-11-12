@@ -108,7 +108,7 @@ class RunTest(unittest.TestCase):
         self.assertEqual(c["anthropic"]["calls"], 2)   # compose 1 + guard 분류 1
         self.assertEqual((c["account_id"], c["status"]), ("test", "ok"))
         self.assertIn("input_tokens", c["anthropic"])
-        self.assertEqual(r["cost"], {k: c[k] for k in ("anthropic", "higgsfield")})
+        self.assertEqual(r["cost"], {k: c[k] for k in ("anthropic", "higgsfield", "attempts")})
         self.assertEqual(len(ledger.read("run_ledger", self.d["ledger"])), 1)
 
     def test_real_background_library_used(self):
@@ -284,6 +284,148 @@ class RunTest(unittest.TestCase):
             self.go(rehearsal=True, out_root=os.path.join(self.tmp.name, "rehearsal"))
         self.alerts.clear()
         self.assertEqual(self.go()["status"], "ok")   # 리허설이 같은 키워드의 실제 실행을 G5 로 막지 않는다
+
+    def test_sources_come_from_research_sources_for_run(self):
+        calls = []
+        from cardnews import research
+        real = research.sources_for_run
+
+        def spy(rrec, ledger_dir=None):
+            calls.append(rrec.get("run_id"))
+            return real(rrec, ledger_dir)
+        with mock.patch("cardnews.research.sources_for_run", side_effect=spy):
+            r = self.go()
+        self.assertEqual(r["status"], "ok", r["reason"])
+        self.assertEqual(len(calls), 1)
+
+    def test_caption_source_lines_use_portal_label_for_unknown_org(self):
+        doc_c = ("<html><body><p>정책브리핑 재게시 기사입니다. 기초연금 안내를 쉽게 풀어 설명합니다. 기초연금 수급 연령은 만 65세 이상입니다. "
+                 "자세한 내용은 담당 부처 누리집을 참고하세요.</p></body></html>").encode("utf-8")
+        docs = [("https://www.korea.kr/briefing/a", "korea.kr", doc_c, False), ("https://www.korea.kr/news/x", "행정안전부", DOC_A, True),
+                ("https://www.mohw.go.kr/b", "보건복지부", DOC_B, True)]
+        disc = lambda kw: [{"url": u, "org": o, "org_known": k, "published": "2026-11-10",  # noqa: E731
+                            "content": c, "title": f"{o} {kw} 안내"} for u, o, c, k in docs]
+        r = self.go(fetchers=self.fx(discover=disc))
+        self.assertEqual(r["status"], "ok", r["reason"])        # 기관 미상(포털)은 표기만 바뀌고 G1·G2 는 그대로 통과
+        cap = _rd(os.path.join(r["out_dir"], "캡션.txt"))
+        lines = [ln for ln in cap.splitlines() if ln.startswith("출처:")]
+        self.assertEqual(len(lines), 3)
+        self.assertTrue(lines[-1].startswith("출처: 정책브리핑(korea.kr) https://www.korea.kr/briefing/a"), lines)
+        self.assertNotIn("출처: korea.kr", cap)
+        self.assertTrue(all(g["pass"] for g in json.loads(_rd(os.path.join(r["out_dir"], "manifest.json")))["gates"]))
+
+    # ---- G2 보류 시 1회 재작성 ----
+    def test_g2_fail_then_rewrite_succeeds(self):
+        prompts = []
+
+        def gen(prompt):
+            prompts.append(prompt)
+            return gen_wrong_number(prompt) if len(prompts) == 1 else gen_ok(prompt)
+        r = self.go(generate=gen)
+        self.assertEqual(r["status"], "ok", r["reason"])
+        self.assertEqual(len(prompts), 2)
+        self.assertNotIn("검증(G2)에서 보류", prompts[0])
+        self.assertIn("검증(G2)에서 보류", prompts[1])                 # verify 사유가 피드백으로 들어감
+        self.assertIn("99만원", prompts[1])
+        self.assertIn("원문 숫자만 단위와 함께 쓰라", prompts[1])
+        self.assertEqual(r["cost"]["attempts"], 2)
+        c = ledger.read("cost_ledger", self.d["ledger"])[0]
+        self.assertEqual(c["attempts"], 2)
+        self.assertEqual(c["anthropic"]["calls"], 3)                   # compose 2 + guard 분류 1
+        names = [g["gate"] for g in r["gates"]]
+        self.assertIn("G2(1차 — 재작성됨)", names)
+        self.assertEqual(self.alerts, [])                              # 재작성 성공이면 알림 없음
+        self.assertTrue(all(g["pass"] for g in r["gates"] if "재작성됨" not in g["gate"]))
+
+    def test_g2_fails_twice_held_after_one_rewrite(self):
+        n = []
+
+        def gen(prompt):
+            n.append(1)
+            return gen_wrong_number(prompt)
+        r = self.go(generate=gen)
+        self.assertEqual((r["status"], r["stage"]), ("held", "verify"))
+        self.assertEqual(len(n), 2)                                    # 최초 1 + 재작성 1, 그 이상 없음
+        self.assertIn("재작성 후에도 실패", r["reason"])
+        self.assertEqual(r["cost"]["attempts"], 2)
+        self.assertEqual(len(self.alerts), 1)
+        self.assertFalse(os.path.exists(self.out_account_dir()))
+
+    def test_g3_fail_is_not_rewritten(self):
+        n = []
+
+        def gen(prompt):
+            n.append(1)
+            return gen_ok(prompt)
+        r = self.go(generate=gen, classify=bad_classify)
+        self.assertEqual((r["status"], r["stage"]), ("held", "guard"))
+        self.assertEqual(len(n), 1)                                    # 금칙은 재작성(우회 시도) 없음
+        self.assertEqual(r["cost"]["attempts"], 1)
+
+    def test_g1_fail_is_not_rewritten(self):
+        n = []
+
+        def gen(prompt):
+            n.append(1)
+            return gen_ok(prompt)
+        with mock.patch("cardnews.verify.run", return_value={"pass": False, "G1": (False, "공식 기관 1곳"), "G2": (False, "G1 실패로 대조 생략"), "detail": {}}):
+            r = self.go(generate=gen)
+        self.assertEqual((r["status"], r["stage"]), ("held", "verify"))
+        self.assertEqual(len(n), 1)
+        self.assertNotIn("재작성 후에도", r["reason"])
+
+    def test_cost_ledger_attempts_single_run(self):
+        self.go()
+        self.assertEqual(ledger.read("cost_ledger", self.d["ledger"])[0]["attempts"], 1)
+
+    # ---- R7b: 다시 쓰기 전 1차 초안 감사 기록 ----
+    def _audit_dirs(self, root):
+        p = os.path.join(root, "_attempts", TODAY.isoformat())
+        return [os.path.join(p, n) for n in sorted(os.listdir(p))] if os.path.isdir(p) else []
+
+    def test_rewrite_leaves_attempt1_audit_record(self):
+        n = []
+
+        def gen(prompt):
+            n.append(1)
+            return gen_wrong_number(prompt) if len(n) == 1 else gen_ok(prompt)
+        r = self.go(generate=gen)
+        self.assertEqual(r["status"], "ok", r["reason"])
+        dirs = self._audit_dirs(self.d["hold"])
+        self.assertEqual(len(dirs), 1)
+        a = json.load(open(os.path.join(dirs[0], "draft_attempt1.json"), encoding="utf-8"))
+        self.assertEqual((a["attempt"], a["gate"]), (1, "G2"))
+        self.assertTrue(a["reason"])
+        self.assertEqual(len(a["draft"]["cards"]), 5)
+        self.assertIn("99만원", json.dumps(a["draft"], ensure_ascii=False))
+        rows = [x for x in ledger.read("run_ledger", self.d["ledger"]) if x.get("attempt") == 1]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["gate"], "G2")
+        self.assertEqual(rows[0]["reason"], " ".join(a["reason"].split("\n"))[:300])
+        self.assertEqual(self.holds(), [])                       # 보류함 목록에는 섞이지 않음
+        self.assertTrue(all(g["pass"] for g in r["gates"] if "재작성됨" not in g["gate"]))  # 재작성본은 전 관문 재검사
+
+    def test_no_audit_record_when_first_attempt_passes(self):
+        self.go()
+        self.assertEqual(self._audit_dirs(self.d["hold"]), [])
+        self.assertEqual([x for x in ledger.read("run_ledger", self.d["ledger"]) if x.get("attempt") == 1], [])
+
+    def test_audit_record_kept_when_rewrite_also_fails(self):
+        r = self.go(generate=gen_wrong_number)
+        self.assertEqual(r["status"], "held")
+        self.assertEqual(len(self._audit_dirs(self.d["hold"])), 1)
+        self.assertEqual(len(self.holds()), 1)
+
+    def test_rehearsal_audit_goes_to_rehearsal_folder(self):
+        n = []
+
+        def gen(prompt):
+            n.append(1)
+            return gen_wrong_number(prompt) if len(n) == 1 else gen_ok(prompt)
+        r = self.go(generate=gen, rehearsal=True)
+        self.assertEqual(r["status"], "ok", r["reason"])
+        self.assertEqual(len(self._audit_dirs(self.d["out"])), 1)
+        self.assertEqual(self._audit_dirs(self.d["hold"]), [])
 
 
 if __name__ == "__main__":

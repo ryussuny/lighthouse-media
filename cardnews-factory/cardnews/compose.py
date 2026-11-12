@@ -29,8 +29,16 @@ NOTICE_KEYS = ("신청 전", "기관")
 USAGE = {"calls": 0, "input_tokens": 0, "output_tokens": 0}  # default_generate 누적(T-09 cost_ledger 가 차이를 읽음)
 
 
+MAX_TOKENS = 4000      # 응답 상한(리허설 실측: 1500 에서 JSON 이 잘림)
+TRUNCATION_RETRIES = 1  # 잘린 응답은 같은 프롬프트로 1회까지만 재시도
+
+
 class ComposeError(ValueError):
     pass
+
+
+class TruncatedError(ComposeError):
+    """응답이 max_tokens 에서 잘림(stop_reason=='max_tokens') — JSON 해석 실패와 구별되는 명확한 사유."""
 
 
 def excerpt(rec, kw, limit=EXCERPT_CHARS):
@@ -49,7 +57,7 @@ def excerpt(rec, kw, limit=EXCERPT_CHARS):
     return "\n".join(out) or text[:limit]
 
 
-def build_prompt(kw, sources, today):
+def build_prompt(kw, sources, today, feedback=None):
     blocks = []
     for i, s in enumerate(sources, 1):
         blocks.append(f"<source n=\"{i}\" org=\"{s['org']}\" url=\"{s['url']}\" published=\"{s.get('published', '?')}\">\n{excerpt(s, kw).replace('</source', '</ source')}\n</source>")
@@ -65,6 +73,8 @@ def build_prompt(kw, sources, today):
         "- 카드마다 title(15자 안팎)과 body(80자 안팎). 카드는 정확히 5장.\n"
         f"- 마지막(5번째) 카드 body 끝에 '{NOTICE}' 문구를 넣는다. 기준일 숫자는 카드에 쓰지 않는다.\n"
         '오직 JSON 만 답한다: {"cards":[{"title":"","body":""}x5],"caption_body":"캡션 본문 2~3문장","hashtags":["태그(# 없이) 최대 5개"]}\n\n'
+        + (f"\n[앞선 시도는 검증(G2)에서 보류됐다] {feedback}\n이 값들은 원문에 없거나 단위가 없다: 위 사유에 적힌 값. "
+           "원문 숫자만 단위와 함께 쓰라(원문 발췌에 그대로 있는 표기만).\n" if feedback else "")
         + "\n\n".join(blocks)
     )
 
@@ -76,7 +86,7 @@ def default_generate(prompt, env_path=guard.ENV_PATH, timeout=90):
     import requests
     r = requests.post("https://api.anthropic.com/v1/messages",
                       headers={"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"},
-                      json={"model": guard.MODEL, "max_tokens": 1500, "messages": [{"role": "user", "content": prompt}]},
+                      json={"model": guard.MODEL, "max_tokens": MAX_TOKENS, "messages": [{"role": "user", "content": prompt}]},
                       timeout=timeout)
     if not r.ok:
         raise ComposeError(f"HTTP {r.status_code}: {r.text[:150]}")
@@ -85,6 +95,8 @@ def default_generate(prompt, env_path=guard.ENV_PATH, timeout=90):
     USAGE["calls"] += 1
     USAGE["input_tokens"] += int(u.get("input_tokens", 0) or 0)
     USAGE["output_tokens"] += int(u.get("output_tokens", 0) or 0)
+    if j.get("stop_reason") == "max_tokens":
+        raise TruncatedError(f"응답 잘림(stop_reason=max_tokens, output_tokens={u.get('output_tokens')}, 상한 {MAX_TOKENS})")
     return "".join(b.get("text", "") for b in j.get("content", []))
 
 
@@ -107,18 +119,28 @@ def parse_generated(raw):
     return out, str(j.get("caption_body") or "").strip(), [str(h).lstrip("#").strip() for h in j.get("hashtags", []) if str(h).strip()]
 
 
-def compose(kw, sources, account_id="test", generate=None, today=None, max_hashtags=CAP.MAX_HASHTAGS):
+def compose(kw, sources, account_id="test", generate=None, today=None, max_hashtags=CAP.MAX_HASHTAGS, feedback=None):
     """반환 draft. 생성기 오류·형식 위반은 ComposeError(그날 이 키워드는 건너뜀)."""
     today = today or dt.date.today()
     if not sources:
         raise ComposeError("출처 없음")
     generate = generate or default_generate
-    cards, cap_body, tags = parse_generated(generate(build_prompt(kw, sources, today)))
+    prompt = build_prompt(kw, sources, today, feedback)
+    raw, last_err = None, None
+    for _ in range(1 + TRUNCATION_RETRIES):
+        try:
+            raw = generate(prompt)
+            break
+        except TruncatedError as e:   # 잘림만 같은 프롬프트로 재시도(다른 오류는 즉시 보류)
+            last_err = e
+    if raw is None:
+        raise ComposeError(f"응답 잘림 — 재시도 {TRUNCATION_RETRIES}회 후에도 실패: {last_err}")
+    cards, cap_body, tags = parse_generated(raw)
     last = cards[-1]
     if not all(k in last["body"] for k in NOTICE_KEYS):
         last["body"] = (last["body"].rstrip() + " " + NOTICE).strip()
     tags = list(dict.fromkeys(["".join(kw.split())] + tags))[:max_hashtags]
-    srcs = [{"url": s["url"], "org": s["org"]} for s in sources]
+    srcs = CAP.display_sources(sources)
     body = (cap_body or kw) + f"\n기준일: {today.isoformat()}"
     return {"account_id": account_id, "kw": kw, "cards": cards, "hashtags": tags, "sources": srcs,
             "caption": CAP.build_caption(body, srcs, tags)}

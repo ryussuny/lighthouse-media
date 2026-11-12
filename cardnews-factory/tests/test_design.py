@@ -216,6 +216,25 @@ class DesignTest(unittest.TestCase):
         # owned 는 그대로 허용
         D.design(draft(), [{"file": "a.png", "origin": "owned"}], self.out, backgrounds_dir=bgd)
 
+    def test_wrap_never_breaks_inside_number_expression(self):
+        font = D._font(D.load_font_table()["Noto Sans KR"]["file"], 50)
+        dr = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+        text = "겨울철 난방비 부담을 덜기 위해 에너지 취약계층 144만 가구에 연간 36만 7000원의 에너지바우처가 지원돼요"
+        for width in range(420, 828, 12):                     # 어느 폭에서도
+            lines = D.wrap(dr, text, font, width)
+            joined = "\n".join(lines)
+            self.assertIn("36만 7000원", joined.replace("\n", "\n"), width)
+            self.assertTrue(any("36만 7000원" in ln for ln in lines), (width, lines))
+            self.assertTrue(any("144만 가구" in ln for ln in lines), (width, lines))
+            self.assertEqual("".join(lines).replace(" ", ""), text.replace(" ", ""))
+
+    def test_number_longer_than_line_is_still_split_not_lost(self):
+        font = D._font(D.load_font_table()["Noto Sans KR"]["file"], 50)
+        dr = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+        lines = D.wrap(dr, "1억 2천만 3000원 지급", font, 160)
+        self.assertEqual("".join(lines).replace(" ", ""), "1억2천만3000원지급")
+        self.assertTrue(all(dr.textlength(x, font=font) <= 160 for x in lines))
+
 
 if __name__ == "__main__":
     unittest.main()

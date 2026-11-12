@@ -79,6 +79,28 @@ class CaptionTest(unittest.TestCase):
     def test_empty_caption(self):
         self.assertEqual(CAP.check_caption(draft(caption="")), ["캡션 비어 있음"])
 
+    def test_display_sources_portal_label_and_order(self):
+        recs = [{"url": "https://www.korea.kr/briefing/a", "org": "korea.kr", "org_known": False},
+                {"url": "https://www.korea.kr/news/b", "org": "보건복지부", "org_known": True},
+                {"url": "https://www.example.go.kr/c", "org": "example.go.kr"},            # org_known 없음 + 호스트명
+                {"url": "https://www.moel.go.kr/d", "org": "고용노동부"}]                   # org_known 없음 + 기관명
+        out = CAP.display_sources(recs)
+        self.assertEqual([x["org"] for x in out],
+                         ["보건복지부", "고용노동부", "정책브리핑(korea.kr)", "기관 미확인(example.go.kr)"])
+        self.assertEqual(out[0]["url"], "https://www.korea.kr/news/b")          # 확인된 기관이 먼저
+
+    def test_display_sources_matches_caption_lines_for_verify_exemption(self):
+        from cardnews import verify
+        recs = [{"url": "https://www.korea.kr/briefing/a", "org": "korea.kr", "org_known": False},
+                {"url": "https://www.korea.kr/news/b", "org": "보건복지부", "org_known": True}]
+        srcs = CAP.display_sources(recs)
+        d = {"cards": [{"title": "t", "body": "b"}] * 5, "hashtags": [], "sources": srcs,
+             "caption": CAP.build_caption("안내 문장입니다", srcs, [])}
+        self.assertEqual(CAP.check_caption(d), [])
+        lines = [t for w, t in verify.text_fields(d)] if hasattr(verify, "text_fields") else []
+        for line in CAP.source_lines(srcs):
+            self.assertNotIn(line, lines)                 # 출처 줄은 G2 검사 대상에서 면제(정확 일치)
+
 
 if __name__ == "__main__":
     unittest.main()

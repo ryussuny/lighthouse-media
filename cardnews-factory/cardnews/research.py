@@ -37,6 +37,21 @@
  B2) 고용노동부 보도자료(https://www.moel.go.kr/news/enews/report/enewsList.do → enewsView.do?news_seq=N):
     https://www.moel.go.kr/robots.txt 는 /portal/·/v2024/ 등만 Disallow, /news/ 는 허용. 키 불필요. 목록에서 최신 N건을 받아
     상세 페이지의 '등록일'(YYYY-MM-DD)과 본문(b_content)을 읽는다. 기관=고용노동부(근로복지공단 등 산하 보도 포함 — 게시 주체는 고용노동부 누리집).
+ B3) 금융위원회 보도자료(https://www.fsc.go.kr/no010101 → /no010101/<번호>): robots.txt 는 User-agent:* Allow:/ , 키 불필요,
+    상세에 등록일(YYYY-MM-DD)과 본문 전문. 기관=금융위원회.
+ B4) 산업통상부 보도·참고자료(https://www.motir.go.kr/kor/article/ATCL3f49a5a8c → /<번호>/view): robots.txt 는 /kor/search·/search·
+    /attach/viewer 만 Disallow. 상세에 등록일과 본문 전문. 옛 주소 motie.go.kr 은 motir.go.kr 로 301(robots.txt 요청이 리다이렉트라
+    우리 fetcher 는 옛 주소를 차단으로 본다 → 새 주소만 사용). 기관=산업통상부.
+ C2) T-04g 추가 조사에서 제외(2026-11-12 실측):
+    - 식품의약품안전처 mfds.go.kr: 보도자료 RSS(/www/rss/brd.do?brdId=ntc0021)는 되지만 항목에 본문이 없고(content:encoded 가 제목과 같음),
+      상세(/brd/m_99/view.do?seq=N)도 제목+첨부파일(hwpx·pdf) 링크뿐 → 본문을 못 읽어 G2 불가.
+    - 여성가족부 mogef.go.kr: /robots.txt 가 400 → 규칙 확인 불가라 차단으로 봄(RSS 주소 /hg/rss/hg_rss_f001.do 는 있으나 사용 안 함).
+    - 국토교통부 molit.go.kr: /robots.txt 가 307 리다이렉트(응답 없음) → 규칙 확인 불가.
+    - 행정안전부 mois.go.kr·질병관리청 kdca.go.kr: 첫 화면이 스크립트/메타 리프레시뿐이라 보도자료 목록 주소를 키 없이 찾지 못함
+      (robots.txt 자체는 허용 — 목록 URL 확인 시 추가 후보).
+    - 재정경제부(구 기획재정부) mofe.go.kr: robots 는 /sch/schMain.do·/id/qustnr.do 만 Disallow 이나 목록이 세션 ID(;jsessionid) 링크·
+      스크립트 상세라 안정적으로 파싱하지 못함(추가 후보).
+    - 중소벤처기업부 mss.go.kr: robots Allow:/ 이나 목록의 상세 링크를 찾지 못함(첨부 다운로드 링크만 확인) — 추가 후보.
  C) 제외(2026-11-12 실측):
     - 국민연금공단 nps.or.kr: RSS 없음(/rss/rss.do 404). https://www.nps.or.kr/robots.txt 가 /search/ 와
       /pbcpgdnc/ognzprsn/getOHAG0013M0List.do?menuId=MN24001022* 를 Disallow — 보도자료 게시판 위치를 robots 허용 경로에서 확인하지 못함.
@@ -48,7 +63,7 @@
     - 정책브리핑 RSS(서비스 중단 공지 https://www.korea.kr/etc/noticeView.do?newsId=132038885),
     정책브리핑 검색 totalSearch.do(GET 응답에 결과 없음·스크립트 렌더), 정부24(robots 거의 전면 Disallow),
     복지로(robots.txt 확인 불가), 공공데이터포털·법령정보센터 OpenAPI(인증키 필요).
-준수: robots.txt 를 호스트별로 읽어 허용 URL 만 요청, 요청 간 1.2초, 실행당 호스트별 MAX_PAGES(40)건 이하, 로그인·우회 없음.
+준수(실행당 총 TOTAL_MAX_PAGES=200·호스트별 몫 HOST_CAPS, 근거는 상수 주석): robots.txt 를 호스트별로 읽어 허용 URL 만 요청, 요청 간 1.2초, 실행당 호스트별 MAX_PAGES(40)건 이하, 로그인·우회 없음.
 네트워크는 전부 주입 가능: run(..., fetchers={"discover": f(kw)->[{"url","org","published","content"(bytes),"title"}]}).
 """
 import datetime as dt
@@ -58,6 +73,7 @@ import html
 import json
 import os
 import re
+import secrets
 import time
 import urllib.robotparser
 import xml.etree.ElementTree as ET
@@ -77,6 +93,16 @@ MAX_AGE_DAYS = 30
 MAX_TRIES = 15           # 한 번 실행에서 시도하는 키워드 상한(top5 + 나머지 in_scope 후보)
 MAX_PAGES = 40           # 한 번 실행에서 호스트당 받는 요청 상한(하루 수십 건 이하)
 MIN_INTERVAL = 1.2       # 요청 간 최소 간격(초)
+# 실행당 총 요청 상한과 기관(호스트)별 몫 (T-04g). 호스트당 40 은 그대로 두고, 전체가 부풀지 않게 총 200 을 둔다.
+# 근거: 200 요청 × 1.2초 = 최대 4분(한 번 실행이 너무 길어지지 않는 선). 현재 몫 합계는 90(여유 110 = 기관을 더 붙일 자리).
+# 몫 = robots 1 + 목록/RSS 1 + 상세 N(=12) 를 기관마다 맞춘 값. korea.kr 만 사이트맵·기사 36건이라 40 을 다 쓴다.
+TOTAL_MAX_PAGES = 200
+HOST_CAPS = {"korea.kr": 40, "mohw.go.kr": 5, "moel.go.kr": 15, "fsc.go.kr": 15, "motir.go.kr": 15}
+LIST_ITEMS = 12          # 목록형 기관(고용노동부·금융위·산업통상부)에서 실행마다 새로 받는 상세 페이지 상한
+FSC_LIST = "https://www.fsc.go.kr/no010101"
+FSC_VIEW = "https://www.fsc.go.kr/no010101/"
+MOTIR_LIST = "https://www.motir.go.kr/kor/article/ATCL3f49a5a8c"
+MOTIR_VIEW = "https://www.motir.go.kr/kor/article/ATCL3f49a5a8c/"
 SITEMAPS = ["https://www.korea.kr/sitemap_policy.xml", "https://www.korea.kr/sitemap_briefing.xml"]
 MOHW_RSS = "https://www.mohw.go.kr/rss/board.es?mid=a10503000000&bid=0027"
 MOEL_LIST = "https://www.moel.go.kr/news/enews/report/enewsList.do"
@@ -128,7 +154,10 @@ def body_text(content):
     """저장본에서 '본문' 텍스트(공백 정리, nav·footer·인기검색어 제거). 본문 표지(view_cont·b_content)가 있으면 그 뒤, 없으면 전체."""
     s = content.decode("utf-8", "replace") if isinstance(content, (bytes, bytearray)) else content
     m = _BODY_MARK.search(s)
-    t = html_to_text(strip_chrome(s[m.start():] if m else s))
+    if m:  # 표지가 든 여는 태그의 끝('>')부터 — 태그 조각이 본문 앞머리에 글자로 남지 않게
+        gt = s.find(">", m.end())
+        s = s[gt + 1:] if gt >= 0 else s[m.end():]
+    t = html_to_text(strip_chrome(s))
     return re.sub(r"\s+", " ", t).strip()
 
 
@@ -271,21 +300,29 @@ class PoliteFetcher:
     robots.txt 요청도 같은 간격·호스트 카운터에 들어간다. 리다이렉트는 직접 따라가며 매 홉마다
     공식 도메인·robots·호스트 상한을 다시 적용한다(공식 밖으로 나가는 리다이렉트는 거부)."""
 
-    def __init__(self, max_pages=MAX_PAGES, interval=MIN_INTERVAL, sleep=time.sleep, domains=None):
+    def __init__(self, max_pages=MAX_PAGES, interval=MIN_INTERVAL, sleep=time.sleep, domains=None,
+                 max_total=TOTAL_MAX_PAGES, host_caps=None):
         self.max_pages, self.interval, self.sleep = max_pages, interval, sleep
+        self.max_total = max_total
+        self.host_caps = HOST_CAPS if host_caps is None else host_caps  # 호스트별 몫(없으면 max_pages). 둘 중 작은 값 적용
+        self.total = 0
         self.count, self.last, self.robots = {}, 0.0, {}
         self.domains = domains or C.load_json(os.path.join(C.CONFIG, "official_domains.json"))
 
     def _tick(self, url):
         """요청 1건을 호스트 카운터·간격에 반영(robots 포함). 상한이면 예외."""
         host = org_of(url)
-        if self.count.get(host, 0) >= self.max_pages:
-            raise RuntimeError(f"호스트 상한 도달: {host} {self.max_pages}건")
+        cap = min(self.max_pages, self.host_caps.get(host, self.max_pages))
+        if self.count.get(host, 0) >= cap:
+            raise RuntimeError(f"호스트 상한 도달: {host} {cap}건")
+        if self.total >= self.max_total:
+            raise RuntimeError(f"실행당 총 상한 도달: {self.max_total}건")
         wait = self.interval - (time.monotonic() - self.last)
         if wait > 0:
             self.sleep(wait)
         self.last = time.monotonic()
         self.count[host] = self.count.get(host, 0) + 1
+        self.total += 1
 
     def _allowed(self, url):
         import requests
@@ -369,7 +406,20 @@ class SourceCache:
                         except json.JSONDecodeError:
                             continue
                         if isinstance(e, dict) and e.get("url"):
-                            self.entries[e["url"]] = e
+                            self.entries[e["url"]] = self._resolve(e)
+
+    def _resolve(self, e):
+        """index 의 saved_path 가 상대경로(새 줄)면 cache 디렉터리 기준 절대경로로 되돌린다. 옛 절대경로 줄은 그대로."""
+        sp = e.get("saved_path")
+        if sp and not os.path.isabs(sp):
+            e = {**e, "saved_path": os.path.normpath(os.path.join(self.dir, sp))}
+        return e
+
+    def _relative(self, path):
+        try:
+            return os.path.relpath(path, self.dir).replace(os.sep, "/")
+        except ValueError:  # 다른 드라이브 — 상대화 불가, 절대경로 그대로
+            return path
 
     def has(self, url):
         return url in self.entries
@@ -377,11 +427,12 @@ class SourceCache:
     def _append(self, rec):
         os.makedirs(self.dir, exist_ok=True)
         rec = {"cached_at": ledger.now_iso(), **rec}
+        disk = {**rec, "saved_path": self._relative(rec["saved_path"])} if rec.get("saved_path") else rec
         with open(self.index, "a", encoding="utf-8") as f:
-            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-        self.entries[rec["url"]] = rec
+            f.write(json.dumps(disk, ensure_ascii=False) + "\n")
+        self.entries[rec["url"]] = self._resolve(disk)
         self._texts = None
-        return rec
+        return self.entries[rec["url"]]
 
     def add(self, entry):
         """entry: {url, org, org_known, published, title, content(bytes), date_note?} → 저장본 + 인덱스 한 줄"""
@@ -411,14 +462,31 @@ class SourceCache:
         except OSError:
             return None
 
+    @staticmethod
+    def saved_date(raw):
+        """저장본 자체에서 다시 뽑은 게시일(date) — index 의 published 값은 믿지 않는다. 못 뽑으면 None."""
+        s_ = raw.decode("utf-8", "replace")
+        for pat in (r"<p>게시일: ([^<]+)</p>", r"<dt>\s*등록일\s*</dt>\s*<dd>\s*(\d{4}-\d{2}-\d{2})",
+                    r"<em>\s*등록일\s*</em>\s*<span>\s*(\d{4}-\d{2}-\d{2})",
+                    r'<div class="day">\s*<span>\s*(\d{4}-\d{2}-\d{2})'):
+            m = re.search(pat, s_)
+            d = parse_date(m.group(1)) if m else None
+            if d:
+                return d
+        return parse_date(korea_kr_shown_date(s_))
+
     def within(self, today, max_age=MAX_AGE_DAYS):
+        """30일 창 안의 항목. 게시일은 저장본에서 다시 뽑은 값(sha 가 다르거나 못 읽거나 날짜를 못 뽑으면 제외)."""
         out = []
         for e in self.entries.values():
             if e.get("skip_reason") or not e.get("saved_path"):
                 continue
-            d = parse_date(e.get("published"))
+            raw = self.read(e)
+            if raw is None:
+                continue
+            d = self.saved_date(raw)
             if d is not None and 0 <= (today - d).days <= max_age:
-                out.append(e)
+                out.append({**e, "published": d.isoformat()})
         return out
 
     def read(self, e):
@@ -459,6 +527,10 @@ class SourceCache:
                 "tampered": len(self.tampered_urls)}
 
 
+class AllHostsFailed(RuntimeError):
+    """모든 수집처(호스트)가 비-HTTP 예외로 실패 — run 이 status=error 로 기록한다."""
+
+
 class KoreaKrProvider:
     """정책브리핑 사이트맵 최신 기사. 캐시가 있으면 refresh(cache) 로 새 URL 만 받아 쌓고, 없으면 __call__ 로 메모리 매칭(옛 방식)."""
 
@@ -477,10 +549,11 @@ class KoreaKrProvider:
         if not seg:
             return None
         title = page_title(content)
-        doc = (f"<html><head><title>{html.escape(title)}</title></head><body><p>링크: {html.escape(final)}</p>"
-               f"{seg}</body></html>")
         # 게시일: JSON-LD → 기사 상단 표시일. 사이트맵 lastmod 는 수정일이라 쓰지 않는다(없으면 None + 사유)
         pub = pub or korea_kr_shown_date(seg)
+        pd = parse_date(pub)  # 저장본 안에 게시일을 박아 둔다 — 캐시가 index 값이 아니라 저장본에서 날짜를 다시 읽는다
+        doc = (f"<html><head><title>{html.escape(title)}</title></head><body><p>링크: {html.escape(final)}</p>"
+               + (f"<p>게시일: {pd.isoformat()}</p>" if pd else "") + f"{seg}</body></html>")
         return {"url": final, "org": org or org_of(final), "org_known": org_is_known({"url": final, "org": org}),
                 "published": pub, "content": doc.encode("utf-8"), "title": title,
                 "date_note": None if pub else "게시일 없음(사이트맵 lastmod 는 수정일이라 쓰지 않음)"}
@@ -658,28 +731,184 @@ class MoelProvider:
                 for i in self.items if _norm(kw) in i["_norm"]]
 
 
+# ---------- 금융위원회·산업통상부 (T-04g) ----------
+def parse_fsc_list(raw):
+    """금융위 보도자료 목록 → [(상세 URL, 제목)] 최신(번호 큰 순)"""
+    s_ = raw.decode("utf-8", "replace") if isinstance(raw, (bytes, bytearray)) else raw
+    seen, out = set(), []
+    for m in re.finditer(r'<a[^>]+href="/no010101/(\d+)[^"]*"[^>]*>(.*?)</a>', s_, re.S):
+        if m.group(1) in seen:
+            continue
+        seen.add(m.group(1))
+        title = html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", m.group(2)))).strip()
+        # 목록 앵커 글은 '제목. 금일 등록된 게시글' 처럼 꼬리표가 붙을 수 있다
+        title = re.sub(r"[.\s]*금일 등록된 게시글.*$", "", title).strip()
+        out.append((FSC_VIEW + m.group(1), title))
+    out.sort(key=lambda x: int(x[0].rsplit("/", 1)[1]), reverse=True)
+    return out
+
+
+def parse_fsc_view(raw, url, title=""):
+    """금융위 상세 → 항목(본문 구간+등록일) 또는 None(본문 구간·날짜를 못 읽음)"""
+    s_ = raw.decode("utf-8", "replace") if isinstance(raw, (bytes, bytearray)) else raw
+    i = s_.find('class="board-view-wrap"')
+    if i < 0:
+        return None
+    j = s_.find("이전글", i)
+    seg = strip_chrome(re.sub(r"(?is)<script\b.*?</script>", " ", s_[i:(j if j > i else i + 40000)]))
+    d = re.search(r'<div class="day">\s*<span>\s*(\d{4}-\d{2}-\d{2})', s_[i:])
+    t = re.search(r'<div class="subject">(.*?)</div>', s_[i:], re.S)
+    title = html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", t.group(1)))).strip() if t else title
+    doc = (f"<html><head><title>{html.escape(title)}</title></head><body><p>링크: {html.escape(url)}</p>"
+           f'<div class="b_content">{seg}</div></body></html>')
+    return {"url": url, "org": "금융위원회", "org_known": True, "published": d.group(1) if d else None,
+            "content": doc.encode("utf-8"), "title": title,
+            "date_note": None if d else "게시일 읽지 못함"}
+
+
+def parse_motir_list(raw):
+    """산업통상부 보도·참고자료 목록 → [(상세 URL, 제목)] 최신(번호 큰 순)"""
+    s_ = raw.decode("utf-8", "replace") if isinstance(raw, (bytes, bytearray)) else raw
+    seen, out = set(), []
+    for m in re.finditer(r'<a[^>]+href="/kor/article/ATCL3f49a5a8c/(\d+)/view[^"]*"[^>]*>(.*?)</a>', s_, re.S):
+        if m.group(1) in seen:
+            continue
+        seen.add(m.group(1))
+        title = html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", m.group(2)))).strip()
+        out.append((f"{MOTIR_VIEW}{m.group(1)}/view", title))
+    out.sort(key=lambda x: int(x[0].split("/")[-2]), reverse=True)
+    return out
+
+
+def parse_motir_view(raw, url, title=""):
+    s_ = raw.decode("utf-8", "replace") if isinstance(raw, (bytes, bytearray)) else raw
+    i = s_.find('class="cont-tit"')
+    if i < 0:
+        return None
+    k0 = s_.find("본문 시작", i)  # 제목 영역 바로 뒤의 '페이지 공유·프린트' 버튼 문구를 건너뛰고 본문부터
+    if k0 > i:
+        e0 = s_.find("-->", k0)
+        start = e0 + 3 if e0 > 0 else k0
+    else:
+        start = i
+    j = min([k for k in (s_.find(mk, start) for mk in ("이전글", "다음글")) if k > start] or [start + 30000])
+    seg = strip_chrome(re.sub(r"(?is)<(script|style|link)\b[^>]*>(?:.*?</\1>)?", " ", s_[start:j]))
+    seg = re.sub(r"(?is)<div[^>]*page-share.*?(?:프린트|print).*?</div>", " ", seg)
+    d = re.search(r"<em>\s*등록일\s*</em>\s*<span>\s*(\d{4}-\d{2}-\d{2})", s_[i:])
+    doc = (f"<html><head><title>{html.escape(title)}</title></head><body><p>링크: {html.escape(url)}</p>"
+           f'<div class="b_content">{seg}</div></body></html>')
+    return {"url": url, "org": "산업통상부", "org_known": True, "published": d.group(1) if d else None,
+            "content": doc.encode("utf-8"), "title": title, "date_note": None if d else "게시일 읽지 못함"}
+
+
+class ListViewProvider:
+    """목록 페이지 + 상세 페이지 형태의 기관. refresh: 목록 1회 + 캐시에 없는 새 상세 최대 n건. 없으면 __call__ 로 최신 n건 메모리 매칭."""
+    LIST_URL = None
+
+    def __init__(self, fetcher, n=LIST_ITEMS):
+        self.f, self.n, self.items = fetcher, n, None
+
+    def parse_list(self, raw):
+        raise NotImplementedError
+
+    def parse_view(self, raw, url, title):
+        raise NotImplementedError
+
+    def _rows(self):
+        try:
+            body, _ = self.f.get(self.LIST_URL)
+            return self.parse_list(body)
+        except Exception:  # noqa: BLE001  robots 불허·상한·오류 모두 '이 기관은 오늘 건너뜀'
+            return []
+
+    def _fetch_one(self, url, title):
+        try:
+            raw, final = self.f.get(url)
+        except Exception:  # noqa: BLE001
+            return False
+        return self.parse_view(raw, url, title)  # 항목 | None
+
+    def refresh(self, cache, today):
+        fresh = []
+        for url, title in self._rows():
+            if cache.has(url):
+                cache.stats["known_skipped"] += 1
+            else:
+                fresh.append((url, title))
+        for url, title in fresh[:self.n]:
+            e = self._fetch_one(url, title)
+            if e is False:
+                continue
+            if e is None:
+                cache.add_negative(url, "본문 구간을 읽지 못함")
+            else:
+                cache.add(e)
+
+    def _load(self):
+        self.items = []
+        for url, title in self._rows()[:self.n]:
+            e = self._fetch_one(url, title)
+            if e:
+                self.items.append({**e, "_norm": _norm(html_to_text(e["content"]))})
+
+    def __call__(self, kw):
+        if self.items is None:
+            self._load()
+        return [{**{k: v for k, v in i.items() if k != "_norm"}, "relevance": relevance(kw, i["title"], i["content"])}
+                for i in self.items if _norm(kw) in i["_norm"]]
+
+
+class FscProvider(ListViewProvider):
+    """금융위원회 보도자료(https://www.fsc.go.kr/no010101). robots.txt 는 User-agent:* Allow:/ . 키 불필요,
+    상세에 등록일(<div class="day">)과 본문 전문."""
+    LIST_URL = FSC_LIST
+    parse_list = staticmethod(parse_fsc_list)
+
+    def parse_view(self, raw, url, title):
+        return parse_fsc_view(raw, url, title)
+
+
+class MotirProvider(ListViewProvider):
+    """산업통상부 보도·참고자료(https://www.motir.go.kr/kor/article/ATCL3f49a5a8c). robots.txt 는 /kor/search·/search·/attach/viewer 만
+    Disallow(옛 도메인 motie.go.kr 은 motir.go.kr 로 301). 상세에 등록일(<em>등록일</em>)과 본문 전문."""
+    LIST_URL = MOTIR_LIST
+    parse_list = staticmethod(parse_motir_list)
+
+    def parse_view(self, raw, url, title):
+        return parse_motir_view(raw, url, title)
+
+
 def default_discover(fetcher=None, cache=None, today=None, cache_dir=None):
     """기본 출처 탐색. 첫 호출 때 각 provider 가 '아직 안 받은 새 URL 만' 받아 캐시에 쌓고(요청 상한은 그대로),
     키워드 매칭은 캐시 전체 중 게시 30일 이내 기사에서 한다. discover.summary() 로 캐시 상태를 본다."""
     f = fetcher or PoliteFetcher()
     cache = cache or SourceCache(cache_dir)
     day = today or dt.date.today()
-    providers = [KoreaKrProvider(f), MohwRssProvider(f), MoelProvider(f)]
+    providers = [KoreaKrProvider(f), MohwRssProvider(f), MoelProvider(f), FscProvider(f), MotirProvider(f)]
     state = {"refreshed": False}
+    host_errors = {}
 
     def discover(kw):
         if not state["refreshed"]:
             state["refreshed"] = True
-            for p in providers:
-                p.refresh(cache, day)
+            for p in providers:  # 한 호스트의 예외는 그 호스트만 건너뛰고 기록, 나머지는 계속
+                try:
+                    p.refresh(cache, day)
+                except Exception as e:  # noqa: BLE001
+                    host_errors[type(p).__name__] = f"{type(e).__name__}: {e}"[:200]
+        if len(host_errors) == len(providers):
+            raise AllHostsFailed("모든 수집처 실패: " + "; ".join(f"{k}={v}" for k, v in host_errors.items()))
         return cache.match(kw, day)
 
     def summary():
         out = cache.summary(day)
+        out["host_errors"] = dict(host_errors)
         out["requests"] = dict(getattr(f, "count", {}))
+        out["requests_total"] = getattr(f, "total", None)
         return out
     discover.summary = summary
     discover.cache = cache
+    discover.host_errors = host_errors
     return discover
 
 
@@ -732,7 +961,7 @@ def group_releases(keep):
 
 
 def run(acc, today=None, fetchers=None, ledger_dir=None, sources_dir=None, notify=None, min_sources=MIN_SOURCES,
-        gate=True, stop_file=None, cache_dir=None):
+        gate=True, stop_file=None, cache_dir=None, run_id=None):
     """gate=True(기본): STOP 파일·paused 면 아무것도 하지 않고 {'status':'gated'} 를 돌려준다(원장 기록 없음). T-09 도 단계마다 재확인."""
     if gate:
         ok_gate, why_gate = C.run_gate(acc, stop_file) if stop_file else C.run_gate(acc)
@@ -740,10 +969,11 @@ def run(acc, today=None, fetchers=None, ledger_dir=None, sources_dir=None, notif
             return {"status": "gated", "reason": why_gate, "account_id": acc.get("account_id"), "kw": None, "n_sources": 0}
     today = today or dt.date.today()
     day = today.isoformat()
+    run_id = run_id or f"research-{dt.datetime.now().strftime('%Y%m%dT%H%M%S')}-{secrets.token_hex(3)}"
     domains = C.load_json(os.path.join(C.CONFIG, "official_domains.json"))
     discover = (fetchers or {}).get("discover") or default_discover(today=today, cache_dir=cache_dir)
     out_dir = os.path.join(sources_dir or SOURCES_DIR, day)
-    base = {"date": day, "account_id": acc["account_id"]}
+    base = {"date": day, "account_id": acc["account_id"], "run_id": run_id}
 
     def final(status, reason, kw, saved=(), tried=(), evidence=None):
         rec = ledger.append("research_ledger", {
@@ -759,17 +989,21 @@ def run(acc, today=None, fetchers=None, ledger_dir=None, sources_dir=None, notif
     if not cands_kw:
         return final("hold", why, None)
 
-    tried = []
+    tried, logged = [], set()
     for rank, ck in enumerate(cands_kw, 1):
         kw = ck["kw"]
         meta = {"rank": rank, "src": ck["src"], "evidence": "indicator" if ck["evidence"] else "none"}
         try:
             cands = discover(kw) or []
+        except AllHostsFailed as e:
+            _log_host_errors(discover, base, ledger_dir, logged)
+            return final("error", str(e)[:300], None, (), tried)
         except Exception as e:  # noqa: BLE001
             ledger.append("research_ledger", {**base, "type": "try", **meta, "kw": kw, "adopted": False,
                                               "reason": f"출처 검색 실패: {e!r}"[:200]}, ledger_dir)
             tried.append(kw)
             continue
+        _log_host_errors(discover, base, ledger_dir, logged)
         keep, drop = screen(cands, today, domains)
         reps = group_releases(keep)
         orgs = {_norm(c.get("org") or org_of(c["url"])) for c in reps if org_is_known(c)}
@@ -799,12 +1033,34 @@ def run(acc, today=None, fetchers=None, ledger_dir=None, sources_dir=None, notif
             saved.append(ledger.append("source_ledger", {
                 "url": c["url"], "org": c.get("org") or org_of(c["url"]), "title": c.get("title", ""),
                 "published": c["published_date"], "fetched_at": ledger.now_iso(), "sha256": sha,
-                "saved_path": path, "kw": kw, "org_known": org_is_known(c), "dup_of": c.get("dup_of")}, ledger_dir))
+                "saved_path": path, "kw": kw, "org_known": org_is_known(c), "dup_of": c.get("dup_of"),
+                "run_id": run_id}, ledger_dir))
         note = "" if ck["evidence"] else "; evidence=none(지표 근거 없음, 공식 출처만 있음)"
         return final("ok", f"{reason}; 채택 키워드 {kw!r}(시도 {rank}번째, {ck['src']}), 저장 {len(saved)}건{note}",
                      kw, saved, tried, evidence=meta["evidence"])
     return final("hold", f"시도 {len(cands_kw)}개 키워드 모두 공식 출처(확인된 기관) {min_sources}곳을 못 채움: {', '.join(tried)}",
                  None, (), tried)
+
+
+def _log_host_errors(discover, base, ledger_dir, logged):
+    """수집처별 예외를 research_ledger 에 한 번씩(type=host_error) 남긴다."""
+    for host, why in (getattr(discover, "host_errors", None) or {}).items():
+        if host not in logged:
+            logged.add(host)
+            ledger.append("research_ledger", {**base, "type": "host_error", "host": host, "reason": why}, ledger_dir)
+
+
+def sources_for_run(rrec, ledger_dir=None):
+    """research.run 이 돌려준 기록(rrec)의 이번 실행(run_id) source_ledger 행만, (url, sha256) 중복 제거.
+    같은 키워드를 여러 번 실행해 같은 줄이 쌓여도 이번 실행 몫만 돌려준다. run_id 가 없는 옛 줄은 포함하지 않는다."""
+    rid = rrec.get("run_id")
+    seen, out = set(), []
+    for r in ledger.read("source_ledger", ledger_dir):
+        key = (r.get("url"), r.get("sha256"))
+        if rid and r.get("run_id") == rid and key not in seen:
+            seen.add(key)
+            out.append(r)
+    return out
 
 
 if __name__ == "__main__":

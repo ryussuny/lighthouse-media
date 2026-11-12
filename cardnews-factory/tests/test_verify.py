@@ -153,6 +153,10 @@ class TestVerify(unittest.TestCase):
         s = self.two()
         s[1]["org"] = "정책브리핑"
         self.assertFalse(self.run_(self.draft("월 34만원"), s)["G1"][0])
+        for name in ("KTV", "KTV 국민방송"):
+            s = self.two()
+            s[1]["org"] = name
+            self.assertFalse(self.run_(self.draft("월 34만원"), s)["G1"][0], name)
 
     # ---- 재검증4 반영: 만·억·천 뒤 숫자 이어짐(값 축소) 차단, 복합 금액 한 토큰 ----
     def test_truncated_amount_fails(self):
@@ -186,6 +190,26 @@ class TestVerify(unittest.TestCase):
         d = self.draft("기준연금액 월 34만원")
         d["subtitle"] = "최대 77만원"
         self.assertFalse(self.run_(d, self.two())["pass"])
+
+    # ---- 리뷰7 반영: 한글 단위 뒤 경계 — 다른 낱말 속 '2위'·'1인' 은 일치가 아님 ----
+    def test_unit_inside_other_word_not_matched(self):
+        b = ("<html><body>보건복지부: 2위원회 구성, 1인분 제공, 3편성, 5권역, 10개국어, 8종목, 7인승 차량,"
+             " 기준연금액 월 34만원.</body></html>")
+        for body in ("평가 2위", "1인 지원", "3편 제작", "5권 배포", "10개국 참여", "8종 혜택", "7인 가족"):
+            r = self.run_(self.draft(body), self.two(b))
+            self.assertFalse(r["pass"], body)
+
+    def test_unit_followed_by_particle_passes(self):
+        b = ("<html><body>보건복지부: 만 65세부터 신청, 3월 31일까지 접수, 1인당 월 34만원씩, 2위를 기록,"
+             " 1인가구 지원.</body></html>")
+        body = "65세부터 신청, 3월 31일까지 접수, 1인당 월 34만원씩, 2위를 기록, 1인가구 지원"
+        r = self.run_(self.draft(body), self.two(b))
+        self.assertTrue(r["pass"], r["G2"])
+
+    def test_numbers_in_unit_boundary(self):
+        self.assertEqual(V.numbers_in("2위원회"), ["2"])
+        self.assertEqual(V.numbers_in("2위를"), ["2위"])
+        self.assertEqual(V.numbers_in("1인분"), ["1"])
 
     def test_numbers_in(self):
         self.assertEqual(V.numbers_in("2026년 11월 12일, 1,000,000원, 3.5%"),
