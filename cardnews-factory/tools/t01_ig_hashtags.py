@@ -11,6 +11,8 @@ import json
 import os
 import statistics as st
 
+import re
+
 import requests
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,28 +28,44 @@ TAGS = ["카드뉴스", "정부지원금", "생활꿀팁", "재테크", "건강�
         "육아정보", "자기계발", "여행정보", "부동산정보", "시니어"]
 FIELDS = "id,media_type,like_count,comments_count,timestamp,caption"
 
+_SECRET_Q = re.compile(r"(?i)([?&](?:key|access_token|token|refresh_token|client_secret|api_key)=)[^&\s'\")]+")
+
+
+def mask(s):
+    """예외·응답 문자열의 URL 쿼리 비밀값 가림(cardnews.trends.mask_secrets 와 같은 규칙)."""
+    return _SECRET_Q.sub(r"\g<1>***", str(s))
+
+
 summary = {"measured_at": NOW.isoformat(), "account": "lighthouse(IG_ID only)", "tags": {}}
 for tag in TAGS:
     ent = {}
     try:
         r = requests.get(f"{G}/ig_hashtag_search", params={"user_id": IG_ID, "q": tag, "access_token": TOKEN}, timeout=20)
         if not r.ok:
-            ent["error"] = r.text[:300]
+            ent["error"] = mask(r.text)[:300]
             summary["tags"][tag] = ent
             continue
         hid = r.json()["data"][0]["id"]
         rr = requests.get(f"{G}/{hid}/top_media", params={"user_id": IG_ID, "fields": FIELDS, "limit": 25, "access_token": TOKEN}, timeout=30)
+        # 저장 전 paging 제거(paging.next URL 에 access_token 이 들어 있음). 오류 응답은 마스킹.
+        try:
+            body = rr.json()
+            body.pop("paging", None)
+            saved = json.dumps(body, ensure_ascii=False)
+        except ValueError:
+            saved = mask(rr.text)
         with open(os.path.join(RAW, f"{STAMP}_ig_top_{tag}.json"), "w", encoding="utf-8") as f:
-            f.write(rr.text)
+            f.write(saved)
         if not rr.ok:
-            ent["error"] = rr.text[:300]
+            ent["error"] = mask(rr.text)[:300]
         else:
             items = rr.json().get("data", [])
             likes = [i.get("like_count") for i in items if isinstance(i.get("like_count"), int)]
             by_type = {}
             for i in items:
                 t = i.get("media_type")
-                by_type.setdefault(t, []).append(i.get("like_count") or 0)
+                if isinstance(i.get("like_count"), int):  # 좋아요 숨김 게시물은 0 이 아니라 제외(전체 중앙값과 같은 기준)
+                    by_type.setdefault(t, []).append(i["like_count"])
             ent = {
                 "hashtag_id": hid, "n": len(items), "n_like_visible": len(likes),
                 "like_median": st.median(likes) if likes else None,
@@ -58,7 +76,7 @@ for tag in TAGS:
                 "newest": max((i["timestamp"] for i in items), default=None),
             }
     except Exception as e:  # noqa: BLE001
-        ent["error"] = repr(e)[:300]
+        ent["error"] = mask(repr(e))[:300]
     summary["tags"][tag] = ent
 
 p = os.path.join(RAW, f"{STAMP}_ig_hashtag_summary.json")

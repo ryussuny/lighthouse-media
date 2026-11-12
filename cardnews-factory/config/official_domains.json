@@ -1,10 +1,23 @@
 {
-  "_note": "G1 공식 출처 도메인 목록. 출처 url 의 호스트가 suffix 중 하나로 끝나거나 exact 와 같으면 공식 출처로 본다.",
-  "version": 1,
-  "suffixes": [".go.kr", ".or.kr", ".re.kr", ".ac.kr", ".mil.kr"],
+  "_note": "G1 공식 출처 도메인 목록(v2, 2026-11-12 리뷰 반영). 정부·지자체·군(.go.kr·.mil.kr 접미사)과 명시한 공공기관 exact 만 공식. .or.kr·.ac.kr·.re.kr 는 사설 단체·대학도 쓰므로 접미사로 허용하지 않는다 — 공공기관은 exact 에 하나씩 추가(추가 전 기관 공식 사이트임을 확인).",
+  "version": 2,
+  "suffixes": [
+    ".go.kr",
+    ".mil.kr"
+  ],
   "exact": [
-    "law.go.kr", "korea.kr", "gov.kr", "data.go.kr", "kosis.kr",
-    "nhis.or.kr", "nps.or.kr", "hira.or.kr", "kosaf.go.kr",
-    "bok.or.kr", "fss.or.kr", "kostat.go.kr", "kma.go.kr"
+    "law.go.kr",
+    "korea.kr",
+    "gov.kr",
+    "data.go.kr",
+    "kosis.kr",
+    "nhis.or.kr",
+    "nps.or.kr",
+    "hira.or.kr",
+    "kosaf.go.kr",
+    "bok.or.kr",
+    "fss.or.kr",
+    "kostat.go.kr",
+    "kma.go.kr"
   ]
 }

@@ -60,6 +60,41 @@ class TestConfig(unittest.TestCase):
         self.assertTrue(C.is_official_url("https://www.mohw.go.kr/a", dom))
         self.assertFalse(C.is_official_url("https://blog.naver.com/a", dom))
         self.assertFalse(C.is_official_url("https://go.kr.evil.com/a", dom))
+        # v2: .or.kr·.ac.kr·.re.kr 접미사는 공식 아님(사설 단체·대학) — 명시 exact 만
+        self.assertFalse(C.is_official_url("https://random-assoc.or.kr/a", dom))
+        self.assertFalse(C.is_official_url("https://www.some-univ.ac.kr/a", dom))
+        self.assertFalse(C.is_official_url("https://lab.re.kr/a", dom))
+        self.assertTrue(C.is_official_url("https://www.nps.or.kr/a", dom))
+
+    # ---- 2026-11-12 리뷰 반영: 교회 계열 차단·token_ref 허용 목록·공백 금칙어 ----
+    def test_church_accounts_blocked(self):
+        cases = {"account_id": "dongsan_church", "topic": "동산교회 말씀 카드뉴스", "token_ref": "token_dongsan",
+                 "handle": "garden___church", "brand": {"font": "x", "logo_path": "교회로고.png"}}
+        for k, v in cases.items():
+            errs = C.validate_account(dict(self.acc, **{k: v}))
+            self.assertTrue(any("교회" in e and k in e for e in errs), (k, errs))
+        errs = C.validate_account(dict(self.acc, account_id="church", topic="t"))
+        self.assertTrue(any("account_id" in e for e in errs))
+        self.assertTrue(any("CHURCH" not in e and "교회" in e for e in errs))
+        self.assertTrue(any("교회" in e for e in C.validate_account(dict(self.acc, is_virtual=False, token_ref="Token_Dongsan"))))
+
+    def test_token_ref_allowlist(self):
+        ok = dict(self.acc, is_virtual=False, token_ref="instagram")
+        self.assertEqual(C.validate_account(ok), [])
+        bad = dict(self.acc, is_virtual=False, token_ref="some_other_token")
+        self.assertTrue(any("허용 목록" in e for e in C.validate_account(bad)))
+
+    def test_normal_account_not_blocked(self):
+        self.assertEqual(C.validate_account(self.acc), [])
+
+    def test_blank_banned_word_rejected(self):
+        b = {"categories": {k: ["x"] for k in ("medical_claim", "investment_solicit", "political_agitation", "adult", "copyright_suspect")}}
+        self.assertEqual(C.validate_banned(b), [])
+        b["categories"]["adult"] = ["x", "   "]
+        self.assertTrue(any("adult" in e for e in C.validate_banned(b)))
+
+    def test_yt_token_path_configurable(self):
+        self.assertTrue(C.YT_OAUTH_TOKEN_PATH)
 
 
 if __name__ == "__main__":

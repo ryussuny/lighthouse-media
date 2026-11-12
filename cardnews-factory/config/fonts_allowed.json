@@ -1,0 +1,7 @@
+{
+  "_note": "G4 허용 글꼴 목록. 이름이 목록에 없으면 보류. license 는 글꼴 파일 name 테이블(ID 13/14)에서 직접 읽은 값(2026-11-12 master 실측). Pretendard 는 이 PC에 설치돼 있지 않아 뺐다.",
+  "fonts": [
+    {"name": "Noto Sans KR", "file": "C:/Windows/Fonts/NotoSansKR-VF.ttf", "license": "SIL Open Font License 1.1", "license_url": "http://scripts.sil.org/OFL"},
+    {"name": "Noto Serif KR", "file": "C:/Windows/Fonts/NotoSerifKR-VF.ttf", "license": "SIL Open Font License 1.1", "license_url": "http://scripts.sil.org/OFL"}
+  ]
+}

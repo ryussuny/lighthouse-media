@@ -15,8 +15,11 @@ import math
 import os
 import xml.etree.ElementTree as ET
 
+import re
+
 import requests
 
+from . import config as C
 from . import ledger
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -31,6 +34,21 @@ FORMULA = {
             "view = 0.7*min(1,log10(1+yt_views)/7) + 0.3*min(1,log10(1+ig_like_median)/5) (ig 없으면 yt만); "
             "rising = min(1,log10(gt_traffic)/4) (트렌드 RSS에 있을 때) 아니면 0; fit = 1(seed) / 0.7(경계 통과 트렌드어)",
 }
+_SECRET_Q = re.compile(r"(?i)([?&](?:key|access_token|token|refresh_token|client_secret|api_key)=)[^&\s'\")]+")
+
+
+def mask_secrets(s):
+    """예외·로그 문자열 속 URL 쿼리의 키·토큰 값을 가린다(원장·알림 본문에 비밀이 실리는 경로 차단)."""
+    return _SECRET_Q.sub(r"\g<1>***", str(s))
+
+
+def strip_paging(obj):
+    """Graph API 응답의 paging(next URL 에 access_token 이 실림)을 저장 전에 제거."""
+    if isinstance(obj, dict):
+        obj.pop("paging", None)
+    return obj
+
+
 W_VIEW, W_RISING, W_FIT = 0.6, 0.25, 0.15
 
 
@@ -70,8 +88,7 @@ def _yt_headers_params():
         return {}, {"key": key}
     from google.auth.transport.requests import Request
     from google.oauth2.credentials import Credentials
-    tp = os.path.join(os.path.expanduser("~"), "OneDrive", "바탕 화면", "03_사업_마케팅", "lighthouse_media", "token_lighthouse.json")
-    creds = Credentials.from_authorized_user_file(tp)
+    creds = Credentials.from_authorized_user_file(C.YT_OAUTH_TOKEN_PATH)
     if not creds.valid:
         creds.refresh(Request())  # 메모리만, 파일에 쓰지 않음
     return {"Authorization": f"Bearer {creds.token}"}, {}
@@ -125,6 +142,8 @@ def _norm(s):
 def in_scope(kw, news_titles, seeds):
     """규칙 경계: 트렌드어 자체나 그 뉴스 제목에 seed 키워드가 들어 있으면 통과. 이유를 돌려준다."""
     n = _norm(kw)
+    if not n:
+        return False, "빈 키워드"
     for s in seeds:
         ns = _norm(s)
         if ns and (ns in n or n in ns):
@@ -132,7 +151,7 @@ def in_scope(kw, news_titles, seeds):
     for t in news_titles:
         nt = _norm(t)
         for s in seeds:
-            if _norm(s) in nt:
+            if _norm(s) and _norm(s) in nt:
                 return True, f"뉴스 제목에 seed '{s}' 포함"
     return False, "계정 seed 키워드와 무관"
 
@@ -141,7 +160,8 @@ def is_banned(kw, banned):
     n = _norm(kw)
     for cat, words in banned.items():
         for w in words:
-            if _norm(w) in n:
+            nw = _norm(w)
+            if nw and nw in n:
                 return cat
     return None
 
@@ -170,8 +190,17 @@ def score_candidates(cands, videos, ig_likes):
 
 
 # ---------- 실행 ----------
-def run(acc, banned, fetchers=None, today=None, ledger_dir=None, exclude_kws=(), notify=None):
-    """fetchers: 시험용 주입 {'google_trends': f(day)->(items,path), 'youtube': f(day,cats)->(videos,paths), 'ig': f(date)->(dict,path)}"""
+def run(acc, banned, fetchers=None, today=None, ledger_dir=None, exclude_kws=(), notify=None, gate=True, stop_file=None):
+    """fetchers: 시험용 주입 {'google_trends': f(day)->(items,path), 'youtube': f(day,cats)->(videos,paths), 'ig': f(date)->(dict,path)}
+
+    gate(기본 True): STOP 파일·paused 이면 아무것도 수집·기록하지 않고 {"status": "gated"} 로 바로 중단(AC-9).
+    ※ T-09 오케스트레이터는 이 한 번에 의존하지 말고 단계마다(수집·research·design·게시 직전) config.run_gate 를 재확인한다.
+    지표 성공 = 받은 개수 n>0. 근거 지표 0 인 seed 는 top5 에서 뺀다(없으면 status="no_evidence" + 알림).
+    """
+    if gate:
+        ok, why = C.run_gate(acc, **({"stop_file": stop_file} if stop_file else {}))
+        if not ok:
+            return {"status": "gated", "reason": why, "account_id": acc.get("account_id"), "top5": []}
     today = today or dt.date.today()
     day = today.isoformat()
     f = {"google_trends": fetch_google_trends, "youtube": fetch_youtube, "ig": load_ig_hashtags, **(fetchers or {})}
@@ -179,9 +208,12 @@ def run(acc, banned, fetchers=None, today=None, ledger_dir=None, exclude_kws=(),
 
     try:
         gt_items, p = f["google_trends"](day)
-        sources.append({"name": "google_trends", "fetched_at": ledger.now_iso(), "raw_path": p, "n": len(gt_items)})
+        if gt_items:
+            sources.append({"name": "google_trends", "fetched_at": ledger.now_iso(), "raw_path": p, "n": len(gt_items)})
+        else:
+            errors.append("google_trends: 0건")
     except Exception as e:  # noqa: BLE001
-        errors.append(f"google_trends: {e!r}"[:200])
+        errors.append(mask_secrets(f"google_trends: {e!r}")[:200])
     try:
         videos, ps = f["youtube"](day, [str(c) for c in acc["trend_categories"].get("youtube", [])])
         if videos:
@@ -189,13 +221,13 @@ def run(acc, banned, fetchers=None, today=None, ledger_dir=None, exclude_kws=(),
         else:
             errors.append("youtube: 0건")
     except Exception as e:  # noqa: BLE001
-        errors.append(f"youtube: {e!r}"[:200])
+        errors.append(mask_secrets(f"youtube: {e!r}")[:200])
     try:
         ig_likes, p = f["ig"](today)
         if ig_likes:
             sources.append({"name": "ig_hashtag", "fetched_at": ledger.now_iso(), "raw_path": p, "n": len(ig_likes)})
     except Exception as e:  # noqa: BLE001
-        errors.append(f"ig: {e!r}"[:200])
+        errors.append(mask_secrets(f"ig: {e!r}")[:200])
 
     base = {"date": day, "account_id": acc["account_id"], "sources": sources, "errors": errors, "formula": FORMULA}
     if not sources:
@@ -208,9 +240,13 @@ def run(acc, banned, fetchers=None, today=None, ledger_dir=None, exclude_kws=(),
     seeds = acc["seed_keywords"]
     cands, seen = [], set()
     for s in seeds:
+        if not _norm(s):
+            continue
         cands.append({"kw": s, "origin": "seed", "in_scope": True, "reason": "계정 seed 키워드", "traffic": 0})
         seen.add(_norm(s))
     for it in gt_items:
+        if not _norm(it["kw"]):
+            continue  # 빈 제목 항목은 후보로 만들지 않음
         ok, why = in_scope(it["kw"], it["news_titles"], seeds)
         if _norm(it["kw"]) in seen:  # seed 와 같으면 트래픽만 붙인다
             for c in cands:
@@ -229,7 +265,17 @@ def run(acc, banned, fetchers=None, today=None, ledger_dir=None, exclude_kws=(),
         if _norm(c["kw"]) in {_norm(x) for x in exclude_kws}:
             c["in_scope"], c["reason"] = False, "다른 계정이 오늘 이미 고른 키워드(중복 방지)"
     scores = score_candidates([c for c in cands if c["in_scope"]], videos, ig_likes)
-    top5 = [{"rank": i + 1, "kw": s["kw"], "score": s["value"]} for i, s in enumerate(scores[:5])]
+    for s in scores:
+        pt = s["parts"]
+        s["evidence"] = bool(pt["yt_matches"] or pt["gt_traffic"] or pt["ig_like_median"] is not None)
+    evid = [s for s in scores if s["evidence"]]
+    top5 = [{"rank": i + 1, "kw": s["kw"], "score": s["value"]} for i, s in enumerate(evid[:5])]
+    if not top5:
+        rec = ledger.append("trend_ledger", {**base, "status": "no_evidence", "candidates": cands, "scores": scores, "top5": [],
+                                             "reason": "근거 지표(유튜브 일치·트렌드 검색량·IG 반응)가 있는 후보가 0 — seed 만으로 순위를 만들지 않음"}, ledger_dir)
+        if notify:
+            notify("warn", f"[{acc['account_id']}] 근거 지표 있는 후보 0 — 오늘 카드뉴스 없음", "; ".join(errors))
+        return rec
     status = "ok" if len({s["name"] for s in sources}) >= 2 else "ok_single_indicator"
     return ledger.append("trend_ledger", {**base, "status": status, "candidates": cands, "scores": scores, "top5": top5}, ledger_dir)
 

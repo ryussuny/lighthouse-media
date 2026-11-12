@@ -13,6 +13,14 @@ REQUIRED = {
     "account_id": str, "topic": str, "seed_keywords": list, "trend_categories": dict,
     "daily_post_cap": int, "post_times": list, "paused": bool, "banned_topics_extra": list, "brand": dict,
 }
+# 교회 계열은 이 공장의 대상이 아니다(오너 원칙: 교회 계정·채널은 교회 콘텐츠만 / 10/24 채널 혼선 사고).
+CHURCH_RE = re.compile(r"교회|church|dongsan|garden___church|token_dongsan", re.I)
+CHURCH_FIELDS = ("account_id", "token_ref", "topic", "brand", "handle", "ig_handle", "channel_id")
+# 게시 단계가 쓸 수 있는 token_ref 허용 목록. 새 실계정은 오너 승인 뒤 여기에 추가한다.
+ALLOWED_TOKEN_REFS = {"instagram", "token_lighthouse"}
+# 유튜브 인기 지표용 OAuth 폴백 토큰 경로(읽기·메모리 갱신만). YT_API_KEY 가 발급되면 이 폴백은 제거한다(docs/T01_지표실측 §2).
+YT_OAUTH_TOKEN_PATH = os.environ.get("CARDNEWS_YT_TOKEN") or os.path.join(
+    os.path.expanduser("~"), "OneDrive", "바탕 화면", "03_사업_마케팅", "lighthouse_media", "token_lighthouse.json")
 MAX_DAILY_CAP = 2  # PRD_v2 §2: 계정당 하루 1~2건
 YT_NO_CHART_KR = {"27"}  # T-01 실측(2026-11-12): 교육 카테고리 mostPopular KR → 404
 
@@ -51,6 +59,12 @@ def validate_account(acc):
     yt = acc["trend_categories"].get("youtube", [])
     if set(map(str, yt)) & YT_NO_CHART_KR:
         errs.append(f"유튜브 카테고리 {sorted(set(map(str, yt)) & YT_NO_CHART_KR)} 는 한국 인기 목록 없음(T-01 실측 404)")
+    for k in CHURCH_FIELDS:
+        if k in acc and CHURCH_RE.search(json.dumps(acc[k], ensure_ascii=False)):
+            errs.append(f"교회 계열 계정·채널은 카드뉴스 공장 대상이 아님: {k}")
+    ref = acc.get("token_ref")
+    if ref is not None and ref not in ALLOWED_TOKEN_REFS:
+        errs.append(f"token_ref {ref!r} 허용 목록 밖(허용: {sorted(ALLOWED_TOKEN_REFS)})")
     for k in ("token", "access_token"):
         if k in acc:
             errs.append(f"토큰 값을 설정 파일에 쓰면 안 됨: {k}")
@@ -67,7 +81,7 @@ def validate_banned(b):
     if miss:
         errs.append(f"금칙 분류 누락: {sorted(miss)}")
     for k, v in cats.items():
-        if not (isinstance(v, list) and v and all(isinstance(x, str) and x for x in v)):
+        if not (isinstance(v, list) and v and all(isinstance(x, str) and x.strip() for x in v)):
             errs.append(f"금칙 분류 {k} 는 비어 있지 않은 문자열 목록")
     return errs
 

@@ -1,0 +1,223 @@
+# -*- coding: utf-8 -*-
+"""T-05 verify — G1(공식 출처 2곳) · G2(수치 글자 대조) 기계 검사. AI 판단 없음.
+
+입력
+  draft   : {"account_id", "kw", "cards":[{"title","body",...}], "caption"?, "hashtags"?}
+  sources : source_ledger 레코드 목록 [{url, org, org_known?, sha256, saved_path, ...}]
+
+G1  공식 도메인 안 + 저장본 sha256 이 원장 값과 같음 + 서로 다른 '확인된' 기관(org) 2곳 이상.
+    org_known 이 False 이거나 org 가 호스트명(점 포함)이면 기관 수에 넣지 않는다(2026-11-12 리뷰).
+G2  검사 대상 = 카드의 모든 문자열 필드 + 해시태그 + 캡션. 캡션 면제는 코드가 만드는 줄과 **정확히 같은 꼴**뿐
+    ('기준일: YYYY-MM-DD', draft.sources 로 만든 '출처: 기관 URL', 'AI로 제작'). 접두어만 같은 줄은 검사한다.
+    ① 숫자 표현(숫자 + 단위, 복합 금액 '1억 2천만원'은 한 토큰, 날짜 포함)을 카드와 원문 양쪽에서 **같은 규칙**으로
+       잘라 **토큰 단위로 일치**해야 한다(공백 무시). 부분 문자열 일치가 아니므로 더 긴 수의 앞·뒤 일부는 실패
+       ('100만원'↔'2,100만원', '3억'↔'3억5천만원', '5천만원'↔'1억5천만원' 모두 실패).
+    ② 단위 없는 1~2자리 숫자는 무엇을 세는지 기계로 확인할 수 없어 실패(사람 검토).
+    ③ 한글 수사('오십만원'·'세 가지')·어림수('수십만', '몇백')가 보이면 실패 — 아라비아 숫자로만 쓰게 한다.
+    ④ 두 출처 값 비교: 숫자 바로 앞 한글 낱말 1~2개(라벨, 공백 무시·2글자 이상)와 단위가 같은 표현이 출처에
+       있는데 값이 다르면 '값 불일치'로 실패(예: 카드 '월 34만원', 출처 B '월 33만원').
+    한계: 라벨이 다르게 쓰인 불일치는 못 잡는다 → values_single_source 로 한 출처에서만 확인된 값을 남긴다.
+결과는 check_ledger 에 gate 별 한 줄(T-06 guard 와 같은 원장).
+"""
+import hashlib
+import os
+import re
+
+from . import config as C
+from . import ledger
+from .research import html_to_text
+
+MIN_ORGS = 2
+NUM = r"\d(?:[\d,]*\d)?(?:\.\d+)?"
+UNITS = (r"(?:만\s*원|억\s*원|천\s*원|만\s*명|만\s*가구|만\s*건|억\s*명|원|%|퍼센트|세|살|개월|년|월|일|시간|시|분|명|"
+         r"가구|회차|회|배|건|곳|개|주년|주|가지|번|층|차|대|장|점|등급|단계|만|억|천)?")
+PRE = r"(?<!\d)(?<!\d[,.])"   # 앞이 숫자 또는 '숫자,' '숫자.' 이면 더 긴 수의 일부. 문장 끝 '다.' 뒤는 허용
+# 복합 금액·수('1억 2천만원'·'34만 9천700원'·'5천만원')는 한 토큰으로 읽는다 — 앞부분만 떼어 대조하면 값이 줄어든다
+AMOUNT = NUM + r"(?:\s*[억천만](?:\s*" + NUM + r")?)*"
+NUM_RE = re.compile(PRE + AMOUNT + r"\s*" + UNITS)
+LABEL_RE = r"((?:[가-힣]{1,8}\s+)?[가-힣]{1,8})\s*$"   # 숫자 바로 앞 한글 낱말 1~2개
+# 한글 수사: 십·백·천·만·억 이 들어간 수 + 단위 / 고유어 수 + 세는 말(‘한’은 '한 번 더' 같은 관용이 많아 뺀다)
+KO_NUM_RE = re.compile(
+    r"(?:[일이삼사오육칠팔구]?[십백천만억][일이삼사오육칠팔구십백천만억]*\s*(?:원|명|세|살|개월|년|가구|퍼센트|배|곳|건|가지))"
+    r"|(?:(?<![가-힣])(?:두|세|네|다섯|여섯|일곱|여덟|아홉|열)\s+(?:가지|번|개|명|곳|살|달|해|단계|배))"
+    r"|(?:(?<![가-힣])(?:스무|서른|마흔|쉰|예순|일흔|여든|아흔|열\s*(?:한|두|세|네|다섯|여섯|일곱|여덟|아홉))"
+    r"\s*(?:살|가지|번|개|명|곳|해|달|단계))"
+    r"|(?:[일이삼사오육칠팔구]?십\s*대)"
+    r"|(?:수[십백천만억]+|몇\s*[십백천만억]+)")
+PORTAL_ORGS = {"정책브리핑", "대한민국정책브리핑", "korea.kr", "정부24", "gov.kr"}   # 포털 이름은 기관이 아님
+# 캡션에서 검사를 면제하는 줄 = 코드가 만드는 줄과 정확히 같은 꼴뿐(접두어만 같으면 검사)
+CAPTION_MACHINE = [re.compile(r"^기준일:\s*\d{4}-\d{2}-\d{2}$"), re.compile(r"^AI로 제작$")]
+
+
+def _ns(s):
+    return "".join(s.split())
+
+
+def numbers_in(text):
+    """숫자 표현 목록(공백 제거, 등장 순서·중복 제거)."""
+    out = []
+    for m in NUM_RE.finditer(text or ""):
+        t = _ns(m.group(0))
+        if t and t not in out:
+            out.append(t)
+    return out
+
+
+def _split_num_unit(tok):
+    m = re.match(r"(" + NUM + r")(.*)$", tok)
+    return (m.group(1), m.group(2)) if m else (tok, "")
+
+
+def _found(tok, text):
+    """경계 있는 일치. 원문은 공백을 지운 글이라 '3월 31일'이 '3월31일'이 된다 —
+    그래서 뒤쪽 경계(뒤에 숫자·쉼표 금지)는 tok 이 숫자 또는 만·억·천(수가 이어질 수 있는 자리)으로 끝날 때만 본다
+    — '3억'은 '3억5천만원' 안에서 찾은 것으로 치지 않는다. 원·명·월 같은 닫는 단위로 끝나면 단위가 경계.
+    앞쪽: 숫자, '숫자,' '숫자.' 뒤면 더 긴 수의 일부('2,100만원'의 '100만원')라 불일치."""
+    post = r"(?![\d,])" if (tok[-1].isdigit() or tok[-1] in "만억천") else ""
+    return re.search(PRE + re.escape(tok) + post, text) is not None
+
+
+def load_source_text(rec):
+    with open(rec["saved_path"], "rb") as f:
+        raw = f.read()
+    return raw, _ns(html_to_text(raw))
+
+
+def _org_counts(s):
+    org = (s.get("org") or "").strip()
+    if not org or s.get("org_known") is False or "." in org or _ns(org) in PORTAL_ORGS:
+        return None
+    return org
+
+
+def check_g1(sources, domains):
+    bad, orgs, ok_src, unknown = [], set(), [], 0
+    for s in sources:
+        if not C.is_official_url(s.get("url", ""), domains):
+            bad.append(f"비공식 도메인: {s.get('url')}")
+            continue
+        if not os.path.exists(s.get("saved_path", "")):
+            bad.append(f"원문 저장본 없음: {s.get('saved_path')}")
+            continue
+        with open(s["saved_path"], "rb") as f:
+            if hashlib.sha256(f.read()).hexdigest() != s.get("sha256"):
+                bad.append(f"sha256 불일치(저장 후 바뀜): {s['saved_path']}")
+                continue
+        ok_src.append(s)
+        org = _org_counts(s)
+        if org:
+            orgs.add(org)
+        else:
+            unknown += 1
+    ok = len(orgs) >= MIN_ORGS
+    reason = f"확인된 공식 기관 {len(orgs)}곳({', '.join(sorted(orgs))})" + ("" if ok else f" — 최소 {MIN_ORGS}곳 필요")
+    if unknown:
+        reason += f"; 기관 미상 출처 {unknown}건은 기관 수에서 뺌"
+    if bad:
+        reason += "; " + "; ".join(bad)
+    return ok, reason, ok_src
+
+
+def g2_texts(draft):
+    """G2 검사 대상 글 조각 목록 [(어디, 글)]."""
+    out = []
+    def walk(where, v):  # 리스트·dict 필드 안의 글도 검사
+        if isinstance(v, str):
+            out.append((where, v))
+        elif isinstance(v, dict):
+            for k2, v2 in v.items():
+                walk(f"{where}.{k2}", v2)
+        elif isinstance(v, (list, tuple)):
+            for j, v2 in enumerate(v):
+                walk(f"{where}[{j}]", v2)
+
+    for i, card in enumerate(draft.get("cards", []), 1):
+        for k, v in card.items():
+            if k not in ("image_path", "bg_path", "bg_origin", "font"):
+                walk(f"card{i}.{k}", v)
+    for h in draft.get("hashtags", []) or []:
+        out.append(("hashtag", str(h)))
+    src_lines = {f"출처: {x.get('org', '')} {x.get('url', '')}".strip() for x in draft.get("sources", []) or []}
+    for line in (draft.get("caption") or "").splitlines():
+        s = line.strip()
+        if not s or s in src_lines or any(r.match(s) for r in CAPTION_MACHINE):
+            continue
+        if s.startswith("#"):  # 해시태그 줄은 태그 단위로 검사(숫자 든 태그도 대조)
+            out += [("hashtag", t) for t in s.split()]
+        else:
+            out.append(("caption", s))
+    for k, v in draft.items():  # 그 밖의 최상위 글 필드도(내부 식별용 키 제외)
+        if k not in ("cards", "hashtags", "caption", "sources", "account_id", "kw"):
+            walk(k, v)
+    return out
+
+
+def source_tokens(raw):
+    """원문을 카드와 **같은 규칙**으로 잘라 만든 숫자 토큰 집합(공백 제거). 대조는 토큰 단위 일치 —
+    부분 문자열이 아니므로 '5천만원'은 원문 '1억5천만원'(한 토큰)에서 찾은 것으로 치지 않는다."""
+    return set(numbers_in(html_to_text(raw)))
+
+
+def check_g2(draft, sources):
+    texts, toks = {}, {}
+    for s in sources:
+        raw, stripped = load_source_text(s)
+        texts[s["url"]], toks[s["url"]] = stripped, source_tokens(raw)
+    missing, conflicts, single, found_in, unitless, ko = [], [], [], {}, [], []
+    for where, ctext in g2_texts(draft):
+        for m in KO_NUM_RE.finditer(NUM_RE.sub(" ", ctext)):  # '34만원'의 '만원'을 한글 수사로 오인하지 않게
+            ko.append(f"{where}:'{m.group(0)}'")
+        for m in NUM_RE.finditer(ctext):
+            tok = _ns(m.group(0))
+            if not tok:
+                continue
+            num, unit = _split_num_unit(tok)
+            if not unit and len(num.replace(",", "")) <= 2:
+                unitless.append(f"{where}:'{tok}'")
+                continue
+            hits = [u for u, ts in toks.items() if tok in ts]
+            found_in[tok] = hits
+            if not hits:
+                missing.append(tok)
+                continue
+            if len(hits) == 1 and len(texts) > 1:
+                single.append(tok)
+            lab = re.search(LABEL_RE, ctext[:m.start()])
+            if not lab or not unit:
+                continue
+            label = _ns(lab.group(1))
+            if len(label) < 2:  # '월'·'약' 같은 한 글자 라벨은 너무 흔해 불일치 판정에 쓰지 않는다
+                continue
+            pat = re.compile(re.escape(label) + r"(?<![\d,.])(" + NUM + r")" + re.escape(unit))
+            for u, t in texts.items():
+                for other in pat.findall(t):
+                    if other != num:
+                        conflicts.append(f"'{label} {tok}' ↔ 출처 {u} '{label}{other}{unit}'")
+    missing, conflicts = list(dict.fromkeys(missing)), list(dict.fromkeys(conflicts))
+    unitless, ko = list(dict.fromkeys(unitless)), list(dict.fromkeys(ko))
+    ok = not (missing or conflicts or unitless or ko)
+    parts = []
+    if missing:
+        parts.append("원문에서 못 찾은 값: " + ", ".join(missing))
+    if conflicts:
+        parts.append("값 불일치: " + "; ".join(conflicts))
+    if unitless:
+        parts.append("단위 없는 짧은 숫자(무엇을 세는지 확인 불가): " + ", ".join(unitless))
+    if ko:
+        parts.append("한글 수사·어림수(아라비아 숫자로 써야 대조 가능): " + ", ".join(ko))
+    reason = "; ".join(parts) or f"숫자 표현 {len(found_in)}개 모두 원문에서 확인"
+    return ok, reason, {"found_in": found_in, "values_single_source": list(dict.fromkeys(single))}
+
+
+def run(draft, sources, ledger_dir=None, domains=None):
+    domains = domains or C.load_json(os.path.join(C.CONFIG, "official_domains.json"))
+    base = {"account_id": draft.get("account_id"), "kw": draft.get("kw")}
+    g1_ok, g1_why, ok_src = check_g1(sources, domains)
+    ledger.append("check_ledger", {**base, "gate": "G1", "pass": g1_ok, "reason": g1_why}, ledger_dir)
+    if not g1_ok:
+        ledger.append("check_ledger", {**base, "gate": "G2", "pass": False, "reason": "G1 실패로 대조 생략"}, ledger_dir)
+        return {"pass": False, "G1": (g1_ok, g1_why), "G2": (False, "G1 실패로 대조 생략"), "detail": {}}
+    g2_ok, g2_why, detail = check_g2(draft, ok_src)
+    ledger.append("check_ledger", {**base, "gate": "G2", "pass": g2_ok, "reason": g2_why,
+                                   "values_single_source": detail["values_single_source"]}, ledger_dir)
+    return {"pass": g1_ok and g2_ok, "G1": (g1_ok, g1_why), "G2": (g2_ok, g2_why), "detail": detail}
