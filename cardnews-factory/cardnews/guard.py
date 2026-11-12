@@ -172,7 +172,7 @@ def g5(draft, ledger_dir=None, today=None, days=DEDUP_DAYS):
             age = (today - dt.date.fromisoformat(r["ts"][:10])).days
         except (KeyError, ValueError):
             continue
-        if not 0 <= age <= days:
+        if age > days:  # 미래 날짜(시계 차이·자정 경계)도 최근으로 본다 — 보수적
             continue
         if _kw_related(r.get("kw", ""), draft.get("kw", "")):
             hits.append(f"같은 키워드/포함 관계 {draft.get('kw')!r}~{r.get('kw')!r} ({r['ts'][:10]})")
