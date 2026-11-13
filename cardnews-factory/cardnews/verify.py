@@ -183,11 +183,7 @@ def check_g2(draft, sources):
     for where, ctext in g2_texts(draft):
         for m in KO_NUM_RE.finditer(NUM_RE.sub(" ", ctext)):  # '34만원'의 '만원'을 한글 수사로 오인하지 않게
             ko.append(f"{where}:'{m.group(0)}'")
-        for m in NUM_RE.finditer(ctext):
-            tok = _ns(m.group(0))
-            if not tok:
-                continue
-            num, unit = _split_num_unit(tok)
+        for m, tok, num, unit in _num_items(ctext):
             if not unit and len(num.replace(",", "")) <= 2:
                 unitless.append(f"{where}:'{tok}'")
                 continue
@@ -225,14 +221,141 @@ def check_g2(draft, sources):
     return ok, reason, {"found_in": found_in, "values_single_source": list(dict.fromkeys(single))}
 
 
-def run(draft, sources, ledger_dir=None, domains=None):
+DATE_UNITS = {"년", "월", "일", "시", "분"}   # 날짜·시각 단위(분기·상반기·하반기·요일은 숫자+단위 토큰으로 안 잡히거나 위 단위로 환원)
+DATE_LIKE = re.compile(r"^\d{1,4}[.\-/]\d{1,2}(?:[.\-/]\d{1,2})?\.?$")   # 2026.11.04 · 11.4. 꼴
+DF_RATIO = 0.02        # 문서 빈도 상한 = max(DF_MIN, 저장본 수 × 2%). 실측(저장본 322건): 5%=14건·1인=9건·10%=19건은 흔함, 7%=3건·136만명·75만원·53만원=2건은 구별력 있음
+DF_MIN = 5
+CACHE_INDEX = os.path.join(C.ROOT, "data", "source_cache", "index.jsonl")   # 시험이 바꿔 끼울 수 있게 모듈 상수
+DF_SMALL_CACHE = 50    # 저장본이 이보다 적으면 빈도를 믿을 수 없다 → 짧은 숫자(두 자리 이하, 소수점 없음)도 흔한 토큰으로 본다
+_DF_CACHE = {}
+
+
+def _num_items(ctext):
+    """글 한 조각의 숫자 표현 (match, 토큰(공백 제거), 숫자부, 단위부). G2·기여 판정이 같은 추출을 쓴다."""
+    for m in NUM_RE.finditer(ctext or ""):
+        tok = _ns(m.group(0))
+        if tok:
+            num, unit = _split_num_unit(tok)
+            yield m, tok, num, unit
+
+
+def is_date_token(tok):
+    num, unit = _split_num_unit(tok)
+    return bool(DATE_LIKE.match(tok)) or unit in DATE_UNITS or (not unit and bool(DATE_LIKE.match(num)))
+
+
+def _short_numeric(tok):
+    num, _unit = _split_num_unit(tok)
+    return len(num.replace(",", "")) <= 2 and "." not in num
+
+
+def common_tokens(index_path=None):
+    """source_cache 인덱스 전체 저장본의 숫자 토큰 문서 빈도 → (흔한 토큰 집합, 저장본 수, 상한). 상한 초과 토큰이 '흔한' 것.
+    프로세스당 1회 계산(인덱스 크기·mtime 이 같으면 캐시). 읽을 수 없는 저장본은 건너뜀."""
+    import json
+    from collections import Counter
+    from .research import resolve_saved_path   # 호출 시점 import(순환 방지)
+    index_path = os.path.abspath(index_path or CACHE_INDEX)
+    base = os.path.dirname(index_path)
+    try:
+        st = os.stat(index_path)
+        key = (index_path, st.st_size, st.st_mtime)
+    except OSError:
+        return frozenset(), 0, DF_MIN   # 인덱스 없음 → n=0 → 기여 판정 불가(fail-closed)
+    if key in _DF_CACHE:
+        return _DF_CACHE[key]
+    df, n, seen = Counter(), 0, set()
+    try:
+        fh = open(index_path, encoding="utf-8")
+    except OSError:
+        return frozenset(), 0, DF_MIN
+    with fh as f:
+        for line in f:
+            try:
+                rec = json.loads(line)
+                sp = resolve_saved_path(rec, base)["saved_path"]   # 상대('files/…')는 인덱스 디렉터리 기준, 절대는 그대로
+            except (ValueError, KeyError, TypeError, AttributeError):
+                continue
+            if sp in seen or not os.path.exists(sp):
+                continue
+            seen.add(sp)
+            try:
+                with open(sp, "rb") as g:
+                    toks = source_tokens(g.read())
+            except OSError:
+                continue
+            n += 1
+            df.update(toks)
+    limit = max(DF_MIN, int(-(-n * DF_RATIO // 1)))   # ceil(n*2%)
+    res = (frozenset(t for t, c in df.items() if c > limit), n, limit)
+    _DF_CACHE.clear()
+    _DF_CACHE[key] = res
+    return res
+
+
+def contribution_tokens(draft, common=frozenset(), n_docs=10 ** 6):
+    """기여 판정에 쓰는 초안 숫자 토큰: 카드 본문(cards[].body)에서만, 날짜성 제외, 흔한 토큰(common) 제외,
+    저장본이 적으면(n_docs < DF_SMALL_CACHE) 짧은 숫자도 제외. 단위 없는 짧은 숫자는 원래 G2 대조 대상이 아니라 제외."""
+    out = set()
+    for card in draft.get("cards", []) or []:
+        body = card.get("body") if isinstance(card, dict) else None
+        if not isinstance(body, str):
+            continue
+        for _m, tok, num, unit in _num_items(body):
+            if not unit and len(num.replace(",", "")) <= 2:
+                continue
+            if is_date_token(tok) or tok in common:
+                continue
+            if n_docs < DF_SMALL_CACHE and _short_numeric(tok):
+                continue
+            out.add(tok)
+    return out
+
+
+def contribution_g1(draft, ok_src, g1_why, common=frozenset(), n_docs=10 ** 6):
+    """선언한 출처의 기관은, 그 기관 저장본에 구별력 있는 본문 숫자 토큰이 1개 이상 실제로 있어야 기관 수에 든다
+    (source_tokens·numbers_in 재사용). 같은 숫자가 두 기관 원문에 다 있으면 둘 다 기여(교차 확인). 반환 (ok, 사유)."""
+    if n_docs <= 0:   # fail-closed: 빈도 기준(source_cache)을 못 읽으면 '흔한 숫자' 를 가릴 수 없다
+        return False, (g1_why + "; 기여 판정 불가 — source_cache 인덱스를 읽지 못했거나 해석된 저장본 0건(흔한 숫자 기준 없음) — 보류")
+    toks = contribution_tokens(draft, common, n_docs)
+    declared, contributing = set(), set()
+    for s in ok_src:
+        org = _org_counts(s)
+        if not org:
+            continue
+        declared.add(org)
+        if toks & source_tokens(load_source_text(s)[0]):
+            contributing.add(org)
+    unused = sorted(declared - contributing)
+    ok = len(contributing) >= MIN_ORGS
+    reason = g1_why
+    if unused:
+        reason += f"; 선언했지만 내용에 쓰이지 않은 기관: {', '.join(unused)}(기관 수에서 뺌)"
+    if not ok:
+        reason += (f"; 내용에 쓰인 기관 {len(contributing)}곳 — 최소 {MIN_ORGS}곳 필요"
+                   f"(카드 본문의 구별력 있는 숫자 {len(toks)}개: 날짜성·흔한 숫자는 제외)")
+    return ok, reason
+
+
+def run(draft, sources, ledger_dir=None, domains=None, require_contribution=False, common=None):
+    """require_contribution=True(draft 모드: used_sources 는 선언): 숫자를 실제로 쓴 기관만 G1 기관 수에 센다."""
     domains = domains or C.load_json(os.path.join(C.CONFIG, "official_domains.json"))
     base = {"account_id": draft.get("account_id"), "kw": draft.get("kw")}
     g1_ok, g1_why, ok_src = check_g1(sources, domains)
+    if g1_ok and require_contribution:
+        cset, n_docs, _lim = common if common is not None else common_tokens()
+        g1_ok, g1_why = contribution_g1(draft, ok_src, g1_why, cset, n_docs)
     ledger.append("check_ledger", {**base, "gate": "G1", "pass": g1_ok, "reason": g1_why}, ledger_dir)
     if not g1_ok:
-        ledger.append("check_ledger", {**base, "gate": "G2", "pass": False, "reason": "G1 실패로 대조 생략"}, ledger_dir)
-        return {"pass": False, "G1": (g1_ok, g1_why), "G2": (False, "G1 실패로 대조 생략"), "detail": {}}
+        g2_msg = "G1 실패로 대조 생략"
+        if ok_src:   # 진단용 대조(통과 판정에는 영향 없음): 어떤 숫자가 원문에 없는지 같이 남긴다
+            try:
+                _ok2, why2, _d = check_g2(draft, ok_src)
+                g2_msg = f"G1 실패 — 진단용 숫자 대조(판정 아님): {why2}"
+            except Exception as e:  # noqa: BLE001
+                g2_msg = f"G1 실패 — 진단용 대조 오류: {e!r}"[:200]
+        ledger.append("check_ledger", {**base, "gate": "G2", "pass": False, "reason": g2_msg}, ledger_dir)
+        return {"pass": False, "G1": (g1_ok, g1_why), "G2": (False, g2_msg), "detail": {}}
     g2_ok, g2_why, detail = check_g2(draft, ok_src)
     ledger.append("check_ledger", {**base, "gate": "G2", "pass": g2_ok, "reason": g2_why,
                                    "values_single_source": detail["values_single_source"]}, ledger_dir)

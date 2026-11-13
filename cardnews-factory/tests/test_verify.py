@@ -236,6 +236,164 @@ class TestVerify(unittest.TestCase):
         r = self.run_(self.draft("1인가구 월 34만원 지원"), self.two(b))
         self.assertFalse(r["pass"])
 
+    # ---- T-SRC2/3: 선언만 한 출처는 기관 수에서 뺀다(본문·구별력 있는 숫자만) ----
+    NOCOMMON = (frozenset(), 999, 5)          # 빈도 계산 없이(실제 캐시를 읽지 않음)
+    COMMON = (frozenset({"10%", "65세", "5%"}), 999, 5)
+
+    def two_org(self, other_html):
+        return [self.src("m.html", "<html><body>보건복지부: 대상 약 136만 명, 본인부담 약 75만 원, 지급 99만원.</body></html>",
+                         "https://www.mohw.go.kr/x", "보건복지부"),
+                self.src("o.html", other_html, "https://www.mois.go.kr/1", "행정안전부")]
+
+    def run_c(self, draft, srcs, common=None):
+        return V.run(draft, srcs, ledger_dir=self.d, domains=DOMAINS, require_contribution=True, common=common or self.NOCOMMON)
+
+    def dr(self, body, title="안내", caption="", tags=None):
+        d = {"account_id": "test", "kw": "기초연금", "cards": [{"title": title, "body": body}] + [{"title": "안내", "body": "확인"}] * 4}
+        if caption:
+            d["caption"] = caption
+        if tags:
+            d["hashtags"] = tags
+        return d
+
+    COMMON_OTHER = "<html><body>행정안전부 안내: 2026년 11월 1일 시행, 10%, 5%, 65세 이상, 2026.11.01.</body></html>"
+
+    def test_declared_but_unused_org_not_counted(self):
+        r = self.run_c(self.dr("대상 약 136만 명"), self.two_org(self.COMMON_OTHER))
+        self.assertFalse(r["G1"][0])
+        self.assertIn("선언했지만 내용에 쓰이지 않은 기관: 행정안전부", r["G1"][1])
+
+    def test_two_orgs_each_with_distinctive_numbers_passes(self):
+        other = "<html><body>행정안전부: 청사 이용 인원 75만 원 규모 예산.</body></html>"
+        r = self.run_c(self.dr("대상 약 136만 명, 예산 약 75만 원"), self.two_org(other))
+        self.assertTrue(r["G1"][0], r["G1"])
+
+    def test_same_distinctive_number_in_both_counts_both(self):
+        other = "<html><body>행정안전부 안내: 대상 약 136만 명.</body></html>"
+        r = self.run_c(self.dr("대상 약 136만 명"), self.two_org(other))
+        self.assertTrue(r["G1"][0], r["G1"])
+
+    def test_contribution_not_required_by_default(self):
+        r = V.run(self.dr("대상 약 136만 명"), self.two_org(self.COMMON_OTHER), ledger_dir=self.d, domains=DOMAINS)
+        self.assertTrue(r["G1"][0])
+
+    # VERDICT14 의 9변형: 날짜·흔한 숫자를 본문/제목/캡션/해시태그에 끼워도 쓰지 않은 기관은 기여가 아니다
+    def test_variants_common_and_date_tokens_do_not_buy_an_org(self):
+        base = "대상 약 136만 명"
+        variants = []
+        for t in ("2026년", "11월", "1일", "2026년 11월 1일", "10%", "65세"):      # 본문 6종
+            variants.append(self.dr(f"{base}, {t}"))
+        variants.append(self.dr(base, caption=f"{base}\n2026년 11월 1일 10% 65세"))          # 캡션만
+        variants.append(self.dr(base, title="2026년 11월 1일 10% 65세"))                       # 제목만
+        variants.append(self.dr(base, tags=["#2026년", "#10%", "#65세"]))                      # 해시태그만
+        self.assertEqual(len(variants), 9)
+        for d in variants:
+            r = self.run_c(d, self.two_org(self.COMMON_OTHER), common=self.COMMON)
+            self.assertFalse(r["G1"][0], (d["cards"][0], d.get("caption")))
+
+    def test_distinctive_number_only_in_title_or_caption_does_not_count(self):
+        other = "<html><body>행정안전부: 청사 이용 인원 75만 원 규모 예산.</body></html>"
+        for d in (self.dr("대상 약 136만 명", title="예산 75만 원"), self.dr("대상 약 136만 명", caption="예산 75만 원")):
+            r = self.run_c(d, self.two_org(other))
+            self.assertFalse(r["G1"][0])
+
+    def test_document_frequency_boundary(self):
+        import tempfile as tf
+        with tf.TemporaryDirectory() as t:
+            idx = os.path.join(t, "index.jsonl")
+            lines = []
+            n_docs = 100
+            for k in range(n_docs):
+                path = os.path.join(t, f"d{k}.html")
+                # 'A5건' 은 정확히 5개 문서(상한 5 = 포함 허용), 'B6건' 은 6개(상한 초과 = 흔함)
+                body = "".join(["문서 A5건 " if k < 5 else "", "문서 B6건 " if k < 6 else "", f"고유 {1000 + k}건"])
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(f"<html><body>{body}</body></html>")
+                lines.append('{"saved_path": %s}' % __import__("json").dumps(path))
+            with open(idx, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines))
+            common, n, lim = V.common_tokens(idx)
+            self.assertEqual((n, lim), (100, 5))                 # max(5, ceil(100*2%)=2) = 5
+            self.assertNotIn("5건", common)
+            self.assertIn("6건", common)
+
+    def test_small_cache_also_excludes_short_numbers(self):
+        d = self.dr("대상 7명, 약 136만 명")
+        self.assertEqual(V.contribution_tokens(d, frozenset(), 10), {"136만명"})        # 저장본 10건: 짧은 숫자 제외
+        self.assertEqual(V.contribution_tokens(d, frozenset(), 999), {"7명", "136만명"})
+
+    def test_date_like_tokens_excluded(self):
+        for t in ("2026.11.04", "11.4", "2026년", "12월", "1일", "9시", "30분"):
+            self.assertTrue(V.is_date_token(t), t)
+        self.assertFalse(V.is_date_token("136만명"))
+        self.assertFalse(V.is_date_token("7%"))
+
+    def test_g1_failure_keeps_g2_diagnosis(self):
+        r = self.run_c(self.dr("대상 약 999만 명"), self.two_org(self.COMMON_OTHER))
+        self.assertFalse(r["pass"])
+        self.assertIn("진단용 숫자 대조", r["G2"][1])
+        self.assertIn("원문에서 못 찾은 값: 999만명", r["G2"][1])
+
+    # ---- T-SRC4: common_tokens 경로 해석·fail-closed ----
+    def _mk_cache(self, root, n_rel, n_abs, token_docs=None):
+        """인덱스 줄: 상대 'files/…' n_rel 줄 + 절대경로 n_abs 줄 + saved_path 없는 줄 1개. 모든 문서에 '65세' 가 있다."""
+        import json as _j
+        os.makedirs(os.path.join(root, "files"), exist_ok=True)
+        lines = []
+        for k in range(n_rel + n_abs):
+            path = os.path.join(root, "files", f"d{k}.html")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(f"<html><body>대상 65세 이상, 고유 {2000 + k}건</body></html>")
+            sp = f"files/d{k}.html" if k < n_rel else path
+            lines.append(_j.dumps({"url": f"https://www.korea.kr/{k}", "saved_path": sp}))
+        lines.append(_j.dumps({"url": "https://www.korea.kr/neg", "negative": True}))   # saved_path 없는 줄
+        idx = os.path.join(root, "index.jsonl")
+        with open(idx, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+        return idx
+
+    def test_common_tokens_resolves_relative_and_absolute_paths(self):
+        root = os.path.join(self.d, "cache1")
+        idx = self._mk_cache(root, 30, 30)
+        common, n, lim = V.common_tokens(idx)
+        self.assertEqual(n, 60)                       # 상대 30 + 절대 30 = 전체 줄(saved_path 없는 줄 제외)
+        self.assertIn("65세", common)                 # 60개 문서 모두에 있음 → 흔함
+        self.assertEqual(lim, 5)
+
+    def test_common_tokens_same_result_from_other_cwd(self):
+        root = os.path.join(self.d, "cache2")
+        idx = self._mk_cache(root, 40, 20)
+        a = V.common_tokens(idx)
+        V._DF_CACHE.clear()
+        old = os.getcwd()
+        other = os.path.join(self.d, "elsewhere")
+        os.makedirs(other, exist_ok=True)
+        os.chdir(other)
+        try:
+            b = V.common_tokens(idx)
+            c = V.common_tokens(os.path.relpath(idx, other))   # 상대 인덱스 경로도 같은 결과
+        finally:
+            os.chdir(old)
+        self.assertEqual(a, b)
+        self.assertEqual(a, c)
+        self.assertEqual(a[1], 60)
+
+    def test_common_tokens_missing_or_unreadable_index_is_zero_docs(self):
+        self.assertEqual(V.common_tokens(os.path.join(self.d, "nope.jsonl"))[1], 0)
+        empty = os.path.join(self.d, "empty.jsonl")
+        open(empty, "w").close()
+        self.assertEqual(V.common_tokens(empty)[1], 0)
+        junk = os.path.join(self.d, "junk.jsonl")
+        with open(junk, "w", encoding="utf-8") as f:
+            f.write("not json\n{\"saved_path\": \"files/missing.html\"}\n")
+        self.assertEqual(V.common_tokens(junk)[1], 0)
+
+    def test_fail_closed_when_no_frequency_basis(self):
+        r = self.run_c(self.dr("대상 약 136만 명"), self.two_org("<html><body>행정안전부: 대상 약 136만 명.</body></html>"),
+                       common=(frozenset(), 0, 5))
+        self.assertFalse(r["G1"][0])
+        self.assertIn("기여 판정 불가", r["G1"][1])
+
 
 if __name__ == "__main__":
     unittest.main()

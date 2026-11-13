@@ -34,11 +34,13 @@ def gen_ok(prompt):
 
 
 def gen_wrong_number(prompt):
-    return json.dumps({"cards": [{"title": f"제목{NAMES[i]}", "body": "월 99만원 지급" if i == 1 else f"본문{NAMES[i]}"} for i in range(5)],
+    return json.dumps({"cards": [{"title": f"제목{NAMES[i]}", "body": "월 99만원 지급, 만 65세 이상" if i == 1 else f"본문{NAMES[i]}"} for i in range(5)],
                        "caption_body": "안내", "hashtags": ["기초연금"]}, ensure_ascii=False)
 
 
 USED_DEFAULT = ("https://www.korea.kr/news/a", "https://www.mohw.go.kr/b")   # fx() 기본 두 출처
+from cardnews import verify as _V  # noqa: E402
+_REAL_COMMON = _V.common_tokens   # setUp 이 가짜로 막기 전의 실제 함수(가짜 없는 시험용)
 ok_classify = lambda t: (True, "none", "정상")  # noqa: E731
 bad_classify = lambda t: (False, "adult", "가짜 분류기: 위반")  # noqa: E731
 
@@ -52,6 +54,9 @@ class RunTest(unittest.TestCase):
         self.stop = os.path.join(t, "STOP")
         self.alerts = []
         self.acc = C.load_account("test")
+        pc = mock.patch("cardnews.verify.common_tokens", return_value=(frozenset(), 999, 5))   # 실제 source_cache 를 읽지 않음
+        pc.start()
+        self.addCleanup(pc.stop)
 
     def discover(self, docs=None):
         docs = docs if docs is not None else [("https://www.korea.kr/news/a", "행정안전부", DOC_A), ("https://www.mohw.go.kr/b", "보건복지부", DOC_B)]
@@ -737,6 +742,71 @@ class RunTest(unittest.TestCase):
         rp = self._write("test.retry.json", json.dumps(rd, ensure_ascii=False), raw=True)
         self._verdict(rp)
         self._held_c(self._seat(), "used_sources 없음")
+
+    # ---- T-SRC2 ----
+    def test_src2_declared_org_without_numbers_holds_g1(self):
+        docs = [("https://www.korea.kr/news/a", "행정안전부", "<html><body><p>행정안전부 안내 기초연금 청사 안내.</p></body></html>".encode("utf-8")),
+                ("https://www.mohw.go.kr/b", "보건복지부", DOC_B)]
+        self._draft_with(used_sources=["https://www.korea.kr/news/a", "https://www.mohw.go.kr/b"])
+        r = self._seat(fetchers=self.fx(docs=docs))
+        self.assertEqual((r["status"], r["stage"]), ("held", "verify"), r["reason"])
+        self.assertIn("선언했지만 내용에 쓰이지 않은 기관: 행정안전부", r["reason"])
+
+    def test_src2_unknown_url_message_has_closest_candidate(self):
+        self._draft_with(used_sources=["https://www.mohw.go.kr/bb"])
+        r = self._seat()
+        self._held_c(r, "그대로 복사")
+        self.assertIn("가장 가까운 후보 'https://www.mohw.go.kr/b'", r["reason"])
+
+    def test_src2_caption_body_missing_or_hashtags_not_list_holds(self):
+        self._draft_with(used_sources=list(USED_DEFAULT), caption_body="")
+        self._held_c(self._seat(), "caption_body")
+        self._draft_with(used_sources=list(USED_DEFAULT), hashtags="기초연금")
+        self._held_c(self._seat(), "hashtags")
+
+    # ---- T-SRC4: 가짜 없는 common_tokens(임시 source_cache, 상대경로 인덱스) ----
+    def _tmp_cache(self, n=60):
+        root = os.path.join(self.tmp.name, "source_cache")
+        os.makedirs(os.path.join(root, "files"), exist_ok=True)
+        lines = []
+        for k in range(n):
+            path = os.path.join(root, "files", f"f{k}.html")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(f"<html><body>일반 안내 만 65세 이상, 고유 {3000 + k}건</body></html>")
+            lines.append(json.dumps({"url": f"https://www.korea.kr/f{k}", "saved_path": f"files/f{k}.html"}))   # 상대경로
+        idx = os.path.join(root, "index.jsonl")
+        with open(idx, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+        return idx
+
+    def _real_common_run(self, body, idx, docs=None):
+        from cardnews import verify as V
+        d = dict(json.loads(gen_ok("")), kw="기초연금", author_surface="worker-1", used_sources=list(USED_DEFAULT))
+        d["cards"][1]["body"] = body
+        p = self._write("test.json", json.dumps(d, ensure_ascii=False), raw=True)
+        self._verdict(p)
+        V._DF_CACHE.clear()
+        with mock.patch("cardnews.verify.common_tokens", _REAL_COMMON), mock.patch.object(V, "CACHE_INDEX", idx):
+            return self._seat(fetchers=self.fx(docs=docs) if docs else None)
+
+    def test_src4_real_common_only_common_number_holds_g1(self):
+        idx = self._tmp_cache()
+        r = self._real_common_run("기초연금은 만 65세 이상이 대상입니다", idx)      # 65세 는 임시 캐시 60건 모두에 있음 = 흔함
+        self.assertEqual((r["status"], r["stage"]), ("held", "verify"), r["reason"])
+        self.assertIn("선언했지만 내용에 쓰이지 않은 기관", r["reason"])
+
+    def test_src4_real_common_distinctive_number_passes(self):
+        idx = self._tmp_cache()
+        a = "<html><body><p>행정안전부 기초연금 안내. 기초연금 대상 약 136만 명.</p></body></html>".encode("utf-8")
+        b = "<html><body><p>보건복지부 보도자료. 기초연금 대상은 약 136만 명입니다. 서류는 신분증이다.</p></body></html>".encode("utf-8")
+        docs = [("https://www.korea.kr/news/a", "행정안전부", a), ("https://www.mohw.go.kr/b", "보건복지부", b)]
+        r = self._real_common_run("기초연금 대상은 약 136만 명입니다", idx, docs=docs)
+        self.assertEqual(r["status"], "ok", r["reason"])
+
+    def test_src4_missing_cache_index_holds_fail_closed(self):
+        r = self._real_common_run("기초연금은 만 65세 이상이 대상입니다", os.path.join(self.tmp.name, "no", "index.jsonl"))
+        self.assertEqual((r["status"], r["stage"]), ("held", "verify"), r["reason"])
+        self.assertIn("기여 판정 불가", r["reason"])
 
 
 if __name__ == "__main__":

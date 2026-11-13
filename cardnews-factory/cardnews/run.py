@@ -48,7 +48,10 @@ def used_records(meta, sources):
     known = {s["url"] for s in sources}
     unknown = [u for u in used if u not in known]
     if unknown:
-        raise compose.ComposeError(f"used_sources 에 이번 실행 출처가 아닌 url: {unknown[:3]}")
+        import difflib
+        hint = "; ".join(f"{u!r} → 가장 가까운 후보 {(difflib.get_close_matches(u, sorted(known), n=1, cutoff=0.0) or ['(없음)'])[0]!r}"
+                         for u in unknown[:3])
+        raise compose.ComposeError("used_sources 에 이번 실행 출처가 아닌 url — 이번 실행 출처 url 목록에서 그대로 복사하라(자동 보정 안 함): " + hint)
     return [s for s in sources if s["url"] in set(used)]
 
 
@@ -185,6 +188,10 @@ def run(acc, banned, today=None, now=None, fetchers=None, generate=None, classif
                         raise compose.ComposeError("초안에 kw 없음/빈 값")
                     if meta["kw"] != state["kw"]:
                         raise compose.ComposeError(f"초안 kw {meta['kw']!r} 가 오늘 주제 {state['kw']!r} 와 다름")
+                    if not (isinstance(meta.get("caption_body"), str) and meta["caption_body"].strip()):
+                        raise compose.ComposeError("초안에 caption_body 없음/빈 값/문자열 아님")
+                    if "hashtags" in meta and not (isinstance(meta["hashtags"], list) and all(isinstance(h, str) for h in meta["hashtags"])):
+                        raise compose.ComposeError("hashtags 는 문자열 배열이어야 함")
                     vsources = used_records(meta, sources)
                     draft = compose.compose(state["kw"], vsources, account_id=acc["account_id"], generate=lambda p: raw_text,
                                             today=today)
@@ -194,7 +201,7 @@ def run(acc, banned, today=None, now=None, fetchers=None, generate=None, classif
             except (compose.ComposeError, OSError) as e:
                 hold("compose", None, [("COMPOSE", False, str(e))], f"글 생성 실패({attempt}차): {e}")
             checkgate("verify")
-            v = verify.run(draft, vsources, ledger_dir)
+            v = verify.run(draft, vsources, ledger_dir, require_contribution=draft_mode)
             if v["pass"]:
                 gates.append({"gate": "G1", "pass": v["G1"][0], "reason": v["G1"][1]})
                 gates.append({"gate": "G2", "pass": v["G2"][0], "reason": v["G2"][1]})

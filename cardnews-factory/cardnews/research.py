@@ -474,6 +474,15 @@ def parse_rss_items(xml_bytes):
 CACHE_DIR = os.path.join(ROOT, "data", "source_cache")
 
 
+def resolve_saved_path(e, cache_dir):
+    """index 의 saved_path 가 상대경로(새 줄)면 cache 디렉터리 기준 절대경로로 되돌린다. 옛 절대경로 줄은 그대로.
+    SourceCache 와 verify.common_tokens 가 같이 쓴다(T-SRC4 — 해석 규칙 하나)."""
+    sp = e.get("saved_path")
+    if sp and not os.path.isabs(sp):
+        e = {**e, "saved_path": os.path.normpath(os.path.join(cache_dir, sp))}
+    return e
+
+
 class SourceCache:
     """받은 기사(본문 구간 저장본)를 누적한다. 요청 상한은 그대로 두고, 매일 '아직 안 받은 새 URL'만 받아 쌓는다.
     - index.jsonl 은 추가만(같은 url 의 마지막 줄이 유효). 저장본은 files/<sha 앞 16자>_<호스트>.html.
@@ -500,11 +509,7 @@ class SourceCache:
                             self.entries[e["url"]] = self._resolve(e)
 
     def _resolve(self, e):
-        """index 의 saved_path 가 상대경로(새 줄)면 cache 디렉터리 기준 절대경로로 되돌린다. 옛 절대경로 줄은 그대로."""
-        sp = e.get("saved_path")
-        if sp and not os.path.isabs(sp):
-            e = {**e, "saved_path": os.path.normpath(os.path.join(self.dir, sp))}
-        return e
+        return resolve_saved_path(e, self.dir)
 
     def _relative(self, path):
         try:
