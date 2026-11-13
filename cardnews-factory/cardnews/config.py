@@ -25,6 +25,14 @@ MAX_DAILY_CAP = 2  # PRD_v2 §2: 계정당 하루 1~2건
 YT_NO_CHART_KR = {"27"}  # T-01 실측(2026-11-12): 교육 카테고리 mostPopular KR → 404
 
 
+METERED_ENV = "CARDNEWS_ALLOW_METERED_API"
+
+
+def metered_allowed():
+    """종량 API(Anthropic) 호출 허용 여부. 기본 꺼짐 — 환경변수 CARDNEWS_ALLOW_METERED_API=1 일 때만(오너 승인 뒤)."""
+    return os.environ.get(METERED_ENV) == "1"
+
+
 class ConfigError(ValueError):
     pass
 
@@ -62,6 +70,10 @@ def validate_account(acc):
     for k in CHURCH_FIELDS:
         if k in acc and CHURCH_RE.search(json.dumps(acc[k], ensure_ascii=False)):
             errs.append(f"교회 계열 계정·채널은 카드뉴스 공장 대상이 아님: {k}")
+    if "required_disclaimer" in acc and not (isinstance(acc["required_disclaimer"], str) and acc["required_disclaimer"].strip()):
+        errs.append("required_disclaimer 는 비어 있지 않은 문자열")
+    if (acc["account_id"] == "invest" or acc.get("type") == "invest") and not str(acc.get("required_disclaimer") or "").strip():
+        errs.append("투자 계정(invest)은 required_disclaimer 필수")
     ref = acc.get("token_ref")
     if ref is not None and ref not in ALLOWED_TOKEN_REFS:
         errs.append(f"token_ref {ref!r} 허용 목록 밖(허용: {sorted(ALLOWED_TOKEN_REFS)})")

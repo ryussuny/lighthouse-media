@@ -136,7 +136,8 @@ def load_ig_hashtags(today, max_age_days=7):
 
 # ---------- 경계·점수 ----------
 def _norm(s):
-    return "".join(s.split()).lower()
+    """비교용 정규화: 한글·영문·숫자만 남긴다(공백·하이픈·중점·밑줄·마침표 등 제거 — '종목-추천' 도 '종목추천' 으로 걸린다)."""
+    return re.sub(r"[^0-9a-z가-힣]", "", (s or "").lower())
 
 
 def in_scope(kw, news_titles, seeds):

@@ -1,0 +1,62 @@
+{
+  "account_id": "invest",
+  "is_virtual": true,
+  "ig_user_id": null,
+  "token_ref": null,
+  "daily_post_cap": 1,
+  "paused": false,
+  "topic": "투자 제도·통계·일정 (가상 계정, 종목·수익 권유 금지)",
+  "seed_keywords": [
+    "연금저축",
+    "ISA",
+    "청년도약계좌",
+    "기준금리",
+    "금융소비자 경보",
+    "세금 신고"
+  ],
+  "trend_categories": {
+    "youtube": [
+      "25"
+    ],
+    "google_trends_geo": "KR"
+  },
+  "post_times": [
+    "18:30"
+  ],
+  "banned_topics_extra": [
+    "매수 추천",
+    "매도 추천",
+    "지금 사야",
+    "지금 팔아야",
+    "목표가",
+    "목표 주가",
+    "수익률 보장",
+    "확정 수익",
+    "고수익 보장",
+    "손실 없는",
+    "무위험 수익",
+    "몇 배 오를",
+    "텐배거",
+    "급등 예상",
+    "상한가 종목",
+    "저평가 종목 추천",
+    "종목 추천",
+    "픽",
+    "매매 신호",
+    "시그널 방",
+    "리딩",
+    "유료 회원",
+    "1:1 상담",
+    "투자 자문",
+    "카톡방 입장",
+    "코인 추천",
+    "에어드랍"
+  ],
+  "required_disclaimer": "투자 권유가 아닙니다. 투자 판단과 책임은 본인에게 있습니다.",
+  "brand": {
+    "primary_color": "#1F3A5F",
+    "accent_color": "#C9A227",
+    "font": "Noto Sans KR",
+    "logo_path": null
+  }
+}

@@ -17,7 +17,7 @@ import json
 import os
 import re
 
-from . import caption as CAP, guard
+from . import caption as CAP, config as C, guard
 from .research import html_to_text
 
 CARDS_N = 5
@@ -80,6 +80,8 @@ def build_prompt(kw, sources, today, feedback=None):
 
 
 def default_generate(prompt, env_path=guard.ENV_PATH, timeout=90):
+    if not C.metered_allowed():
+        raise ComposeError(f"종량 API 꺼짐({C.METERED_ENV}=1 아님) — 좌석이 초안 파일을 써서 --draft-file 로 넘긴다")
     key = guard._read_env_key("ANTHROPIC_API_KEY", env_path)
     if not key:
         raise ComposeError("ANTHROPIC_API_KEY 없음")

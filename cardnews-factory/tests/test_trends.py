@@ -167,6 +167,12 @@ class TestTrends(unittest.TestCase):
         import inspect
         self.assertNotIn("OneDrive", inspect.getsource(T._yt_headers_params))
 
+    def test_norm_strips_punctuation_for_banned_match(self):
+        banned = {"investment_solicit": ["종목 추천"]}
+        for kw in ("종목-추천", "종목·추천", "종목_추천", "종목.추천", "종 목 추천"):
+            self.assertEqual(T.is_banned(kw, banned), "investment_solicit", kw)
+        self.assertIsNone(T.is_banned("종목 소개", banned))
+
 
 if __name__ == "__main__":
     unittest.main()

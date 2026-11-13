@@ -1,0 +1,32 @@
+{
+  "account_id": "trend",
+  "is_virtual": true,
+  "ig_user_id": null,
+  "token_ref": null,
+  "daily_post_cap": 1,
+  "paused": false,
+  "topic": "오늘의 트렌드 (가상 계정, 공식 출처 2곳 확인된 날만)",
+  "seed_keywords": [
+    "트렌드",
+    "요즘 뜨는",
+    "신제품",
+    "정책 변화"
+  ],
+  "trend_categories": {
+    "youtube": [
+      "24",
+      "28"
+    ],
+    "google_trends_geo": "KR"
+  },
+  "post_times": [
+    "20:30"
+  ],
+  "banned_topics_extra": [],
+  "brand": {
+    "primary_color": "#4B2E83",
+    "accent_color": "#F2A541",
+    "font": "Noto Sans KR",
+    "logo_path": null
+  }
+}

@@ -27,6 +27,7 @@ CARDS_N = 5
 CARD_SIZE = (1080, 1350)
 ORIGINS_OK = {"higgsfield", "owned"}
 DEDUP_DAYS = 30
+FUTURE_SLACK_DAYS = 2
 USAGE = {"calls": 0, "input_tokens": 0, "output_tokens": 0}  # default_classify 누적(T-09 cost_ledger 가 차이를 읽음)
 
 
@@ -58,6 +59,8 @@ CLASSIFY_PROMPT = (
 
 
 def default_classify(text, env_path=ENV_PATH, timeout=40):
+    if not C.metered_allowed():
+        return False, "classifier_error", f"종량 API 꺼짐({C.METERED_ENV}=1 아님) — 판정 파일(<계정>.g3.json) 필요 — 보류"
     key = _read_env_key("ANTHROPIC_API_KEY", env_path)
     if not key:
         return False, "classifier_error", "ANTHROPIC_API_KEY 없음 — 보류"
@@ -84,6 +87,50 @@ def default_classify(text, env_path=ENV_PATH, timeout=40):
         return passed, category, str(j.get("reason", ""))[:300]
     except Exception as e:  # noqa: BLE001
         return False, "classifier_error", f"{e!r}"[:200] + " — 보류"
+
+
+def file_sha256(path):
+    import hashlib
+    with open(path, "rb") as f:
+        return hashlib.sha256(f.read()).hexdigest()
+
+
+def norm_surface(s):
+    """좌석 표기 정규화: strip·lower·'surface:' 접두 제거 ('Worker-2'=='worker-2', '154'=='surface:154')."""
+    t = str(s or "").strip().lower()
+    while t.startswith("surface:"):
+        t = t[len("surface:"):].strip()
+    return t
+
+
+def file_classifier(verdict_path, draft_sha256, author_surface=None):
+    """G3 의 AI 분류 대신 다른 좌석(리뷰어)이 쓴 판정 파일을 읽는 classify 함수(fail-closed).
+    판정 {ok, category, reviewer_surface, draft_sha256}. 파일 없음·깨짐·draft_sha256 불일치·reviewer_surface 없음/작성자와 같음·
+    ok 가 True 아님·category 가 'none' 아님 → 전부 보류."""
+    def classify(_text):
+        try:
+            with open(verdict_path, encoding="utf-8") as f:
+                j = json.load(f)
+        except FileNotFoundError:
+            return False, "classifier_error", f"판정 파일 없음: {verdict_path} — 보류"
+        except Exception as e:  # noqa: BLE001
+            return False, "classifier_error", f"판정 파일 읽기 실패: {e!r}"[:200] + " — 보류"
+        if not isinstance(j, dict):
+            return False, "classifier_error", "판정 파일 형식 오류 — 보류"
+        if j.get("draft_sha256") != draft_sha256:
+            return False, "classifier_error", "판정 파일의 draft_sha256 이 초안과 다름(초안이 바뀜) — 보류"
+        rs = str(j.get("reviewer_surface") or "").strip()
+        if not norm_surface(rs):
+            return False, "classifier_error", "판정 파일에 reviewer_surface 없음 — 보류"
+        if not norm_surface(author_surface):   # fail-closed: 작성자를 모르면 '다른 좌석' 을 확인할 수 없다
+            return False, "classifier_error", "초안에 author_surface 없음 — 작성자≠판정자 확인 불가 — 보류"
+        if norm_surface(rs) == norm_surface(author_surface):
+            return False, "classifier_error", "만든 좌석과 검증 좌석이 같음 — 보류"
+        category = str(j.get("category", "missing"))
+        if not (j.get("ok") is True and category == "none"):
+            return False, category, f"리뷰어({rs}) 판정: {str(j.get('reason', ''))[:200]}"
+        return True, "none", f"리뷰어({rs}) 판정 통과"
+    return classify
 
 
 def draft_text(draft):
@@ -172,7 +219,11 @@ def g5(draft, ledger_dir=None, today=None, days=DEDUP_DAYS):
             age = (today - dt.date.fromisoformat(r["ts"][:10])).days
         except (KeyError, ValueError):
             continue
-        if age > days:  # 미래 날짜(시계 차이·자정 경계)도 최근으로 본다 — 보수적
+        if age < -FUTURE_SLACK_DAYS:  # 시계 차이·자정 경계(+2일)까지만 최근으로 본다. 더 먼 미래 행은 무시하고 경고
+            import sys
+            print(f"[G5 경고] 원장 행 날짜가 {-age}일 미래라 무시: {r.get('ts')} kw={r.get('kw')!r}", file=sys.stderr)
+            continue
+        if age > days:
             continue
         if _kw_related(r.get("kw", ""), draft.get("kw", "")):
             hits.append(f"같은 키워드/포함 관계 {draft.get('kw')!r}~{r.get('kw')!r} ({r['ts'][:10]})")
@@ -191,7 +242,7 @@ def _measure(path):
         return im.size
 
 
-def g7(draft, max_hashtags=CAP.MAX_HASHTAGS, strict=False):
+def g7(draft, max_hashtags=CAP.MAX_HASHTAGS, strict=False, required_disclaimer=None):
     """strict=True(design 뒤 호출): 카드마다 image_path(완성 카드 PNG)가 없으면 실패 — 디자인 생략·실패가 AC-3 를 비운 채 통과하지 못하게.
     strict=False(design 전): 장수·캡션 검사만, 이미지는 경로가 있을 때만 실측."""
     errs = []
@@ -214,6 +265,11 @@ def g7(draft, max_hashtags=CAP.MAX_HASHTAGS, strict=False):
             continue
         if sz != CARD_SIZE:
             errs.append(f"카드{i} 크기 {sz[0]}x{sz[1]} (1080x1350 이어야 함)")
+    if required_disclaimer:   # 계정별 필수 고지(투자 계정): 모든 카드 본문에 문구가 있어야 한다
+        need = "".join(required_disclaimer.split())
+        for i, c in enumerate(cards, 1):
+            if not any(need in "".join(str(c.get(k, "")).split()) for k in ("body",)):   # 이미지에 그려지는 본문에 있어야 함
+                errs.append(f"카드{i} 필수 고지 문구 없음")
     errs += CAP.check_caption(draft, max_hashtags=max_hashtags)
     return (not errs), ("; ".join(errs) if errs else "형식 통과")
 
@@ -236,7 +292,7 @@ def _hold(draft, results, hold_dir, now):
 
 def run_guards(draft, acc, banned, classify=None, alert_send=None, ledger_dir=None, hold_dir=None,
                fonts_allowed=None, today=None, now=None, max_hashtags=CAP.MAX_HASHTAGS, record_all=True,
-               gates=("G3", "G4", "G5", "G7"), strict_images=False):
+               gates=("G3", "G4", "G5", "G7"), strict_images=False, required_disclaimer=None):
     """반환 {"pass", "results":[(gate, ok, reason)], "hold_path"}"""
     now = now or dt.datetime.now()
     today = today or now.date()
@@ -250,7 +306,7 @@ def run_guards(draft, acc, banned, classify=None, alert_send=None, ledger_dir=No
     for gate, fn in (("G3", lambda: g3(draft, acc, banned, classify)),
                      ("G4", lambda: g4(draft, fonts)),
                      ("G5", lambda: g5(draft, ledger_dir, today)),
-                     ("G7", lambda: g7(draft, max_hashtags, strict_images))):
+                     ("G7", lambda: g7(draft, max_hashtags, strict_images, required_disclaimer))):
         if gate not in gates:
             continue
         try:

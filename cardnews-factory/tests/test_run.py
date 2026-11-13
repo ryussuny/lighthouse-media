@@ -47,7 +47,7 @@ class RunTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         t = self.tmp.name
-        self.d = {k: os.path.join(t, k) for k in ("ledger", "out", "hold", "sources")}
+        self.d = {k: os.path.join(t, k) for k in ("ledger", "out", "hold", "sources", "drafts")}
         self.stop = os.path.join(t, "STOP")
         self.alerts = []
         self.acc = C.load_account("test")
@@ -426,6 +426,249 @@ class RunTest(unittest.TestCase):
         self.assertEqual(r["status"], "ok", r["reason"])
         self.assertEqual(len(self._audit_dirs(self.d["out"])), 1)
         self.assertEqual(self._audit_dirs(self.d["hold"]), [])
+
+    # ---- T-SW1: 좌석 작성 방식 ----
+    def _write(self, name, obj_or_text, raw=False):
+        """raw=False 이면 초안 JSON 에 빠진 kw·author_surface 기본값을 채운다(검사 통과용). raw=True 는 있는 그대로."""
+        p = os.path.join(self.d["drafts"], TODAY.isoformat(), name)
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        if not raw and name.endswith(".json") and ".g3." not in name:
+            obj = json.loads(obj_or_text) if isinstance(obj_or_text, str) else dict(obj_or_text)
+            obj.setdefault("kw", "기초연금")
+            obj.setdefault("author_surface", "worker-1")
+            obj_or_text = obj
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(obj_or_text if isinstance(obj_or_text, str) else json.dumps(obj_or_text, ensure_ascii=False))
+        return p
+
+    def _sha(self, p):
+        from cardnews import guard
+        return guard.file_sha256(p)
+
+    def _seat(self, acc=None, **kw):
+        return R.run(acc or self.acc, BANNED, today=TODAY, now=NOW, fetchers=self.fx(), notify=lambda *a: self.alerts.append(a),
+                     ledger_dir=self.d["ledger"], out_root=self.d["out"], hold_root=self.d["hold"], sources_dir=self.d["sources"],
+                     stop_file=self.stop, bg_manifest=[], drafts_dir=self.d["drafts"], **kw)
+
+    def _verdict(self, draft_path, **over):
+        v = {"ok": True, "category": "none", "reviewer_surface": "reviewer-gemini", "draft_sha256": self._sha(draft_path)}
+        v.update(over)
+        return self._write("test.g3.json", v)
+
+    def test_metered_off_by_default_compose_and_classify(self):
+        from cardnews import compose, guard
+        env = {k: v for k, v in os.environ.items() if k != "CARDNEWS_ALLOW_METERED_API"}
+        env["ANTHROPIC_API_KEY"] = "x"
+        with mock.patch.dict(os.environ, env, clear=True), mock.patch("requests.post") as post:
+            with self.assertRaises(compose.ComposeError):
+                compose.default_generate("p")
+            ok, cat, why = guard.default_classify("글")
+            self.assertFalse(ok)
+            self.assertEqual(cat, "classifier_error")
+            post.assert_not_called()
+
+    def test_draft_file_passes_with_reviewer_verdict(self):
+        p = self._write("test.json", gen_ok(""))
+        self._verdict(p)
+        r = self._seat()
+        self.assertEqual(r["status"], "ok", r["reason"])
+        self.assertEqual(r["cost"]["anthropic"]["calls"], 0)
+        g3 = [g for g in r["gates"] if g["gate"] == "G3"][0]
+        self.assertTrue(g3["pass"])
+        self.assertIn("분류 통과", g3["reason"])
+
+    def test_missing_draft_is_skipped_with_one_alert(self):
+        r = self._seat()
+        self.assertEqual((r["status"], r["stage"]), ("skipped", "draft"))
+        self.assertEqual(len(self.alerts), 1)
+        self.assertEqual(self.holds(), [])
+        self.assertFalse(os.path.exists(self.out_account_dir()))
+
+    def test_explicit_draft_file_path(self):
+        p = self._write("other.json", gen_ok(""))
+        self._write("other.g3.json", {"ok": True, "category": "none", "reviewer_surface": "r", "draft_sha256": self._sha(p)})
+        r = self._seat(draft_file=p)
+        self.assertEqual(r["status"], "ok", r["reason"])
+
+    def test_g3_verdict_missing_holds(self):
+        self._write("test.json", gen_ok(""))
+        r = self._seat()
+        self.assertEqual((r["status"], r["stage"]), ("held", "guard"))
+        self.assertIn("판정 파일 없음", r["reason"])
+
+    def test_g3_verdict_sha_mismatch_holds(self):
+        p = self._write("test.json", gen_ok(""))
+        self._verdict(p, draft_sha256="0" * 64)
+        r = self._seat()
+        self.assertEqual((r["status"], r["stage"]), ("held", "guard"))
+        self.assertIn("draft_sha256", r["reason"])
+
+    def test_g3_verdict_category_not_none_or_not_true_holds(self):
+        p = self._write("test.json", gen_ok(""))
+        for over in ({"category": "adult", "ok": False}, {"ok": "true"}, {"category": "none", "ok": False}, {"reviewer_surface": ""}):
+            self._verdict(p, **over)
+            self.assertEqual(self._seat()["status"], "held", over)
+
+    def test_g3_reviewer_same_as_author_holds(self):
+        d = json.loads(gen_ok(""))
+        d["author_surface"] = "worker-1"
+        p = self._write("test.json", d)
+        self._verdict(p, reviewer_surface="worker-1")
+        r = self._seat()
+        self.assertEqual(r["status"], "held")
+        self.assertIn("같음", r["reason"])
+
+    def test_keyword_g3_still_runs_first(self):
+        d = json.loads(gen_ok(""))
+        d["caption_body"] = "무조건 오르는 종목 알려드립니다 리딩방"
+        p = self._write("test.json", d)
+        self._verdict(p)
+        r = self._seat()
+        self.assertEqual(r["status"], "held")
+        self.assertIn("키워드 금칙", r["reason"])
+
+    def test_g2_fail_without_retry_file_holds_with_hint(self):
+        p = self._write("test.json", gen_wrong_number(""))
+        self._verdict(p)
+        r = self._seat()
+        self.assertEqual((r["status"], r["stage"]), ("held", "verify"))
+        self.assertIn("test.retry.json", r["reason"])
+        self.assertEqual(len(self.alerts), 1)
+
+    def test_g2_fail_then_retry_file_rechecked_once(self):
+        self._write("test.json", gen_wrong_number(""))
+        rp = self._write("test.retry.json", gen_ok(""))
+        self._verdict(rp)            # 판정은 최종(재작성본) 초안 기준
+        r = self._seat()
+        self.assertEqual(r["status"], "ok", r["reason"])
+        self.assertEqual(r["cost"]["attempts"], 2)
+        self.assertTrue(any(g["gate"] == "G2(1차 — 재작성됨)" for g in r["gates"]))
+        dirs = os.path.join(self.d["hold"], "_attempts", TODAY.isoformat())
+        self.assertTrue(os.path.exists(os.path.join(dirs, os.listdir(dirs)[0], "draft_attempt1.json")))
+
+    def test_retry_file_also_failing_holds_no_third_try(self):
+        self._write("test.json", gen_wrong_number(""))
+        self._write("test.retry.json", gen_wrong_number(""))
+        r = self._seat()
+        self.assertEqual(r["status"], "held")
+        self.assertIn("재작성 후에도 실패", r["reason"])
+
+    def test_verdict_for_first_draft_does_not_cover_retry(self):
+        p = self._write("test.json", gen_wrong_number(""))
+        self._write("test.retry.json", gen_ok(""))
+        self._verdict(p)             # 1차 초안 판정 → 재작성본과 sha 다름
+        r = self._seat()
+        self.assertEqual((r["status"], r["stage"]), ("held", "guard"))
+
+    def test_kw_mismatch_in_draft_holds(self):
+        d = json.loads(gen_ok(""))
+        d["kw"] = "전혀다른주제"
+        p = self._write("test.json", d)
+        self._verdict(p)
+        r = self._seat()
+        self.assertEqual((r["status"], r["stage"]), ("held", "compose"))
+
+    def test_invest_disclaimer_required_in_every_card(self):
+        msg = "투자 권유가 아닙니다. 투자 판단과 책임은 본인에게 있습니다."
+        acc = dict(self.acc, required_disclaimer=msg)
+        p = self._write("test.json", gen_ok(""))
+        self._verdict(p)
+        r = self._seat(acc=acc)
+        self.assertEqual((r["status"], r["stage"]), ("held", "guard"))
+        self.assertIn("필수 고지 문구 없음", r["reason"])
+        d = json.loads(gen_ok(""))
+        for c in d["cards"]:
+            c["body"] += " " + msg
+        p = self._write("test.json", d)
+        self._verdict(p)
+        self.assertEqual(self._seat(acc=acc)["status"], "ok")
+
+    def test_one_card_missing_disclaimer_holds(self):
+        from cardnews import guard
+        msg = "투자 권유가 아닙니다. 투자 판단과 책임은 본인에게 있습니다."
+        d = {"cards": [{"title": "t", "body": f"본문 {msg}"} for _ in range(5)], "caption": "x\nAI로 제작", "sources": [], "hashtags": []}
+        d["cards"][3]["body"] = "본문만"
+        ok, why = guard.g7(d, required_disclaimer=msg)
+        self.assertFalse(ok)
+        self.assertIn("카드4 필수 고지 문구 없음", why)
+
+    def test_report_marks_audit_rows(self):
+        ledger.append("run_ledger", {"date": TODAY.isoformat(), "account_id": "test", "attempt": 1, "gate": "G2", "reason": "x"}, self.d["ledger"])
+        os.makedirs(os.path.join(self.d["out"], TODAY.isoformat()), exist_ok=True)
+        path = report.build(TODAY.isoformat(), self.d["out"], self.d["hold"], self.d["ledger"])
+        html = _rd(path)
+        self.assertIn("재작성 1차(G2)", html)
+        self.assertNotIn("<td>None</td>", html)
+
+    # ---- T-SW1b: 리뷰9 ----
+    def _held_compose(self, r, needle):
+        self.assertEqual((r["status"], r["stage"]), ("held", "compose"), r["reason"])
+        self.assertIn(needle, r["reason"])
+
+    def test_neg_author_surface_missing_holds(self):
+        d = json.loads(gen_ok(""))
+        d["kw"] = "기초연금"
+        p = self._write("test.json", json.dumps(d, ensure_ascii=False), raw=True)
+        self._verdict(p)
+        self._held_compose(self._seat(), "author_surface")
+
+    def test_neg_author_surface_blank_holds(self):
+        p = self._write("test.json", dict(json.loads(gen_ok("")), author_surface="  "))
+        self._verdict(p)
+        self._held_compose(self._seat(), "author_surface")
+
+    def test_neg_kw_missing_holds(self):
+        d = json.loads(gen_ok(""))
+        d["author_surface"] = "worker-1"
+        p = self._write("test.json", json.dumps(d, ensure_ascii=False), raw=True)
+        self._verdict(p)
+        self._held_compose(self._seat(), "kw")
+
+    def test_neg_code_fence_holds(self):
+        d = dict(json.loads(gen_ok("")), kw="기초연금", author_surface="worker-1")
+        p = self._write("test.json", "```json\n" + json.dumps(d, ensure_ascii=False) + "\n```", raw=True)
+        self._verdict(p)
+        self._held_compose(self._seat(), "순수 JSON")
+
+    def test_neg_reviewer_case_difference_holds(self):
+        p = self._write("test.json", dict(json.loads(gen_ok("")), author_surface="Worker-2"))
+        self._verdict(p, reviewer_surface="worker-2")
+        r = self._seat()
+        self.assertEqual((r["status"], r["stage"]), ("held", "guard"))
+        self.assertIn("같음", r["reason"])
+
+    def test_neg_reviewer_prefix_difference_holds(self):
+        p = self._write("test.json", dict(json.loads(gen_ok("")), author_surface="154"))
+        self._verdict(p, reviewer_surface="surface:154")
+        r = self._seat()
+        self.assertEqual((r["status"], r["stage"]), ("held", "guard"))
+        self.assertIn("같음", r["reason"])
+
+    def test_norm_surface(self):
+        from cardnews import guard
+        self.assertEqual(guard.norm_surface(" Surface:154 "), "154")
+        self.assertEqual(guard.norm_surface("Worker-2"), "worker-2")
+        self.assertEqual(guard.norm_surface(None), "")
+
+    def test_skipped_alert_once_per_day_and_account(self):
+        self._seat()
+        self._seat()
+        self.assertEqual(len(self.alerts), 1)
+        rows = [x for x in ledger.read("run_ledger", self.d["ledger"]) if x.get("status") == "skipped"]
+        self.assertEqual(len(rows), 2)
+
+    def test_g5_future_tolerance_plus_two_days(self):
+        from cardnews import guard
+        today = TODAY
+
+        def hit(days_ahead):
+            d = {"account_id": "fx", "kw": "기초연금", "cards": [{"title": "가", "body": "나"}] * 5, "caption": "x"}
+            led = os.path.join(self.tmp.name, f"led{days_ahead}")
+            ledger.append("check_ledger", {"gate": "ALL", "pass": True, "account_id": "fx", "kw": "기초연금", "titles": [], "sent_hashes": [],
+                                           "ts": (today + dt.timedelta(days=days_ahead)).isoformat() + "T10:00:00"}, led)
+            return not guard.g5(d, led, today)[0]
+        self.assertTrue(hit(2))
+        self.assertFalse(hit(3))
 
 
 if __name__ == "__main__":

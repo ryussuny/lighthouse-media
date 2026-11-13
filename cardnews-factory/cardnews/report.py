@@ -98,6 +98,10 @@ def build(day, out_root=None, hold_root=None, ledger_dir=None, rehearsal=False):
     parts.append("<h2>오늘 실행 기록</h2><div class='box'><table><tr><th>시각</th><th>계정</th><th>상태</th><th>단계</th><th>사유</th></tr>")
     for r in ledger.read("run_ledger", ledger_dir):
         if r.get("date") == day:
+            if not r.get("status"):   # 감사 줄(재작성 1차 G2 기록)은 실행 결과가 아니라 표시만 다르게
+                parts.append(f"<tr><td>{_e(r['ts'][11:19])}</td><td>{_e(r.get('account_id'))}</td><td>재작성 1차({_e(r.get('gate'))})</td>"
+                             f"<td>attempt {_e(r.get('attempt'))}</td><td>{_e(r.get('reason'))}</td></tr>")
+                continue
             parts.append(f"<tr><td>{_e(r['ts'][11:19])}</td><td>{_e(r.get('account_id'))}</td><td>{_e(r.get('status'))}</td>"
                          f"<td>{_e(r.get('stage'))}</td><td>{_e(r.get('reason'))}</td></tr>")
     parts.append("</table></div></div>")

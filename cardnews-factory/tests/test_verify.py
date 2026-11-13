@@ -201,8 +201,8 @@ class TestVerify(unittest.TestCase):
 
     def test_unit_followed_by_particle_passes(self):
         b = ("<html><body>보건복지부: 만 65세부터 신청, 3월 31일까지 접수, 1인당 월 34만원씩, 2위를 기록,"
-             " 1인가구 지원.</body></html>")
-        body = "65세부터 신청, 3월 31일까지 접수, 1인당 월 34만원씩, 2위를 기록, 1인가구 지원"
+             " 2위를 기록.</body></html>")
+        body = "65세부터 신청, 3월 31일까지 접수, 1인당 월 34만원씩, 2위를 기록"
         r = self.run_(self.draft(body), self.two(b))
         self.assertTrue(r["pass"], r["G2"])
 
@@ -214,6 +214,27 @@ class TestVerify(unittest.TestCase):
     def test_numbers_in(self):
         self.assertEqual(V.numbers_in("2026년 11월 12일, 1,000,000원, 3.5%"),
                          ["2026년", "11월", "12일", "1,000,000원", "3.5%"])
+
+    # ---- 리뷰8: 한 글자 조사(이·가·로·의·도)는 뒤가 비한글일 때만 ----
+    def test_single_char_particle_needs_nonhangul_after(self):
+        self.assertEqual(V.numbers_in("1인가구 지원"), ["1"])        # 단위 없는 수로 떨어져 G2 가 보류시킴
+        self.assertEqual(V.numbers_in("2차로변 공사"), ["2"])
+        self.assertEqual(V.numbers_in("9종가는 오른다"), ["9"])
+        self.assertEqual(V.numbers_in("3분의 1 지급"), ["3", "1"])
+        self.assertEqual(V.numbers_in("2차로 이동"), ["2차"])           # 뒤가 공백이면 조사 '로'
+
+    def test_single_char_particle_positive_kept(self):
+        self.assertEqual(V.numbers_in("1인당 지원"), ["1인"])
+        self.assertEqual(V.numbers_in("65세부터 신청"), ["65세"])
+        self.assertEqual(V.numbers_in("2위를 기록"), ["2위"])
+        self.assertEqual(V.numbers_in("2위가 되었다"), ["2위"])
+        self.assertEqual(V.numbers_in("3명의 신청"), ["3명"])
+        self.assertEqual(V.numbers_in("3명도 신청"), ["3명"])
+
+    def test_g2_holds_on_one_in_household_word(self):
+        b = "<html><body>보건복지부: 기준연금액 월 34만원. 1인가구 지원.</body></html>"
+        r = self.run_(self.draft("1인가구 월 34만원 지원"), self.two(b))
+        self.assertFalse(r["pass"])
 
 
 if __name__ == "__main__":

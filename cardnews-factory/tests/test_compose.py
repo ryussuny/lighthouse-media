@@ -112,13 +112,13 @@ class ComposeTest(unittest.TestCase):
         def post(url, headers=None, json=None, timeout=None):
             seen["mt"] = json["max_tokens"]
             return self._resp("{}")
-        with mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "x"}), mock.patch("requests.post", side_effect=post):
+        with mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "x", "CARDNEWS_ALLOW_METERED_API": "1"}), mock.patch("requests.post", side_effect=post):
             CP.default_generate("p")
         self.assertEqual(seen["mt"], 4000)
 
     def test_default_generate_truncated_raises_clear_error(self):
         from unittest import mock
-        with mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "x"}), \
+        with mock.patch.dict(os.environ, {"ANTHROPIC_API_KEY": "x", "CARDNEWS_ALLOW_METERED_API": "1"}), \
                 mock.patch("requests.post", return_value=self._resp('{"cards": [{"title": "a"', "max_tokens", 4000)):
             with self.assertRaises(CP.TruncatedError) as cm:
                 CP.default_generate("p")

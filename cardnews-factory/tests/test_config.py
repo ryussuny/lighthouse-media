@@ -5,6 +5,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from cardnews import config as C  # noqa: E402
@@ -95,6 +96,37 @@ class TestConfig(unittest.TestCase):
 
     def test_yt_token_path_configurable(self):
         self.assertTrue(C.YT_OAUTH_TOKEN_PATH)
+
+    def test_new_accounts_valid_and_virtual(self):
+        for a in ("travel", "invest", "trend"):
+            acc = C.load_account(a)
+            self.assertTrue(acc["is_virtual"], a)
+            self.assertIsNone(acc["token_ref"], a)
+            self.assertEqual(acc["daily_post_cap"], 1, a)
+        inv = C.load_account("invest")
+        self.assertEqual(inv["required_disclaimer"], "투자 권유가 아닙니다. 투자 판단과 책임은 본인에게 있습니다.")
+        for w in ("매수 추천", "목표가", "수익률 보장", "텐배거", "코인 추천", "에어드랍", "종목 추천", "리딩"):
+            self.assertIn(w, inv["banned_topics_extra"], w)
+        self.assertNotIn("required_disclaimer", C.load_account("travel"))
+
+    def test_required_disclaimer_must_be_nonempty_string(self):
+        acc = dict(C.load_account("invest"), required_disclaimer=" ")
+        self.assertTrue(any("required_disclaimer" in e for e in C.validate_account(acc)))
+
+    def test_metered_flag(self):
+        env = {k: v for k, v in os.environ.items() if k != "CARDNEWS_ALLOW_METERED_API"}
+        with mock.patch.dict(os.environ, env, clear=True):
+            self.assertFalse(C.metered_allowed())
+            os.environ["CARDNEWS_ALLOW_METERED_API"] = "1"
+            self.assertTrue(C.metered_allowed())
+
+    def test_invest_account_requires_disclaimer(self):
+        acc = dict(C.load_account("invest"))
+        del acc["required_disclaimer"]
+        self.assertTrue(any("required_disclaimer" in e for e in C.validate_account(acc)))
+        acc2 = dict(C.load_account("travel"), type="invest")
+        self.assertTrue(any("required_disclaimer" in e for e in C.validate_account(acc2)))
+        self.assertEqual(C.validate_account(C.load_account("travel")), [])
 
 
 if __name__ == "__main__":
