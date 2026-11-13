@@ -281,6 +281,14 @@ class TestVerify(unittest.TestCase):
         self.assertIn("선언했지만 내용에 쓰이지 않은 기관: 행정안전부", r["G1"][1])
         self.assertEqual(V.contribution_tokens(self.dr("대상 약 136만 명, 번호 148975407")), {"136만명"})
 
+    def test_ordinal_units_do_not_buy_an_org(self):
+        # '276차'·'244번'·'100회' 를 본문에 끼워 타 기관을 채우는 초안 → G1 보류
+        other = "<html><body>행정안전부 제276차 회의, 안건 244번, 누적 100회 개최.</body></html>"
+        r = self.run_c(self.dr("대상 약 136만 명, 제276차 회의 244번 안건 100회"), self.two_org(other))
+        self.assertFalse(r["G1"][0])
+        self.assertIn("선언했지만 내용에 쓰이지 않은 기관: 행정안전부", r["G1"][1])
+        self.assertEqual(V.contribution_tokens(self.dr("대상 약 136만 명, 제276차 회의 244번 안건 100회")), {"136만명"})
+
     def test_is_distinctive_number_is_the_shared_rule(self):
         self.assertTrue(V.is_distinctive_number("136만명"))
         self.assertFalse(V.is_distinctive_number("148975407"))               # 단위 없음

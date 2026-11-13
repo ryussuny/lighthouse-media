@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from cardnews import config as C, ledger, research as R, run as RUN, trends as T  # noqa: E402
+from cardnews import config as C, ledger, research as R, run as RUN, trends as T, verify as V  # noqa: E402
 
 TODAY = dt.date(2026, 11, 13)
 COMMON = (frozenset({"10%", "65세"}), 999, 5)     # 흔한 토큰 집합, 읽은 저장본 수(빈도 계산 없이 주입)
@@ -31,7 +31,7 @@ def fsc(pub="2026-11-10", title="신용융자 담보비율 완화 조치", txt="
     return doc("fsc.go.kr", "금융위원회", pub, title, txt)
 
 
-def mofe(pub="2026-11-10", title="증권사 신용융자 한시 면제 시행", txt="신용융자 담보비율 의무 면제 대상 5,678억원"):
+def mofe(pub="2026-11-10", title="증권사 신용융자 한시 면제 시행", txt="신용융자 담보비율 의무 면제 대상 5,678억원, 잔액 4,321억원"):
     return doc("mofe.go.kr", "재정경제부", pub, title, txt)
 
 
@@ -100,11 +100,26 @@ class TestFindPairs(unittest.TestCase):
         self.assertEqual(find(filler + [a, b]), [])       # '플랫폼'·'개편' 이 제목 12건에 흔함 → 핵심어 아님
         self.assertEqual(len(find([a, b])), 1)            # 문서가 둘뿐이면 흔하지 않아 묶음
 
+    def test_one_stem_needs_a_shared_distinctive_number(self):
+        # 어간 1개(신용융자)만 겹치고 구별 숫자는 서로 다름 → 같은 사안이 아님('겨울철' 제설 vs 취약계층 꼴)
+        self.assertEqual(find([fsc(), mofe(txt="신용융자 담보비율 의무 면제 대상 5,678억원")]), [])
+        self.assertEqual(len(find([fsc(), mofe()])), 1)                                   # 같은 숫자(4,321억원) 공유 → 묶음
+
+    def test_two_stems_pair_without_shared_number(self):
+        a = fsc(title="신용융자 담보비율 완화 조치", txt="신용융자 담보비율 4,321억원")
+        b = mofe(title="신용융자 담보비율 한시 면제", txt="신용융자 담보비율 5,678억원")
+        self.assertEqual(len(find([a, b])), 1)                                            # 공통 어간 2개 이상이면 숫자 공유 불요
+
+    def test_ordinal_units_are_not_distinctive(self):
+        for t in ("276차", "244번", "100회", "3위", "12호", "5회차", "2등급"):
+            self.assertFalse(V.is_distinctive_number(t), t)
+        self.assertEqual(find([fsc(txt="신용융자 제276차 244번 100회"), mofe(txt="신용융자 276차 244번 100회")]), [])
+
     def test_fail_closed_without_frequency_basis(self):
         self.assertEqual(find([fsc(), mofe()], common=(frozenset(), 0, 5)), [])
 
     def test_ordering_more_agencies_then_newer(self):
-        third = doc("moel.go.kr", "고용노동부", "2026-11-10", "신용융자 이용 노동자 대출", "신용융자 이용 노동자 9,876명")
+        third = doc("moel.go.kr", "고용노동부", "2026-11-10", "신용융자 이용 노동자 대출", "신용융자 이용 노동자 9,876명, 잔액 4,321억원")
         x = find([fsc(), mofe(), third])
         self.assertEqual(len(x[0]["orgs"]), 3)
 

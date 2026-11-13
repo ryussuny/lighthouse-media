@@ -252,11 +252,16 @@ def _short_numeric(tok):
     return len(num.replace(",", "")) <= 2 and "." not in num
 
 
+# 순서·식별 번호 꼴 단위: '276차'·'244번'·'100회'·'3위' 는 규모·실적이 아니라 회차·순번·호수다. 어느 기관 문서에나 있고
+# (회의 차수·기사 번호·순위) 본문에 끼워 넣어 타 기관을 기여로 만들 수 있어 단위가 있어도 구별 숫자로 치지 않는다. '제N…' 꼴은 단위로 안 잡히므로 해당 없음.
+ORDINAL_UNITS = frozenset({"차", "번", "회", "회차", "호", "위", "등", "등급"})
+
+
 def is_distinctive_number(tok, common=frozenset(), allow_short=False):
-    """기여·묶음 판정이 함께 쓰는 '구별 숫자' 한 곳: 단위 있는 숫자만(단위 없는 숫자는 길이와 무관하게 제외 — 기사 ID·페이지 번호일 수 있다),
+    """기여·묶음 판정이 함께 쓰는 '구별 숫자' 한 곳: 단위 있는 숫자만(서수·번호형 단위 ORDINAL_UNITS 도 제외; 단위 없는 숫자는 길이와 무관하게 제외 — 기사 ID·페이지 번호일 수 있다),
     날짜성·흔한 토큰(common) 제외, allow_short=False 면 짧은 숫자(두 자리 이하·소수점 없음)도 제외."""
     _num, unit = _split_num_unit(tok)
-    if not unit or is_date_token(tok) or tok in common:
+    if not unit or unit in ORDINAL_UNITS or is_date_token(tok) or tok in common:
         return False
     return allow_short or not _short_numeric(tok)
 

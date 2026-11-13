@@ -1410,6 +1410,14 @@ def find_pairs(docs, today, domains=None, common=None, window=PAIR_WINDOW_DAYS, 
             df[t] = df.get(t, 0) + 1
     df_limit = max(TITLE_DF_MIN, int(-(-len(all_titles) * TITLE_DF_RATIO // 1)))
     terms = [{t for t in title_terms(c["title"], org_names) if df.get(t, 0) <= df_limit} for c in rows]
+    cache = {}
+
+    def distinct(i):
+        if i not in cache:
+            toks = verify.source_tokens(rows[i]["content"])
+            # G1 기여 판정과 같은 함수(단위 있는 숫자만 — 단위 없는 긴 숫자는 페이지 번호·기사 ID 일 수 있다)
+            cache[i] = sorted(t for t in toks if verify.is_distinctive_number(t, cset))
+        return cache[i]
     buckets = {}   # 어간 → 문서 번호 집합
     for i in range(len(rows)):
         for j in range(i + 1, len(rows)):
@@ -1417,7 +1425,9 @@ def find_pairs(docs, today, domains=None, common=None, window=PAIR_WINDOW_DAYS, 
             if a["_org"] == b["_org"] or abs((a["_date"] - b["_date"]).days) > gap:
                 continue
             stems = {s for ta in terms[i] for tb in terms[j] for s in [_stem_match(ta, tb)] if s}
-            if len(stems) < 2 and not any(len(s) >= PAIR_STEM_MIN for s in stems):   # 짧은 낱말 하나만 겹치면('연구'·'대응') 같은 사안이 아님
+            # '한 사안' 원칙: 제목 공통 어간 2개 이상, 또는 어간 1개(길이 PAIR_STEM_MIN 이상)+두 문서가 같은 구별 숫자를 1개 이상 공유.
+            # 계절어·공통어 하나만 겹치는 서로 다른 발표('겨울철' 제설 vs 취약계층)는 숫자가 겹치지 않아 빠진다(TITLE_STOP 목록으로 풀지 않는다).
+            if len(stems) < 2 and not (any(len(s) >= PAIR_STEM_MIN for s in stems) and set(distinct(i)) & set(distinct(j))):
                 continue
             if same_release(a, b):
                 continue
@@ -1434,14 +1444,6 @@ def find_pairs(docs, today, domains=None, common=None, window=PAIR_WINDOW_DAYS, 
         for w in wins:
             if not any(w < o for o in wins):   # 더 큰 창에 들어가는 부분 집합은 버림
                 sets.setdefault(w, set()).add(s)
-    cache = {}
-
-    def distinct(i):
-        if i not in cache:
-            toks = verify.source_tokens(rows[i]["content"])
-            # G1 기여 판정과 같은 함수(단위 있는 숫자만 — 단위 없는 긴 숫자는 페이지 번호·기사 ID 일 수 있다)
-            cache[i] = sorted(t for t in toks if verify.is_distinctive_number(t, cset))
-        return cache[i]
     out, seen = [], {}
     for w, stems in sets.items():
         per_org = {}
