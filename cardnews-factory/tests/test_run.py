@@ -772,7 +772,7 @@ class RunTest(unittest.TestCase):
         for k in range(n):
             path = os.path.join(root, "files", f"f{k}.html")
             with open(path, "w", encoding="utf-8") as f:
-                f.write(f"<html><body>일반 안내 만 65세 이상, 고유 {3000 + k}건</body></html>")
+                f.write(f"<html><body>일반 안내 만 65세 이상, 임시기준 9876만 원, 고유 {3000 + k}건</body></html>")
             lines.append(json.dumps({"url": f"https://www.korea.kr/f{k}", "saved_path": f"files/f{k}.html"}))   # 상대경로
         idx = os.path.join(root, "index.jsonl")
         with open(idx, "w", encoding="utf-8") as f:
@@ -790,8 +790,16 @@ class RunTest(unittest.TestCase):
             return self._seat(fetchers=self.fx(docs=docs) if docs else None)
 
     def test_src4_real_common_only_common_number_holds_g1(self):
+        # '9876만 원' 은 임시 캐시 60건 전부에만 있고 실제 캐시에는 없는 값 → 실제 캐시를 읽었다면 구별 숫자로 통과했을 것(CACHE_INDEX 대체가 실제로 쓰이는지 구별)
+        from cardnews import verify as V
         idx = self._tmp_cache()
-        r = self._real_common_run("기초연금은 만 65세 이상이 대상입니다", idx)      # 65세 는 임시 캐시 60건 모두에 있음 = 흔함
+        a = "<html><body><p>행정안전부 기초연금 안내. 기초연금 임시기준 9876만 원.</p></body></html>".encode("utf-8")
+        b = "<html><body><p>보건복지부 보도자료. 기초연금 임시기준 9876만 원입니다.</p></body></html>".encode("utf-8")
+        docs = [("https://www.korea.kr/news/a", "행정안전부", a), ("https://www.mohw.go.kr/b", "보건복지부", b)]
+        self.assertEqual(_REAL_COMMON(idx)[1], 60)                    # 임시 캐시에서 60건을 읽었다
+        self.assertIn("9876만원", _REAL_COMMON(idx)[0])              # 임시 캐시에서만 흔한 토큰
+        self.assertNotIn("9876만원", _REAL_COMMON()[0])               # 실제 캐시에서는 흔하지 않음(없음)
+        r = self._real_common_run("기초연금 임시기준은 9876만 원입니다", idx, docs=docs)
         self.assertEqual((r["status"], r["stage"]), ("held", "verify"), r["reason"])
         self.assertIn("선언했지만 내용에 쓰이지 않은 기관", r["reason"])
 

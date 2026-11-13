@@ -312,7 +312,7 @@ class TestVerify(unittest.TestCase):
                 lines.append('{"saved_path": %s}' % __import__("json").dumps(path))
             with open(idx, "w", encoding="utf-8") as f:
                 f.write("\n".join(lines))
-            common, n, lim = V.common_tokens(idx)
+            common, n, lim, *_ = V.common_tokens(idx)
             self.assertEqual((n, lim), (100, 5))                 # max(5, ceil(100*2%)=2) = 5
             self.assertNotIn("5건", common)
             self.assertIn("6건", common)
@@ -355,7 +355,7 @@ class TestVerify(unittest.TestCase):
     def test_common_tokens_resolves_relative_and_absolute_paths(self):
         root = os.path.join(self.d, "cache1")
         idx = self._mk_cache(root, 30, 30)
-        common, n, lim = V.common_tokens(idx)
+        common, n, lim, *_ = V.common_tokens(idx)
         self.assertEqual(n, 60)                       # 상대 30 + 절대 30 = 전체 줄(saved_path 없는 줄 제외)
         self.assertIn("65세", common)                 # 60개 문서 모두에 있음 → 흔함
         self.assertEqual(lim, 5)
@@ -393,6 +393,61 @@ class TestVerify(unittest.TestCase):
                        common=(frozenset(), 0, 5))
         self.assertFalse(r["G1"][0])
         self.assertIn("기여 판정 불가", r["G1"][1])
+
+    # ---- T-SRC5: 상한 1% · 부분 읽기 실패 ----
+    def _mk_n_docs(self, root, n, tokens_in):
+        """n 개 문서. tokens_in = {문장: 들어갈 문서 수}. 인덱스는 상대경로."""
+        import json as _j
+        os.makedirs(os.path.join(root, "files"), exist_ok=True)
+        lines = []
+        for k in range(n):
+            extra = " ".join(t for t, c in tokens_in.items() if k < c)
+            with open(os.path.join(root, "files", f"d{k}.html"), "w", encoding="utf-8") as f:
+                f.write(f"<html><body>고유 {5000 + k}건 {extra}</body></html>")
+            lines.append(_j.dumps({"url": f"https://www.korea.kr/{k}", "saved_path": f"files/d{k}.html"}))
+        idx = os.path.join(root, "index.jsonl")
+        with open(idx, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+        return idx
+
+    def test_df_ratio_is_one_percent_boundary(self):
+        # 600건 → 상한 max(5, ceil(6.0)=6) = 6. 'X6건'(6건)은 허용, 'Y7건'(7건)은 흔함. (2% 였다면 상한 12 라 Y7건 도 구별 숫자로 통과)
+        idx = self._mk_n_docs(os.path.join(self.d, "c600"), 600, {"X6건": 6, "Y7건": 7})
+        common, n, lim, total, unread = V.common_tokens(idx)
+        self.assertEqual((n, lim, total, unread), (600, 6, 600, 0))
+        self.assertNotIn("6건", common)
+        self.assertIn("7건", common)
+
+    def test_df_65se_style_common_number_does_not_buy_org_at_one_percent(self):
+        idx = self._mk_n_docs(os.path.join(self.d, "c535"), 535, {"65세": 10})   # 실제 캐시와 같은 규모·빈도(535건, df=10)
+        common = V.common_tokens(idx)
+        self.assertIn("65세", common[0])
+        other = "<html><body>행정안전부: 대상 65세 이상.</body></html>"
+        r = self.run_c(self.dr("대상 약 136만 명, 65세 이상"), self.two_org(other), common=common)
+        self.assertFalse(r["G1"][0])
+
+    def _partial_cache(self, name, total, missing):
+        idx = self._mk_n_docs(os.path.join(self.d, name), total, {})
+        root = os.path.dirname(idx)
+        for k in range(missing):
+            os.remove(os.path.join(root, "files", f"d{k}.html"))
+        return idx
+
+    def test_partial_read_failure_over_5_percent_fails_closed(self):
+        idx = self._partial_cache("p94", 100, 6)          # 6% 읽기 실패
+        common = V.common_tokens(idx)
+        self.assertEqual((common[1], common[3], common[4]), (94, 100, 6))
+        r = self.run_c(self.dr("대상 약 136만 명"), self.two_org("<html><body>행정안전부: 대상 약 136만 명.</body></html>"), common=common)
+        self.assertFalse(r["G1"][0])
+        self.assertIn("기여 판정 불가", r["G1"][1])
+        self.assertIn("6/100", r["G1"][1])
+
+    def test_partial_read_failure_within_5_percent_proceeds_with_note(self):
+        idx = self._partial_cache("p96", 100, 4)          # 4% 읽기 실패
+        common = V.common_tokens(idx)
+        r = self.run_c(self.dr("대상 약 136만 명"), self.two_org("<html><body>행정안전부: 대상 약 136만 명.</body></html>"), common=common)
+        self.assertTrue(r["G1"][0], r["G1"])
+        self.assertIn("읽기 실패 4건", r["G1"][1])
 
 
 if __name__ == "__main__":

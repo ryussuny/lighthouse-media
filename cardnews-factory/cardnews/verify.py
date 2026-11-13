@@ -223,8 +223,11 @@ def check_g2(draft, sources):
 
 DATE_UNITS = {"년", "월", "일", "시", "분"}   # 날짜·시각 단위(분기·상반기·하반기·요일은 숫자+단위 토큰으로 안 잡히거나 위 단위로 환원)
 DATE_LIKE = re.compile(r"^\d{1,4}[.\-/]\d{1,2}(?:[.\-/]\d{1,2})?\.?$")   # 2026.11.04 · 11.4. 꼴
-DF_RATIO = 0.02        # 문서 빈도 상한 = max(DF_MIN, 저장본 수 × 2%). 실측(저장본 322건): 5%=14건·1인=9건·10%=19건은 흔함, 7%=3건·136만명·75만원·53만원=2건은 구별력 있음
+# 문서 빈도 상한 = max(DF_MIN, 저장본 수 × DF_RATIO). 상수는 이 한 곳만. 2%(저장본 535건 → 상한 11)에서는 '65세'(df=10)가 구별 숫자로 통과해
+# 1% 로 낮췄다(→ 상한 6). 과잉 보류 위험은 실초안 기여 토큰(136만명·53만원·75만원 df=2, 7% df=7→흔함)으로 재측정해 보고.
+DF_RATIO = 0.01
 DF_MIN = 5
+DF_UNREAD_MAX = 0.05   # saved_path 가 있는데 읽지 못한 저장본이 이 비율을 넘으면 빈도 기준을 믿을 수 없어 기여 판정 불가(fail-closed)
 CACHE_INDEX = os.path.join(C.ROOT, "data", "source_cache", "index.jsonl")   # 시험이 바꿔 끼울 수 있게 모듈 상수
 DF_SMALL_CACHE = 50    # 저장본이 이보다 적으면 빈도를 믿을 수 없다 → 짧은 숫자(두 자리 이하, 소수점 없음)도 흔한 토큰으로 본다
 _DF_CACHE = {}
@@ -250,7 +253,8 @@ def _short_numeric(tok):
 
 
 def common_tokens(index_path=None):
-    """source_cache 인덱스 전체 저장본의 숫자 토큰 문서 빈도 → (흔한 토큰 집합, 저장본 수, 상한). 상한 초과 토큰이 '흔한' 것.
+    """source_cache 인덱스 전체 저장본의 숫자 토큰 문서 빈도 → (흔한 토큰 집합, 읽은 저장본 수, 상한, saved_path 있는 고유 저장본 수, 읽지 못한 수).
+    상한 초과 토큰이 '흔한' 것.
     프로세스당 1회 계산(인덱스 크기·mtime 이 같으면 캐시). 읽을 수 없는 저장본은 건너뜀."""
     import json
     from collections import Counter
@@ -261,14 +265,14 @@ def common_tokens(index_path=None):
         st = os.stat(index_path)
         key = (index_path, st.st_size, st.st_mtime)
     except OSError:
-        return frozenset(), 0, DF_MIN   # 인덱스 없음 → n=0 → 기여 판정 불가(fail-closed)
+        return frozenset(), 0, DF_MIN, 0, 0   # 인덱스 없음 → n=0 → 기여 판정 불가(fail-closed)
     if key in _DF_CACHE:
         return _DF_CACHE[key]
     df, n, seen = Counter(), 0, set()
     try:
         fh = open(index_path, encoding="utf-8")
     except OSError:
-        return frozenset(), 0, DF_MIN
+        return frozenset(), 0, DF_MIN, 0, 0
     with fh as f:
         for line in f:
             try:
@@ -276,9 +280,11 @@ def common_tokens(index_path=None):
                 sp = resolve_saved_path(rec, base)["saved_path"]   # 상대('files/…')는 인덱스 디렉터리 기준, 절대는 그대로
             except (ValueError, KeyError, TypeError, AttributeError):
                 continue
-            if sp in seen or not os.path.exists(sp):
+            if sp in seen:
                 continue
             seen.add(sp)
+            if not os.path.exists(sp):
+                continue
             try:
                 with open(sp, "rb") as g:
                     toks = source_tokens(g.read())
@@ -286,8 +292,9 @@ def common_tokens(index_path=None):
                 continue
             n += 1
             df.update(toks)
-    limit = max(DF_MIN, int(-(-n * DF_RATIO // 1)))   # ceil(n*2%)
-    res = (frozenset(t for t, c in df.items() if c > limit), n, limit)
+    limit = max(DF_MIN, int(-(-n * DF_RATIO // 1)))   # ceil(n*DF_RATIO)
+    unread = len(seen) - n    # saved_path 가 있었는데 읽지 못한 저장본(고유 경로 기준)
+    res = (frozenset(t for t, c in df.items() if c > limit), n, limit, len(seen), unread)
     _DF_CACHE.clear()
     _DF_CACHE[key] = res
     return res
@@ -312,11 +319,16 @@ def contribution_tokens(draft, common=frozenset(), n_docs=10 ** 6):
     return out
 
 
-def contribution_g1(draft, ok_src, g1_why, common=frozenset(), n_docs=10 ** 6):
+def contribution_g1(draft, ok_src, g1_why, common=frozenset(), n_docs=10 ** 6, unread=0):
     """선언한 출처의 기관은, 그 기관 저장본에 구별력 있는 본문 숫자 토큰이 1개 이상 실제로 있어야 기관 수에 든다
     (source_tokens·numbers_in 재사용). 같은 숫자가 두 기관 원문에 다 있으면 둘 다 기여(교차 확인). 반환 (ok, 사유)."""
     if n_docs <= 0:   # fail-closed: 빈도 기준(source_cache)을 못 읽으면 '흔한 숫자' 를 가릴 수 없다
         return False, (g1_why + "; 기여 판정 불가 — source_cache 인덱스를 읽지 못했거나 해석된 저장본 0건(흔한 숫자 기준 없음) — 보류")
+    total = n_docs + unread
+    if unread and unread / total > DF_UNREAD_MAX:   # 일부만 읽혀 빈도 필터가 무력화됨 → fail-closed
+        return False, (g1_why + f"; 기여 판정 불가 — source_cache 저장본 읽기 실패 {unread}/{total}건(기준 {int(DF_UNREAD_MAX * 100)}% 초과) — 보류")
+    if unread:
+        g1_why += f"; 읽기 실패 {unread}건(source_cache 저장본 {total}건 중)"
     toks = contribution_tokens(draft, common, n_docs)
     declared, contributing = set(), set()
     for s in ok_src:
@@ -343,8 +355,8 @@ def run(draft, sources, ledger_dir=None, domains=None, require_contribution=Fals
     base = {"account_id": draft.get("account_id"), "kw": draft.get("kw")}
     g1_ok, g1_why, ok_src = check_g1(sources, domains)
     if g1_ok and require_contribution:
-        cset, n_docs, _lim = common if common is not None else common_tokens()
-        g1_ok, g1_why = contribution_g1(draft, ok_src, g1_why, cset, n_docs)
+        cset, n_docs, _lim, *rest = common if common is not None else common_tokens()
+        g1_ok, g1_why = contribution_g1(draft, ok_src, g1_why, cset, n_docs, rest[1] if len(rest) > 1 else 0)
     ledger.append("check_ledger", {**base, "gate": "G1", "pass": g1_ok, "reason": g1_why}, ledger_dir)
     if not g1_ok:
         g2_msg = "G1 실패로 대조 생략"
