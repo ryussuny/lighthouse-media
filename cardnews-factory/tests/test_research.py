@@ -834,6 +834,18 @@ class TestResearch(unittest.TestCase):
                 return Resp(self.fsc_view("본문 " * 10))
             if url == R.MOTIR_LIST:
                 return Resp(motir_list)
+            if url == R.NTS_LIST:
+                return Resp(self.nts_list(range(500, 540)))
+            if "nts.go.kr" in url:
+                return Resp(self.nts_view("본문 " * 100))
+            if url == R.BOK_LIST:
+                return Resp(self.bok_list([("보도자료", n, f"t{n}") for n in range(600, 640)]).encode("utf-8"))
+            if "bok.or.kr" in url:
+                return Resp(self.bok_view("본문 " * 100))
+            if url == R.NPS_LIST:
+                return Resp(self.nps_list([f"P{n}" for n in range(40)]))
+            if "nps.or.kr" in url:
+                return Resp(self.nps_view("본문 " * 100))
             return Resp(self.motir_view("본문 " * 10))
         f = R.PoliteFetcher(sleep=lambda x: None)
         with mock.patch("requests.get", fake_get):
@@ -842,8 +854,184 @@ class TestResearch(unittest.TestCase):
         self.assertLessEqual(f.total, R.TOTAL_MAX_PAGES)
         for host, n in f.count.items():
             self.assertLessEqual(n, R.HOST_CAPS.get(host, R.MAX_PAGES), host)
-        self.assertEqual(sorted(f.count), ["fsc.go.kr", "korea.kr", "moel.go.kr", "mohw.go.kr", "motir.go.kr"])
+        self.assertEqual(sorted(f.count), ["bok.or.kr", "fsc.go.kr", "korea.kr", "moel.go.kr", "mohw.go.kr", "motir.go.kr",
+                                          "nps.or.kr", "nts.go.kr"])
         self.assertEqual(d.summary()["requests_total"], f.total)
+
+    # --- T-04h: 국세청·한국은행·국민연금공단 + robots 표준 해석 ---
+    @staticmethod
+    def nts_list(ids):
+        return "".join(f'<tr><td><a href="javascript:;" data-id="{i}" title="국세청 제목 {i}"  class="nttInfoBtn">제목 {i}</a></td>'
+                       f'<td data-table="date">2026.11.12.</td></tr>' for i in ids).encode("utf-8")
+
+    @staticmethod
+    def nts_view(body, day="2026.11.12.", subject="기준시가 사전열람"):
+        return (f'<form><div class="bbs_ViewA"><h3> {subject}</h3><ul class="bbsV_data"><li><strong> 담당부서</strong> 과</li>'
+                f'<li><strong> 작성일자</strong> {day}</li></ul><div class="bbsV_cont"><div>{body}</div></div>'
+                '<div class="bbsV_atchmnfl">첨부파일 없음</div></div></form>').encode("utf-8")
+
+    @staticmethod
+    def bok_list(rows):
+        return "<ul>" + "".join(
+            f'<li class="bbsRowCls"><span class="i"><span class="t1">\n {kind}\n </span></span>'
+            f'<span class="dataInfo"><span class="date"><span class="sr-only">등록일</span>2026.11.13</span></span>'
+            f'<div class="set"><a href="/portal/bbs/B0000501/view.do?nttId={n}&amp;menuNo=201264" class="title">\n <!-- x -->\n {t}\n </a></div></li>'
+            for kind, n, t in rows) + "</ul>"
+
+    @staticmethod
+    def bok_view(body, day="2026.11.13", subject="물가지수"):
+        return (f'<div class="bd-view"><h2 class="subject">{subject}</h2><dl><dt class="sr-only">등록일</dt><dd class="date">{day}</dd></dl>'
+                f'<div class="dbdata"><p>{body}</p></div></div></form><div class="btnSet"></div>').encode("utf-8")
+
+    @staticmethod
+    def nps_list(ids):
+        return "".join(f'<li><p class="title"><a href="/pnsgdnc/nscvrgdata/getOHAE0002M1.do?menuId=MN24000898&pstId={i}&hmpgCd=01&sortSe=FR"> [보도자료] 연금 {i} </a></p></li>'
+                       for i in ids).encode("utf-8")
+
+    @staticmethod
+    def nps_view(body, day=" 2026/11/12 ", subject="[보도자료] 해외수급자"):
+        return (f'<div class="data-view"><table><tr><th scope="row">제목</th><td colspan="5" class="view-title">{subject}</td></tr>'
+                f'<tr><th scope="row">등록일</th><td>{day}</td></tr></table><div class="data-view-contents">'
+                f'<div class="view-contents-wrap"><p>{body}</p></div></div><ul><li>이전글</li></ul></div>').encode("utf-8")
+
+    def test_nts_list_and_view_parse(self):
+        lst = R.parse_nts_list(self.nts_list([1356055, 1355828, 1356055]))
+        self.assertEqual([u for u, _ in lst], [R.NTS_VIEW + "1356055", R.NTS_VIEW + "1355828"])  # 중복 제거·순서 유지
+        self.assertEqual(lst[0][1], "국세청 제목 1356055")
+        e = R.parse_nts_view(self.nts_view("양도소득세 안내 " * 30), lst[0][0], lst[0][1])
+        self.assertEqual((e["org"], e["published"], e["org_known"]), ("국세청", "2026-11-12", True))
+        self.assertEqual(R.SourceCache.saved_date(e["content"]), dt.date(2026, 11, 12))  # 저장본 안 '게시일:' 에서 다시 읽힘
+        self.assertNotIn("class=", R.body_text(e["content"]))
+        self.assertNotIn("첨부파일", R.body_text(e["content"]))
+        self.assertIsNone(R.parse_nts_view(self.nts_view("짧음"), "u", "t"))   # 본문 너무 짧음
+        self.assertIsNone(R.parse_nts_view(b"<html>x</html>", "u", "t"))
+
+    def test_bok_list_only_press_release_and_view(self):
+        html_ = self.bok_list([("주간보도계획", 1, "주간"), ("보도자료", 2, "수출입물가지수"), ("공개시장운영 공지", 3, "RP"),
+                               ("보도자료", 4, "금융안정 상황")])
+        lst = R.parse_bok_list(html_)
+        self.assertEqual([t for _, t in lst], ["수출입물가지수", "금융안정 상황"])
+        self.assertTrue(lst[0][0].startswith("https://www.bok.or.kr/portal/bbs/B0000501/view.do?nttId=2&menuNo=201264"))  # &amp; 해제
+        e = R.parse_bok_view(self.bok_view("물가 본문 " * 60), lst[0][0], lst[0][1])
+        self.assertEqual((e["org"], e["published"], e["title"]), ("한국은행", "2026-11-13", "물가지수"))
+        self.assertEqual(R.SourceCache.saved_date(e["content"]), dt.date(2026, 11, 13))
+        self.assertIsNone(R.parse_bok_view(self.bok_view("※ 자세한 내용은 &lt;붙임&gt; 문서를 참조하시기 바랍니다."), "u", "t"))  # 첨부뿐
+
+    def test_nps_list_and_view_parse(self):
+        lst = R.parse_nps_list(self.nps_list(["ZZ1236", "ZZ1233", "ZZ1236"]))
+        self.assertEqual([u for u, _ in lst], [R.NPS_VIEW + "ZZ1236", R.NPS_VIEW + "ZZ1233"])
+        self.assertEqual(lst[0][1], "[보도자료] 연금 ZZ1236")
+        e = R.parse_nps_view(self.nps_view("국민연금 본문 " * 40), lst[0][0], lst[0][1])
+        self.assertEqual((e["org"], e["published"]), ("국민연금공단", "2026-11-12"))   # 2026/11/12 형식
+        self.assertNotIn("이전글", R.body_text(e["content"]))
+        self.assertNotIn("class=", R.body_text(e["content"]))
+
+    def test_new_providers_refresh_cache_new_urls_only_and_negative_for_empty_body(self):
+        bok_rows = self.bok_list([("보도자료", 2, "물가"), ("보도자료", 4, "첨부뿐")])
+        bl = R.parse_bok_list(bok_rows)
+        routes = {R.NTS_LIST: self.nts_list([11, 12]), R.NTS_VIEW + "11": self.nts_view("세금 본문 " * 40, subject="세금 A"),
+                  R.NTS_VIEW + "12": self.nts_view("세금 본문 " * 40, day="2026.10.01.", subject="세금 B"),
+                  R.BOK_LIST: bok_rows.encode("utf-8"), bl[0][0]: self.bok_view("물가 본문 " * 60), bl[1][0]: self.bok_view("붙임 참조"),
+                  R.NPS_LIST: self.nps_list(["P1"]), R.NPS_VIEW + "P1": self.nps_view("연금 본문 " * 60)}
+        cache = R.SourceCache(os.path.join(self.tmp.name, "c"))
+        f = self.agency_fetcher(routes)
+        for P in (R.NtsProvider, R.BokProvider, R.NpsProvider):
+            P(f).refresh(cache, TODAY)
+        pos = [e for e in cache.entries.values() if e.get("saved_path")]
+        self.assertEqual(sorted(e["org"] for e in pos), ["국민연금공단", "국세청", "국세청", "한국은행"])
+        neg = [e for e in cache.entries.values() if e.get("skip_reason")]
+        self.assertEqual([e["url"] for e in neg], [bl[1][0]])
+        # 30일 창은 저장본 날짜 기준(2026-10-01 은 TODAY 기준 밖)
+        self.assertEqual(sorted(e["title"] for e in cache.within(TODAY) if e["org"] == "국세청"), ["세금 A"])
+        # 둘째 실행: 목록만 다시 받고 상세 재요청 없음(음성 기록 포함)
+        f.urls.clear()
+        for P in (R.NtsProvider, R.BokProvider, R.NpsProvider):
+            P(f).refresh(cache, TODAY)
+        self.assertEqual(sorted(f.urls), sorted([R.NTS_LIST, R.BOK_LIST, R.NPS_LIST]))
+
+    def test_new_providers_robots_block_skips_without_list_requests(self):
+        routes = {"https://www.nts.go.kr/robots.txt": (200, "User-agent: *\nDisallow: /nts", None),
+                  "https://www.bok.or.kr/robots.txt": (200, "User-agent: *\nDisallow: /\nAllow: /imer/", None),
+                  "https://www.nps.or.kr/robots.txt": (200, "User-agent: *\nDisallow: /pnsgdnc/", None)}
+        f, calls, slept, fake = self.fetcher_env(routes)
+        cache = R.SourceCache(os.path.join(self.tmp.name, "c"))
+        with mock.patch("requests.get", fake):
+            for P in (R.NtsProvider, R.BokProvider, R.NpsProvider):
+                P(f).refresh(cache, TODAY)
+        self.assertEqual(cache.entries, {})
+        self.assertEqual(sorted(c[0] for c in calls), sorted(routes))  # robots.txt 만 요청, 목록·상세 0
+
+    def test_robots_rfc9309_longest_match_bok_style(self):
+        r = R._RobotRules()
+        r.parse(["User-agent : *", "Disallow: /", "Allow: /portal/", "Allow: /imer/"])   # 한국은행 실제 형태
+        T = R.ROBOTS_TOKEN
+        self.assertTrue(r.can_fetch(T, "https://www.bok.or.kr/portal/singl/newsData/listCont.do?menuNo=201263"))
+        self.assertFalse(r.can_fetch(T, "https://www.bok.or.kr/kor/x.do"))
+        self.assertFalse(r.can_fetch(T, "https://www.bok.or.kr/"))
+        r.parse(["User-agent: *", "Disallow: /search/", "Disallow: /a/b.do?m=1*", "Disallow: /x$"])
+        self.assertTrue(r.can_fetch(T, "https://h/ok"))
+        self.assertFalse(r.can_fetch(T, "https://h/search/q"))
+        self.assertFalse(r.can_fetch(T, "https://h/a/b.do?m=123"))
+        self.assertTrue(r.can_fetch(T, "https://h/a/b.do?m=2"))
+        self.assertFalse(r.can_fetch(T, "https://h/x"))
+        self.assertTrue(r.can_fetch(T, "https://h/xy"))
+        r.parse(["User-agent: *", "Disallow: /", "User-agent: cardnews-factory", "Allow: /ok"])  # 우리 토큰 그룹이 * 보다 우선
+        self.assertTrue(r.can_fetch(T, "https://h/ok/1"))
+        r.parse(["User-agent: *", "Disallow:"])   # 빈 Disallow = 전부 허용
+        self.assertTrue(r.can_fetch(T, "https://h/anything"))
+        r.parse(["User-agent: *", "Allow: /a", "Disallow: /a"])  # 같은 길이면 Allow
+        self.assertTrue(r.can_fetch(T, "https://h/a"))
+
+    def test_new_collector_urls_official_and_caps(self):
+        d = C.load_json(os.path.join(C.CONFIG, "official_domains.json"))
+        for u in (R.NTS_LIST, R.NTS_VIEW + "1", R.BOK_LIST, R.NPS_LIST, R.NPS_VIEW + "x"):
+            self.assertTrue(C.is_official_url(u, d), u)
+        for h in ("nts.go.kr", "bok.or.kr", "nps.or.kr"):
+            self.assertLessEqual(R.HOST_CAPS[h], 15)
+        self.assertLessEqual(sum(R.HOST_CAPS.values()), R.TOTAL_MAX_PAGES)
+
+    # --- T-04h2: 기관 수 판정을 verify G1 과 공유 · robots 그룹 병합 ---
+    def test_h2_portal_org_not_counted_moves_to_next_keyword(self):
+        mohw = cand("https://www.mohw.go.kr/h2a", "보건복지부")
+        ktv = cand("https://www.korea.kr/h2b", "KTV")
+        nts = cand("https://www.nts.go.kr/h2c", "국세청")
+        r = self.go(lambda kw: [mohw, ktv] if kw == "생활꿀팁" else ([mohw, nts] if kw == "기초연금" else []))
+        self.assertEqual((r["status"], r["kw"]), ("ok", "기초연금"))   # 복지부+KTV 는 1기관 → 다음 후보
+        self.assertEqual(r["orgs"], ["국세청", "보건복지부"])
+        first = self.tries()[0]
+        self.assertFalse(first["adopted"])
+        self.assertIn("1곳", first["reason"])
+
+    def test_h2_research_and_verify_count_same_agencies(self):
+        from cardnews import verify
+        d = C.load_json(os.path.join(C.CONFIG, "official_domains.json"))
+        pairs = [("보건복지부", "KTV"), ("보건복지부", "KTV 국민방송"), ("보건복지부", "국민방송"), ("보건복지부", "정책브리핑"),
+                 ("보건복지부", "대한민국정책브리핑"), ("보건복지부", "정부24"), ("보건복지부", "국세청"),
+                 ("보건복지부", "한국정책방송원"), ("보건복지부", "보건복지부"), ("보건복지부", "www.korea.kr"), ("보건복지부", "")]
+        for i, (o1, o2) in enumerate(pairs):
+            self.fresh()
+            c1 = cand(f"https://www.mohw.go.kr/h2x{i}", o1)
+            c2 = cand(f"https://www.nts.go.kr/h2y{i}", o2)
+            r = self.go([c1, c2])
+            srcs = ledger.read("source_ledger", self.ld)
+            ok_g1, _, _ = verify.check_g1(srcs, d)
+            self.assertEqual(r["status"] == "ok", ok_g1, (o1, o2))   # 같은 입력 → 같은 기관 수 판정
+            if srcs:
+                self.assertEqual(len({verify.counts_as_agency(x, d) for x in srcs} - {None}),
+                                 len(r["orgs"]), (o1, o2))
+
+    def test_h2_robots_duplicate_group_merged(self):
+        r = R._RobotRules()
+        r.parse(["User-agent: *", "Disallow: /a/", "", "User-agent: *", "Disallow: /b/", "",
+                 "User-agent: cardnews-factory", "Disallow: /c/", "User-agent: cardnews-factory", "Disallow: /d/"])
+        T = R.ROBOTS_TOKEN
+        self.assertFalse(r.can_fetch(T, "https://h/c/1"))
+        self.assertFalse(r.can_fetch(T, "https://h/d/1"))   # 같은 에이전트 그룹 둘이 병합
+        self.assertTrue(r.can_fetch(T, "https://h/a/1"))    # 우리 토큰 그룹이 있으면 * 는 안 씀
+        r.parse(["User-agent: *", "Disallow: /a/", "", "User-agent: *", "Disallow: /b/"])
+        self.assertFalse(r.can_fetch(T, "https://h/a/1"))
+        self.assertFalse(r.can_fetch(T, "https://h/b/1"))   # * 그룹 둘 병합
+        self.assertTrue(r.can_fetch(T, "https://h/ok"))
 
     # --- 후속: run_id · 산업부 공유버튼 ---
     def test_run_id_in_return_ledgers_and_sources_for_run(self):
@@ -937,7 +1125,8 @@ class TestResearch(unittest.TestCase):
         cdir = os.path.join(self.tmp.name, "c")
         fake, _ = self.cache_env({"_sm": b"<urlset></urlset>"})
         kw = self._r7_setup()
-        names = ("KoreaKrProvider", "MohwRssProvider", "MoelProvider", "FscProvider", "MotirProvider")
+        names = ("KoreaKrProvider", "MohwRssProvider", "MoelProvider", "FscProvider", "MotirProvider",
+                 "NtsProvider", "BokProvider", "NpsProvider")
         patches = [mock.patch.object(getattr(R, n), "refresh", side_effect=RuntimeError(n)) for n in names]
         for pt in patches:
             pt.start()
@@ -950,7 +1139,7 @@ class TestResearch(unittest.TestCase):
         self.assertEqual(r["status"], "error")
         self.assertIn("모든 수집처 실패", r["reason"])
         hosts = [x for x in ledger.read("research_ledger", self.ld) if x.get("type") == "host_error"]
-        self.assertEqual(len(hosts), 5)
+        self.assertEqual(len(hosts), 8)
 
     def test_r7_index_published_forged_uses_saved_date(self):
         cdir = os.path.join(self.tmp.name, "c")

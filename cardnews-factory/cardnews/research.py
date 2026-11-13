@@ -53,16 +53,30 @@
       스크립트 상세라 안정적으로 파싱하지 못함(추가 후보).
     - 중소벤처기업부 mss.go.kr: robots Allow:/ 이나 목록의 상세 링크를 찾지 못함(첨부 다운로드 링크만 확인) — 추가 후보.
  C) 제외(2026-11-12 실측):
-    - 국민연금공단 nps.or.kr: RSS 없음(/rss/rss.do 404). https://www.nps.or.kr/robots.txt 가 /search/ 와
-      /pbcpgdnc/ognzprsn/getOHAG0013M0List.do?menuId=MN24001022* 를 Disallow — 보도자료 게시판 위치를 robots 허용 경로에서 확인하지 못함.
+    - (국민연금공단 nps.or.kr: T-04h 에서 추가됨 — D 참조)
     - 국민건강보험공단 nhis.or.kr: https://www.nhis.or.kr/robots.txt 가 'Disallow : /nhis/' — 보도자료 목록
       (/nhis/together/wbhaea01600m01.do)이 이 아래라 불허로 판단, 사용 안 함.
-    - 국세청 nts.go.kr: robots 는 Allow: / 이나 RSS 없음(/rss/rss.do 404), 보도자료 목록(/nts/na/ntt/selectNttList.do?mi=2201&bbsId=1028)
-      은 제목·게시일만 있고 상세(selectNttInfo.do)가 폼 POST 전용(GET 은 217바이트 오류) → 본문 원문을 못 얻어 G2 불가.
+    - (국세청 nts.go.kr: T-04h 에서 추가됨 — D 참조. 옛 판단 '상세 POST 전용' 은 인자 없이 GET 한 결과였고, 인자를 다 주면 GET 으로 읽힌다)
     - 복지로 bokjiro.go.kr: /robots.txt 요청에 HTML 응답 — 규칙 확인 불가.
     - 정책브리핑 RSS(서비스 중단 공지 https://www.korea.kr/etc/noticeView.do?newsId=132038885),
     정책브리핑 검색 totalSearch.do(GET 응답에 결과 없음·스크립트 렌더), 정부24(robots 거의 전면 Disallow),
     복지로(robots.txt 확인 불가), 공공데이터포털·법령정보센터 OpenAPI(인증키 필요).
+ 알려진 한계(T-04h2, 이번엔 고치지 않음):
+    - _RobotRules: 경로의 퍼센트 인코딩(%7E 등)을 정규화하지 않고 비교한다(규칙·URL 인코딩이 다르면 어긋날 수 있음).
+    - 음성 캐시('본문 구간을 읽지 못함'·한국은행 '붙임 문서 참조')는 영구 기록이라, 나중에 본문이 채워져도 다시 받지 않는다.
+    - _RobotRules: User-agent 부분일치(우리 토큰이 에이전트 줄에 '포함'되면 일치) — 표준의 제품 토큰 비교보다 느슨할 수 있다.
+ D) T-04h 추가(2026-11-13 실측, 목록 1회+상세 1~2건):
+    - 국세청 nts.go.kr: 목록 /nts/na/ntt/selectNttList.do?mi=2201&bbsId=1028 (HTTP 200, 10건) 의 <a class="nttInfoBtn" data-id=글번호> 가
+      자바스크립트 폼 제출이지만 상세 /nts/na/ntt/selectNttInfo.do?bbsId=1028&mi=2201&nttSn=글번호 를 GET 으로 받으면 본문 전문과 작성일자가 읽힌다(200).
+    - 한국은행 bok.or.kr: robots.txt 가 'Disallow: /' + 'Allow: /portal/' — 파이썬 robotparser(첫 규칙 우선)는 전부 불허로 읽어서 RFC 9309(가장 긴 경로
+      규칙 우선)로 읽는 _RobotRules 로 바꿨다(허용 경로 /portal/ 만 열리고 나머지는 그대로 막힘). 목록 페이지(/portal/singl/newsData/list.do?menuNo=201263)는
+      자바스크립트 뼈대라, 페이지 자체가 쓰는 /portal/singl/newsData/listCont.do 조각을 GET(분류가 '보도자료'인 행만). 상세 본문은 '붙임 문서 참조'뿐인
+      항목이 많아 본문 200자 미만이면 '본문 구간을 읽지 못함'으로 캐시에 기록(재요청 없음).
+    - 국민연금공단 nps.or.kr: robots 는 /search/ 등만 Disallow. 목록 /pnsgdnc/nscvrgdata/getOHAE0002M0List.do?menuId=MN24000898 (200, 10건),
+      상세 getOHAE0002M1.do?...&pstId=글번호 에 본문(view-contents-wrap)과 등록일(2026/11/12 형식).
+    - 금융감독원 fss.or.kr: /robots.txt 요청에 연결이 끊김(www·비www 모두 2회 ConnectionError) → 규칙 확인 불가라 차단으로 봄. 제외.
+    - 문화체육관광부 mcst.go.kr: 목록(/site/s_notice/press/pressList.jsp, robots Allow:/)·상세(pressView.jsp?pSeq=N, 게시일 있음)는 읽히지만 본문이
+      Synap 문서뷰어 iframe(/attachFiles/viewer/skin/doc.html, 내용은 자바스크립트가 서버 변환본을 불러옴)이라 서버 응답에 본문 텍스트가 없다 → G2 불가. 제외.
 준수(실행당 총 TOTAL_MAX_PAGES=200·호스트별 몫 HOST_CAPS, 근거는 상수 주석): robots.txt 를 호스트별로 읽어 허용 URL 만 요청, 요청 간 1.2초, 실행당 호스트별 MAX_PAGES(40)건 이하, 로그인·우회 없음.
 네트워크는 전부 주입 가능: run(..., fetchers={"discover": f(kw)->[{"url","org","published","content"(bytes),"title"}]}).
 """
@@ -97,12 +111,20 @@ MIN_INTERVAL = 1.2       # 요청 간 최소 간격(초)
 # 근거: 200 요청 × 1.2초 = 최대 4분(한 번 실행이 너무 길어지지 않는 선). 현재 몫 합계는 90(여유 110 = 기관을 더 붙일 자리).
 # 몫 = robots 1 + 목록/RSS 1 + 상세 N(=12) 를 기관마다 맞춘 값. korea.kr 만 사이트맵·기사 36건이라 40 을 다 쓴다.
 TOTAL_MAX_PAGES = 200
-HOST_CAPS = {"korea.kr": 40, "mohw.go.kr": 5, "moel.go.kr": 15, "fsc.go.kr": 15, "motir.go.kr": 15}
+HOST_CAPS = {"korea.kr": 40, "mohw.go.kr": 5, "moel.go.kr": 15, "fsc.go.kr": 15, "motir.go.kr": 15,
+             "nts.go.kr": 15, "bok.or.kr": 15, "nps.or.kr": 15}  # T-04h: 새 호스트 각 15 (robots 1 + 목록 1 + 상세 12 = 14)
 LIST_ITEMS = 12          # 목록형 기관(고용노동부·금융위·산업통상부)에서 실행마다 새로 받는 상세 페이지 상한
 FSC_LIST = "https://www.fsc.go.kr/no010101"
 FSC_VIEW = "https://www.fsc.go.kr/no010101/"
 MOTIR_LIST = "https://www.motir.go.kr/kor/article/ATCL3f49a5a8c"
 MOTIR_VIEW = "https://www.motir.go.kr/kor/article/ATCL3f49a5a8c/"
+NTS_LIST = "https://www.nts.go.kr/nts/na/ntt/selectNttList.do?mi=2201&bbsId=1028"
+NTS_VIEW = "https://www.nts.go.kr/nts/na/ntt/selectNttInfo.do?bbsId=1028&mi=2201&nttSn="
+BOK_LIST = "https://www.bok.or.kr/portal/singl/newsData/listCont.do?menuNo=201263&pageIndex=1&syncMenuChekKey=1"
+BOK_BASE = "https://www.bok.or.kr"
+NPS_LIST = "https://www.nps.or.kr/pnsgdnc/nscvrgdata/getOHAE0002M0List.do?menuId=MN24000898"
+NPS_VIEW = "https://www.nps.or.kr/pnsgdnc/nscvrgdata/getOHAE0002M1.do?menuId=MN24000898&hmpgCd=01&hmpgBbsCd=BS20240145&pstId="
+MIN_BODY_CHARS = 200     # 본문이 이보다 짧으면(예: 한국은행 '붙임 문서를 참조') 읽을 본문 없음으로 보고 캐시에 '본문 구간을 읽지 못함' 기록
 SITEMAPS = ["https://www.korea.kr/sitemap_policy.xml", "https://www.korea.kr/sitemap_briefing.xml"]
 MOHW_RSS = "https://www.mohw.go.kr/rss/board.es?mid=a10503000000&bid=0027"
 MOEL_LIST = "https://www.moel.go.kr/news/enews/report/enewsList.do"
@@ -195,6 +217,13 @@ def same_release(a, b, title_ratio=0.8, body_jaccard=0.6):
         return True
     sa, sb = _shingles(body_text(a["content"])), _shingles(body_text(b["content"]))
     return bool(sa and sb) and len(sa & sb) / len(sa | sb) >= body_jaccard
+
+
+def counts_as_agency(c, domains=None):
+    """기관 수에 들어가는 후보인가 — verify G1 과 같은 판정(verify.counts_as_agency)을 그대로 호출. 기관명 또는 None."""
+    from . import verify  # verify 가 research 를 import 하므로 호출 시점에 가져온다(순환 방지)
+    return verify.counts_as_agency({"url": c.get("url", ""), "org": c.get("org") or org_of(c.get("url", "")),
+                                    "org_known": org_is_known(c)}, domains)
 
 
 def org_is_known(c):
@@ -295,6 +324,68 @@ def candidate_keywords(account_id, today, ledger_dir=None, max_tries=MAX_TRIES):
 
 
 # ---------- 기본 네트워크 ----------
+class _RobotRules:
+    """robots.txt 해석 — RFC 9309: 우리 토큰과 가장 구체적으로 맞는 그룹(없으면 *)에서 '가장 긴 경로 규칙'이 이기고(같으면 Allow),
+    * 와 $ 를 지원한다. 파이썬 urllib.robotparser 는 위에서부터 첫 규칙을 쓰므로 'Disallow: / 다음 Allow: /portal/'(한국은행)을
+    전부 불허로 읽는다 — 표준대로 읽어 명시 허용 경로만 열고, 그 밖은 계속 막는다."""
+
+    def __init__(self):
+        self.groups = []  # [(agents[lower], [(allow, pattern)])]
+
+    def parse(self, lines):
+        agents, rules, in_rules = [], [], False
+        self.groups = []
+        for raw in lines:
+            line = raw.split("#", 1)[0].strip()
+            if ":" not in line:
+                continue
+            k, v = (x.strip() for x in line.split(":", 1))
+            k = k.lower()
+            if k == "user-agent":
+                if in_rules:
+                    self.groups.append((agents, rules))
+                    agents, rules, in_rules = [], [], False
+                agents.append(v.lower())
+            elif k in ("allow", "disallow"):
+                in_rules = True
+                if v:  # 빈 Disallow = 전부 허용(규칙 없음)
+                    rules.append((k == "allow", v))
+        if agents:
+            self.groups.append((agents, rules))
+
+    @staticmethod
+    def _match_len(pattern, path):
+        """pattern 이 path 앞부분과 맞으면 pattern 길이, 아니면 -1."""
+        rx = re.escape(pattern).replace(r"\*", ".*")
+        if rx.endswith(r"\$"):
+            rx = rx[:-2] + "$"
+        return len(pattern) if re.match(rx, path) else -1
+
+    def can_fetch(self, token, url):
+        p = urlparse(url)
+        path = (p.path or "/") + (("?" + p.query) if p.query else "")
+        tok = token.lower()
+        best_len, best, star = -1, None, None
+        for agents, rules in self.groups:   # 같은 User-agent 그룹이 여러 번 나오면 규칙을 병합(RFC 9309 2.2.1)
+            for a in agents:
+                if a == "*":
+                    star = (star or []) + rules
+                elif a and a in tok:
+                    if len(a) > best_len:
+                        best_len, best = len(a), list(rules)
+                    elif len(a) == best_len:
+                        best = best + rules
+        rules = best if best is not None else star
+        if rules is None:
+            return True
+        win = None  # (길이, allow)
+        for allow, pat in rules:
+            n = self._match_len(pat, path)
+            if n >= 0 and (win is None or n > win[0] or (n == win[0] and allow)):
+                win = (n, allow)
+        return True if win is None else win[1]
+
+
 class PoliteFetcher:
     """robots.txt 준수 + 요청 간격 + 호스트당 상한. requests 는 여기서만 import.
     robots.txt 요청도 같은 간격·호스트 카운터에 들어간다. 리다이렉트는 직접 따라가며 매 홉마다
@@ -329,7 +420,7 @@ class PoliteFetcher:
         p = urlparse(url)
         base = f"{p.scheme}://{p.netloc}"
         if base not in self.robots:
-            rp = urllib.robotparser.RobotFileParser()
+            rp = _RobotRules()
             try:
                 self._tick(base + "/robots.txt")
                 r = requests.get(base + "/robots.txt", headers={"User-Agent": UA}, timeout=15, allow_redirects=False)
@@ -525,7 +616,6 @@ class SourceCache:
         pos = [e for e in self.entries.values() if e.get("saved_path") and not e.get("skip_reason")]
         return {"entries": len(pos), "in_window": len(self.within(today)), **self.stats,
                 "tampered": len(self.tampered_urls)}
-
 
 class AllHostsFailed(RuntimeError):
     """모든 수집처(호스트)가 비-HTTP 예외로 실패 — run 이 status=error 로 기록한다."""
@@ -801,6 +891,121 @@ def parse_motir_view(raw, url, title=""):
             "content": doc.encode("utf-8"), "title": title, "date_note": None if d else "게시일 읽지 못함"}
 
 
+def _detail_doc(title, url, date_iso, seg):
+    """저장본 공통 틀 — 게시일을 '<p>게시일: …</p>' 로 박아 캐시가 저장본에서 날짜를 다시 읽게 한다."""
+    return (f"<html><head><title>{html.escape(title)}</title></head><body><p>링크: {html.escape(url)}</p>"
+            + (f"<p>게시일: {date_iso}</p>" if date_iso else "") + f'<div class="b_content">{seg}</div></body></html>')
+
+
+def _iso(s):
+    d = parse_date(s)
+    return d.isoformat() if d else None
+
+
+def _clean_seg(seg):
+    seg = seg[seg.find(">") + 1:] if seg.lstrip()[:1] != "<" and ">" in seg[:200] else seg  # 표지 태그 중간(class="…">)부터 잘린 머리 조각 제거
+    return strip_chrome(re.sub(r"(?is)<(script|style|link)\b[^>]*>(?:.*?</\1>)?", " ", seg))
+
+
+def _plain(frag):
+    return html.unescape(re.sub(r"\s+", " ", re.sub(r"<!--.*?-->|<[^>]+>", " ", frag, flags=re.S))).strip()
+
+
+def _decode(raw):
+    return raw.decode("utf-8", "replace") if isinstance(raw, (bytes, bytearray)) else raw
+
+
+def parse_nts_list(raw):
+    """국세청 보도자료 목록 → [(상세 URL, 제목)] 최신순. 항목은 <a class="nttInfoBtn" data-id=글번호 title=제목>(자바스크립트 폼 제출).
+    상세는 같은 값으로 GET selectNttInfo.do?bbsId=1028&mi=2201&nttSn=글번호 가 읽힌다(2026-11-13 실측)."""
+    s_ = _decode(raw)
+    out, seen = [], set()
+    for m in re.finditer(r'<a[^>]*\bdata-id="(\d+)"[^>]*\btitle="([^"]*)"[^>]*class="nttInfoBtn"', s_):
+        if m.group(1) not in seen:
+            seen.add(m.group(1))
+            out.append((NTS_VIEW + m.group(1), html.unescape(m.group(2)).strip()))
+    return out
+
+
+def parse_nts_view(raw, url, title=""):
+    s_ = _decode(raw)
+    i = s_.find('class="bbsV_cont"')
+    if i < 0:
+        return None
+    j = s_.find("bbsV_atchmnfl", i)
+    seg = _clean_seg(s_[i:(j if j > i else i + 60000)])
+    if len(html_to_text(seg).strip()) < MIN_BODY_CHARS:
+        return None
+    d = re.search(r"작성일자\s*</strong>\s*(\d{4}[-./]\d{1,2}[-./]\d{1,2})", s_)
+    t = re.search(r'<div class="bbs_ViewA">\s*<h3>(.*?)</h3>', s_, re.S)
+    title = _plain(t.group(1)) if t else title
+    iso = _iso(d.group(1)) if d else None
+    return {"url": url, "org": "국세청", "org_known": True, "published": iso,
+            "content": _detail_doc(title, url, iso, seg).encode("utf-8"), "title": title,
+            "date_note": None if iso else "게시일 읽지 못함"}
+
+
+def parse_bok_list(raw):
+    """한국은행 뉴스/자료 목록 조각(listCont.do) → [(상세 URL, 제목)]. 분류가 '보도자료' 인 것만(주간보도계획·공개시장운영 공지 등 제외)."""
+    s_ = _decode(raw)
+    out = []
+    for m in re.finditer(r'<li class="bbsRowCls">(.*?)</li>', s_, re.S):
+        blk = m.group(1)
+        kind = re.search(r'<span class="t1">\s*(.*?)\s*</span>', blk, re.S)
+        a = re.search(r'<a href="([^"]+/view\.do\?[^"]*nttId=\d+[^"]*)"[^>]*class="title"[^>]*>(.*?)</a>', blk, re.S)
+        if not (kind and a and kind.group(1).strip() == "보도자료"):
+            continue
+        out.append((urljoin(BOK_BASE, html.unescape(a.group(1))), _plain(a.group(2))))
+    return out
+
+
+def parse_bok_view(raw, url, title=""):
+    s_ = _decode(raw)
+    i = s_.find('class="dbdata"')
+    if i < 0:
+        return None
+    j = s_.find("</form>", i)
+    seg = _clean_seg(s_[i:(j if j > i else i + 40000)])
+    if len(html_to_text(seg).strip()) < MIN_BODY_CHARS:  # '붙임 문서를 참조' 처럼 본문이 첨부파일뿐
+        return None
+    d = re.search(r'<dd class="date">\s*(\d{4}[-./]\d{1,2}[-./]\d{1,2})', s_)
+    t = re.search(r'<h2 class="subject">(.*?)</h2>', s_, re.S)
+    title = _plain(t.group(1)) if t else title
+    iso = _iso(d.group(1)) if d else None
+    return {"url": url, "org": "한국은행", "org_known": True, "published": iso,
+            "content": _detail_doc(title, url, iso, seg).encode("utf-8"), "title": title,
+            "date_note": None if iso else "게시일 읽지 못함"}
+
+
+def parse_nps_list(raw):
+    """국민연금공단 보도자료 목록 → [(상세 URL, 제목)] 최신순. 링크 href 의 pstId 로 상세 GET."""
+    s_ = _decode(raw)
+    out, seen = [], set()
+    for m in re.finditer(r'<a href="[^"]*getOHAE0002M1\.do\?[^"]*pstId=([A-Za-z0-9]+)[^"]*">(.*?)</a>', s_, re.S):
+        if m.group(1) not in seen:
+            seen.add(m.group(1))
+            out.append((NPS_VIEW + m.group(1), _plain(m.group(2))))
+    return out
+
+
+def parse_nps_view(raw, url, title=""):
+    s_ = _decode(raw)
+    i = s_.find('class="view-contents-wrap"')
+    if i < 0:
+        return None
+    j = min([k for k in (s_.find(mk, i) for mk in ("이전글", "다음글", "bottom-btns")) if k > i] or [i + 60000])
+    seg = _clean_seg(s_[i:j])
+    if len(html_to_text(seg).strip()) < MIN_BODY_CHARS:
+        return None
+    d = re.search(r"<th[^>]*>\s*등록일\s*</th>\s*<td[^>]*>\s*(\d{4}[-./]\d{1,2}[-./]\d{1,2})", s_)
+    t = re.search(r'<td[^>]*class="view-title"[^>]*>(.*?)</td>', s_, re.S)
+    title = _plain(t.group(1)) if t else title
+    iso = _iso(d.group(1)) if d else None
+    return {"url": url, "org": "국민연금공단", "org_known": True, "published": iso,
+            "content": _detail_doc(title, url, iso, seg).encode("utf-8"), "title": title,
+            "date_note": None if iso else "게시일 읽지 못함"}
+
+
 class ListViewProvider:
     """목록 페이지 + 상세 페이지 형태의 기관. refresh: 목록 1회 + 캐시에 없는 새 상세 최대 n건. 없으면 __call__ 로 최신 n건 메모리 매칭."""
     LIST_URL = None
@@ -878,13 +1083,43 @@ class MotirProvider(ListViewProvider):
         return parse_motir_view(raw, url, title)
 
 
+class NtsProvider(ListViewProvider):
+    """국세청 보도자료(목록 selectNttList.do?mi=2201&bbsId=1028 → 상세 selectNttInfo.do GET). robots.txt Allow:/ . 기관=국세청."""
+    LIST_URL = NTS_LIST
+    parse_list = staticmethod(parse_nts_list)
+
+    def parse_view(self, raw, url, title):
+        return parse_nts_view(raw, url, title)
+
+
+class BokProvider(ListViewProvider):
+    """한국은행 보도자료(뉴스/자료 목록 조각 listCont.do → 상세 view.do). robots.txt 는 Disallow:/ 에 /portal/ 만 Allow(RFC 9309 해석).
+    본문이 '붙임 문서 참조'뿐인 항목은 '본문 구간을 읽지 못함'으로 캐시에 기록(다시 요청하지 않음). 기관=한국은행."""
+    LIST_URL = BOK_LIST
+    parse_list = staticmethod(parse_bok_list)
+
+    def parse_view(self, raw, url, title):
+        return parse_bok_view(raw, url, title)
+
+
+class NpsProvider(ListViewProvider):
+    """국민연금공단 보도자료(목록 getOHAE0002M0List.do → 상세 getOHAE0002M1.do?pstId=). robots 는 /search/ 등 일부만 Disallow. 기관=국민연금공단."""
+    LIST_URL = NPS_LIST
+    parse_list = staticmethod(parse_nps_list)
+
+    def parse_view(self, raw, url, title):
+        return parse_nps_view(raw, url, title)
+
+
+
 def default_discover(fetcher=None, cache=None, today=None, cache_dir=None):
     """기본 출처 탐색. 첫 호출 때 각 provider 가 '아직 안 받은 새 URL 만' 받아 캐시에 쌓고(요청 상한은 그대로),
     키워드 매칭은 캐시 전체 중 게시 30일 이내 기사에서 한다. discover.summary() 로 캐시 상태를 본다."""
     f = fetcher or PoliteFetcher()
     cache = cache or SourceCache(cache_dir)
     day = today or dt.date.today()
-    providers = [KoreaKrProvider(f), MohwRssProvider(f), MoelProvider(f), FscProvider(f), MotirProvider(f)]
+    providers = [KoreaKrProvider(f), MohwRssProvider(f), MoelProvider(f), FscProvider(f), MotirProvider(f),
+                 NtsProvider(f), BokProvider(f), NpsProvider(f)]
     state = {"refreshed": False}
     host_errors = {}
 
@@ -953,7 +1188,7 @@ def group_releases(keep):
             groups.append([c])
     reps = []
     for g in groups:
-        rep = min(g, key=lambda x: (not org_is_known(x), x["published_date"]))
+        rep = min(g, key=lambda x: (not counts_as_agency(x), x["published_date"]))
         for c in g:
             c["dup_of"] = None if c is rep else rep["url"]
         reps.append(rep)
@@ -1006,8 +1241,8 @@ def run(acc, today=None, fetchers=None, ledger_dir=None, sources_dir=None, notif
         _log_host_errors(discover, base, ledger_dir, logged)
         keep, drop = screen(cands, today, domains)
         reps = group_releases(keep)
-        orgs = {_norm(c.get("org") or org_of(c["url"])) for c in reps if org_is_known(c)}
-        n_unknown = sum(1 for c in keep if not org_is_known(c))
+        orgs = {counts_as_agency(c, domains) for c in reps} - {None}   # G1(verify)와 같은 판정 함수
+        n_unknown = sum(1 for c in keep if not counts_as_agency(c, domains))
         n_dup = sum(1 for c in keep if c.get("dup_of"))
         ok = len(orgs) >= min_sources
         unk = (f", 기관 미상 {n_unknown}건 제외" if n_unknown else "") + (f", 같은 보도자료 재게시 {n_dup}건 합산" if n_dup else "")

@@ -97,6 +97,15 @@ def _org_counts(s):
     return org
 
 
+def counts_as_agency(s, domains=None):
+    """이 출처가 G1 '서로 다른 확인된 기관' 수에 들어가면 기관명, 아니면 None. 공식 도메인 안 + org_known + 호스트명 아님 + 포털·방송(PORTAL_ORGS) 아님.
+    check_g1 과 research(기관 수 세기)가 이 판정 하나를 같이 쓴다(T-04h2 — 중복 구현 금지)."""
+    domains = domains or C.load_json(os.path.join(C.CONFIG, "official_domains.json"))
+    if not C.is_official_url(s.get("url", ""), domains):
+        return None
+    return _org_counts(s)
+
+
 def check_g1(sources, domains):
     bad, orgs, ok_src, unknown = [], set(), [], 0
     for s in sources:
