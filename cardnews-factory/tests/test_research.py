@@ -35,6 +35,11 @@ A = cand("https://www.korea.kr/news/a", "보건복지부")
 B = cand("https://www.mohw.go.kr/b", "국민연금공단")
 
 
+def ab(kw, a_org="보건복지부", b_org="국민연금공단"):
+    """kw 가 본문 첫 단락에 실제로 나오는 두 기관 문서(T-PAIR1: kw 가 제목·첫 단락에 나오는 기관 2곳 이상이어야 채택)."""
+    return [cand("https://www.korea.kr/news/a", a_org, txt=f"{kw} 안내"), cand("https://www.mohw.go.kr/b", b_org, txt=f"{kw} 안내")]
+
+
 def kr_article(body, org="보건복지부", pub="2026-11-11T18:27:00+09:00", sidebar="", prev_next=""):
     """정책브리핑 기사 모양 — 사이드바(본문 밖)·view_title~view_opt 본문·이전/다음 기사 목록."""
     return (f'<html><head><title>{_uniq(body + org, 10)}</title></head><body><div class="side">{sidebar}</div>'
@@ -80,6 +85,7 @@ class TestResearch(unittest.TestCase):
 
     # --- G1 기본 ---
     def test_two_orgs_ok_sha(self):
+        A, B = ab("생활꿀팁")
         r = self.go([A, B])
         self.assertEqual(r["status"], "ok")
         self.assertEqual(r["kw"], "생활꿀팁")
@@ -216,7 +222,7 @@ class TestResearch(unittest.TestCase):
 
         def disc(kw):
             tried.append(kw)
-            return [A, B] if kw == "에너지바우처" else []
+            return ab(kw) if kw == "에너지바우처" else []
         r = self.go(disc)
         self.assertEqual((r["status"], r["kw"]), ("ok", "에너지바우처"))
         self.assertEqual(tried, self.top + ["에너지바우처"])  # 7번째 후보는 시도하지 않음
@@ -251,7 +257,7 @@ class TestResearch(unittest.TestCase):
     def test_evidence_none_marked(self):
         self.fresh()
         self.seed_trend(top=["지표있음"], extra=["근거없는시드"], no_evidence=["근거없는시드"])
-        r = self.go(lambda kw: [A, B] if kw == "근거없는시드" else [])
+        r = self.go(lambda kw: ab(kw) if kw == "근거없는시드" else [])
         self.assertEqual((r["status"], r["kw"], r["evidence"]), ("ok", "근거없는시드", "none"))
         self.assertIn("evidence=none(지표 근거 없음, 공식 출처만 있음)", r["reason"])
         self.assertEqual([x["evidence"] for x in self.tries()], ["indicator", "none"])

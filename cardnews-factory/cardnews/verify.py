@@ -252,6 +252,15 @@ def _short_numeric(tok):
     return len(num.replace(",", "")) <= 2 and "." not in num
 
 
+def is_distinctive_number(tok, common=frozenset(), allow_short=False):
+    """기여·묶음 판정이 함께 쓰는 '구별 숫자' 한 곳: 단위 있는 숫자만(단위 없는 숫자는 길이와 무관하게 제외 — 기사 ID·페이지 번호일 수 있다),
+    날짜성·흔한 토큰(common) 제외, allow_short=False 면 짧은 숫자(두 자리 이하·소수점 없음)도 제외."""
+    _num, unit = _split_num_unit(tok)
+    if not unit or is_date_token(tok) or tok in common:
+        return False
+    return allow_short or not _short_numeric(tok)
+
+
 def common_tokens(index_path=None):
     """source_cache 인덱스 전체 저장본의 숫자 토큰 문서 빈도 → (흔한 토큰 집합, 읽은 저장본 수, 상한, saved_path 있는 고유 저장본 수, 읽지 못한 수).
     상한 초과 토큰이 '흔한' 것.
@@ -301,21 +310,16 @@ def common_tokens(index_path=None):
 
 
 def contribution_tokens(draft, common=frozenset(), n_docs=10 ** 6):
-    """기여 판정에 쓰는 초안 숫자 토큰: 카드 본문(cards[].body)에서만, 날짜성 제외, 흔한 토큰(common) 제외,
-    저장본이 적으면(n_docs < DF_SMALL_CACHE) 짧은 숫자도 제외. 단위 없는 짧은 숫자는 원래 G2 대조 대상이 아니라 제외."""
+    """기여 판정에 쓰는 초안 숫자 토큰: 카드 본문(cards[].body)에서만, is_distinctive_number 통과분(단위 있는 숫자만, 날짜성·흔한 토큰 제외),
+    저장본이 적으면(n_docs < DF_SMALL_CACHE) 짧은 숫자도 제외."""
     out = set()
     for card in draft.get("cards", []) or []:
         body = card.get("body") if isinstance(card, dict) else None
         if not isinstance(body, str):
             continue
-        for _m, tok, num, unit in _num_items(body):
-            if not unit and len(num.replace(",", "")) <= 2:
-                continue
-            if is_date_token(tok) or tok in common:
-                continue
-            if n_docs < DF_SMALL_CACHE and _short_numeric(tok):
-                continue
-            out.add(tok)
+        for _m, tok, _num, _unit in _num_items(body):
+            if is_distinctive_number(tok, common, allow_short=n_docs >= DF_SMALL_CACHE):
+                out.add(tok)
     return out
 
 

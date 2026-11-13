@@ -273,6 +273,22 @@ class TestVerify(unittest.TestCase):
         r = self.run_c(self.dr("대상 약 136만 명"), self.two_org(other))
         self.assertTrue(r["G1"][0], r["G1"])
 
+    def test_unitless_long_number_does_not_buy_an_org(self):
+        # 복지부 단위 숫자 1개 + 타 기관은 무단위 긴 번호(기사 ID 꼴)만 — 번호를 본문에 넣어도 그 기관은 기여가 아니다
+        other = "<html><body>행정안전부 게시물 번호 148975407, 조회 148975407.</body></html>"
+        r = self.run_c(self.dr("대상 약 136만 명, 번호 148975407"), self.two_org(other))
+        self.assertFalse(r["G1"][0])
+        self.assertIn("선언했지만 내용에 쓰이지 않은 기관: 행정안전부", r["G1"][1])
+        self.assertEqual(V.contribution_tokens(self.dr("대상 약 136만 명, 번호 148975407")), {"136만명"})
+
+    def test_is_distinctive_number_is_the_shared_rule(self):
+        self.assertTrue(V.is_distinctive_number("136만명"))
+        self.assertFalse(V.is_distinctive_number("148975407"))               # 단위 없음
+        self.assertFalse(V.is_distinctive_number("2026년"))                  # 날짜성
+        self.assertFalse(V.is_distinctive_number("136만명", {"136만명"}))      # 흔한 토큰
+        self.assertFalse(V.is_distinctive_number("7명"))                     # 짧은 숫자
+        self.assertTrue(V.is_distinctive_number("7명", allow_short=True))
+
     def test_contribution_not_required_by_default(self):
         r = V.run(self.dr("대상 약 136만 명"), self.two_org(self.COMMON_OTHER), ledger_dir=self.d, domains=DOMAINS)
         self.assertTrue(r["G1"][0])

@@ -281,6 +281,42 @@ def run(acc, banned, fetchers=None, today=None, ledger_dir=None, exclude_kws=(),
     return ledger.append("trend_ledger", {**base, "status": status, "candidates": cands, "scores": scores, "top5": top5}, ledger_dir)
 
 
+def indicator_evidence(kw, today, raw_dir=None, ig_loader=None, whole_word=False):
+    """트렌드 순위에 없던 키워드(research 의 '두 기관 묶음')에 같은 지표 판정을 적용한다. score_candidates 와 같은 정의:
+    유튜브 인기 영상 제목에 키워드가 들어 있음 / 구글 트렌드 항목 제목이 키워드와 같고 트래픽>0 / IG 해시태그 실측에 키워드가 있음.
+    그날 받아 둔 원본(data/raw/<날짜>/)만 읽는다(새 호출 없음). 하나도 없으면 False. 반환 (evidence, parts).
+    whole_word=True(pair 경로): 유튜브 제목에서 kw 가 완전한 단어(앞뒤가 한글·영숫자가 아님)일 때만 친다 — 부분 일치·조사 붙은 꼴은 제외."""
+    day = today.isoformat()
+    d = os.path.join(raw_dir or RAW_DIR, day)
+    nk = _norm(kw)
+    yt_n, gt_traffic = 0, 0
+    for p in sorted(glob.glob(os.path.join(d, "*_yt_mostPopular_KR_cat*.json"))):
+        try:
+            with open(p, encoding="utf-8") as f:
+                j = json.load(f)
+            if whole_word:
+                pat = re.compile(r"(?<![0-9a-z가-힣])" + re.escape((kw or "").lower().strip()) + r"(?![0-9a-z가-힣])")
+                yt_n += sum(1 for v in parse_youtube(j, "") if nk and pat.search(v["title"].lower()))
+            else:
+                yt_n += sum(1 for v in parse_youtube(j, "") if nk and nk in _norm(v["title"]))
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+    for p in sorted(glob.glob(os.path.join(d, "*_gtrends_trending_rss.xml"))):
+        try:
+            with open(p, "rb") as f:
+                items = parse_google_trends(f.read())
+        except (OSError, ET.ParseError):
+            continue
+        gt_traffic = max([gt_traffic] + [it["traffic"] for it in items if nk and _norm(it["kw"]) == nk])
+    try:
+        likes, _p = (ig_loader or load_ig_hashtags)(today)
+    except Exception:  # noqa: BLE001 — 지표 읽기 실패는 근거 없음으로
+        likes = {}
+    ig = likes.get(kw)
+    parts = {"yt_matches": yt_n, "gt_traffic": gt_traffic, "ig_like_median": ig}
+    return bool(yt_n or gt_traffic or ig is not None), parts
+
+
 if __name__ == "__main__":
     import sys
     sys.path.insert(0, ROOT)

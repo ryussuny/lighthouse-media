@@ -1140,6 +1140,17 @@ def default_discover(fetcher=None, cache=None, today=None, cache_dir=None):
             raise AllHostsFailed("모든 수집처 실패: " + "; ".join(f"{k}={v}" for k, v in host_errors.items()))
         return cache.match(kw, day)
 
+    def pairs(today_=None):
+        """캐시 안 최근 발표 기관 문서 → 두 기관 같은 사안 묶음(find_pairs)."""
+        t = today_ or day
+        docs = []
+        for e in cache.within(t):
+            raw = cache.read(e)
+            if raw is not None:
+                docs.append({"url": e["url"], "org": e.get("org"), "org_known": bool(e.get("org_known")),
+                             "published": e.get("published"), "title": e.get("title", ""), "content": raw})
+        return find_pairs(docs, t)
+
     def summary():
         out = cache.summary(day)
         out["host_errors"] = dict(host_errors)
@@ -1147,6 +1158,7 @@ def default_discover(fetcher=None, cache=None, today=None, cache_dir=None):
         out["requests_total"] = getattr(f, "total", None)
         return out
     discover.summary = summary
+    discover.pairs = pairs
     discover.cache = cache
     discover.host_errors = host_errors
     return discover
@@ -1201,8 +1213,10 @@ def group_releases(keep):
 
 
 def run(acc, today=None, fetchers=None, ledger_dir=None, sources_dir=None, notify=None, min_sources=MIN_SOURCES,
-        gate=True, stop_file=None, cache_dir=None, run_id=None):
+        gate=True, stop_file=None, cache_dir=None, run_id=None, topic=None, rehearsal=False):
     """gate=True(기본): STOP 파일·paused 면 아무것도 하지 않고 {'status':'gated'} 를 돌려준다(원장 기록 없음). T-09 도 단계마다 재확인."""
+    if topic is not None and not rehearsal:
+        raise ValueError("--topic 은 --rehearsal 과 같이만 쓸 수 있다")
     if gate:
         ok_gate, why_gate = C.run_gate(acc, stop_file) if stop_file else C.run_gate(acc)
         if not ok_gate:
@@ -1225,9 +1239,22 @@ def run(acc, today=None, fetchers=None, ledger_dir=None, sources_dir=None, notif
             notify("warn", f"[{acc['account_id']}] 공식 출처 부족 — 카드뉴스 보류", reason)
         return rec
 
-    cands_kw, why = candidate_keywords(acc["account_id"], today, ledger_dir)
-    if not cands_kw:
+    if topic is not None:   # 리허설 전용 지정(run.py 가 --rehearsal 과 같이만 허용): 트렌드 순위 대신 두 기관 묶음 중 일치하는 것
+        cands_kw, why = [], "topic 지정"
+    else:
+        cands_kw, why = candidate_keywords(acc["account_id"], today, ledger_dir)
+    pair_kw, pair_notes = pair_candidates(acc, today, discover, domains, topic=topic, evidence_fn=(fetchers or {}).get("evidence"))
+    for note in pair_notes:   # 범위 밖·금칙으로 걸러진 묶음도 흔적을 남긴다
+        ledger.append("research_ledger", {**base, "type": "try", "src": "pair", "kw": note["kw"], "adopted": False,
+                                          "reason": note["reason"]}, ledger_dir)
+    if topic is not None and not pair_kw:
+        avail = ", ".join(n["kw"] for n in pair_notes) or "(없음)"
+        return final("hold", f"--topic {topic!r} 와 일치하는 두 기관 묶음이 없음(범위·금칙 통과 0건; 걸러진 묶음: {avail})", None)
+    if not cands_kw and not pair_kw:
         return final("hold", why, None)
+    from . import trends
+    seen_kw = {trends._norm(c["kw"]) for c in cands_kw}   # 트렌드 후보와 같은 키워드(_norm 기준)인 묶음은 중복 시도 안 함
+    cands_kw = cands_kw + [c for c in pair_kw if not (trends._norm(c["kw"]) in seen_kw or seen_kw.add(trends._norm(c["kw"])))]   # 트렌드 후보 먼저, 모두 안 되면 두 기관 묶음
 
     tried, logged = [], set()
     for rank, ck in enumerate(cands_kw, 1):
@@ -1250,9 +1277,17 @@ def run(acc, today=None, fetchers=None, ledger_dir=None, sources_dir=None, notif
         n_unknown = sum(1 for c in keep if not counts_as_agency(c, domains))
         n_dup = sum(1 for c in keep if c.get("dup_of"))
         ok = len(orgs) >= min_sources
+        # 더 엄격한 채택 기준(T-PAIR1): kw 가 제목 또는 본문 첫 단락에 실제로 나오는 기관이 min_sources 곳 이상이어야 한다.
+        # (본문에서 스친 무관한 문서로 기관 수를 채워 놓고 정작 그 주제를 다루는 기관은 1곳뿐인 채택을 막는다)
+        kw_orgs = {counts_as_agency(c, domains) for c in reps if kw_in_title_or_head(kw, c)} - {None}
+        topical_fail = ok and len(kw_orgs) < min_sources
         unk = (f", 기관 미상 {n_unknown}건 제외" if n_unknown else "") + (f", 같은 보도자료 재게시 {n_dup}건 합산" if n_dup else "")
         reason = (f"확인된 서로 다른 기관 {len(orgs)}곳 채움{unk}" if ok
                   else f"확인된 서로 다른 기관 {len(orgs)}곳 (최소 {min_sources}곳 필요){unk}")
+        if topical_fail:
+            ok = False
+            reason = (f"kw 가 제목·본문 첫 단락에 나오는 기관 {len(kw_orgs)}곳({', '.join(sorted(kw_orgs)) or '없음'}) — "
+                      f"최소 {min_sources}곳 필요(기관 {len(orgs)}곳 중 나머지는 본문 스침) — 채택 안 함{unk}")
         ledger.append("research_ledger", {
             **base, "type": "try", **meta, "kw": kw, "adopted": ok, "reason": reason,
             "candidates": len(cands), "kept": [c["url"] for c in keep], "dropped": drop}, ledger_dir)
@@ -1276,6 +1311,8 @@ def run(acc, today=None, fetchers=None, ledger_dir=None, sources_dir=None, notif
                 "saved_path": path, "kw": kw, "org_known": org_is_known(c), "dup_of": c.get("dup_of"),
                 "run_id": run_id}, ledger_dir))
         note = "" if ck["evidence"] else "; evidence=none(지표 근거 없음, 공식 출처만 있음)"
+        if ck["src"] == "pair":
+            note += f"; 두 기관 같은 사안 묶음({', '.join(ck.get('orgs', []))})"
         return final("ok", f"{reason}; 채택 키워드 {kw!r}(시도 {rank}번째, {ck['src']}), 저장 {len(saved)}건{note}",
                      kw, saved, tried, evidence=meta["evidence"])
     return final("hold", f"시도 {len(cands_kw)}개 키워드 모두 공식 출처(확인된 기관) {min_sources}곳을 못 채움: {', '.join(tried)}",
@@ -1301,6 +1338,171 @@ def sources_for_run(rrec, ledger_dir=None):
             seen.add(key)
             out.append(r)
     return out
+
+
+# ---------- 두 기관 같은 사안 묶음 (T-PAIR1) ----------
+PAIR_WINDOW_DAYS = 7      # 최근 발표분만
+PAIR_GAP_DAYS = 3         # 묶음 안 발표일 차이
+PAIR_MAX_TRIES = 5
+PAIR_STEM_MIN = 3         # 제목 핵심어가 1개만 겹칠 때 그 길이 하한(2개 이상 겹치면 길이 무관)
+TITLE_DF_MIN = 8          # 제목 핵심어 문서 빈도 상한 = max(8, 3%) — 넘으면 '정부·지원' 같은 흔한 말
+TITLE_DF_RATIO = 0.03
+TITLE_STOP = {"정부", "발표", "개최", "추진", "지원", "확대", "실시", "시행", "개정", "안내", "공고", "모집", "선정", "운영", "강화",
+              "마련", "최초", "국내", "신규", "정책", "사업", "관련", "대응", "개선", "점검", "협의", "협력", "간담회", "브리핑",
+              "보도자료", "설명", "공개", "현황", "결과", "전망", "올해", "내년", "오늘", "이번", "전국", "지역", "국민", "기관",
+              "인정", "지정", "출범", "체결", "협약", "참석", "방문", "논의", "발간", "공동", "합동", "전환", "도입", "성장", "역량", "집중", "모두", "함께", "먼저", "찾아", "가동", "총력", "위한", "통한", "이후", "선제"}
+_TITLE_TAIL = {"은", "는", "이", "가", "을", "를", "의", "에", "도", "로", "와", "과", "에서", "으로", "까지", "부터", "에는", "에도", "만", "이나"}
+
+
+def kw_in_title_or_head(kw, c):
+    """kw 가 이 문서의 제목 또는 본문 첫 단락(RELEVANCE_HEAD 자)에 있는가."""
+    n = _norm(kw)
+    if not n:
+        return False
+    if n in _norm(c.get("title") or ""):
+        return True
+    return n in _norm(body_text(c.get("content") or b"")[:RELEVANCE_HEAD])
+
+
+def title_terms(title, org_names=frozenset()):
+    """제목 핵심어(소문자). 숫자가 든 토큰·1글자·기관명·흔한 공문어(TITLE_STOP) 제외."""
+    out = set()
+    for t in re.findall(r"[0-9A-Za-z가-힣]+", (title or "").lower()):
+        if len(t) < 2 or re.search(r"\d", t) or t in org_names or any(t.startswith(w) and t[len(w):] in ({""} | _TITLE_TAIL) for w in TITLE_STOP):
+            continue
+        out.add(t)
+    return out
+
+
+def _stem_match(a, b):
+    """두 제목 토큰이 같은 말인가 — 같거나, 짧은 쪽이 긴 쪽의 앞부분이고 나머지가 조사. 맞으면 짧은 쪽(어간), 아니면 None."""
+    if a == b:
+        return a
+    s, l = (a, b) if len(a) <= len(b) else (b, a)
+    return s if len(s) >= 2 and l.startswith(s) and l[len(s):] in _TITLE_TAIL else None
+
+
+def find_pairs(docs, today, domains=None, common=None, window=PAIR_WINDOW_DAYS, gap=PAIR_GAP_DAYS):
+    """같은 사안을 서로 다른 기관이 각각 발표한 묶음. 순수 함수(네트워크·원장 없음).
+    docs: [{url, org, org_known?, published, title, content}]. 기관 판정은 verify.counts_as_agency(G1 과 같은 함수).
+    묶음 조건: 최근 window 일 발표 · 기관 2곳 이상 · 발표일 차이 gap 일 이내 · 제목 핵심어 공통(제목 빈도가 흔하면 제외) ·
+    다른 기관끼리 같은 보도자료(same_release)면 짝으로 안 침(group_releases 가 1건으로 합치므로) ·
+    묶음 안 각 기관 문서에 구별 숫자(단위 있는 숫자만, 날짜성·흔한 토큰·짧은 숫자 제외)가 1개 이상(없는 기관은 빼고, 2곳 미만이면 제외).
+    common: verify.common_tokens 꼴 튜플(흔한 토큰 집합, 읽은 저장본 수, …). None 이면 실제 캐시로 계산. 저장본 0건이면 빈도를 못 믿어 빈 목록(fail-closed).
+    반환 [{kw, kws, orgs, docs:[{url, org, published, title, distinct}], latest}] 기관 수·최신일 순."""
+    from . import verify
+    domains = domains or C.load_json(os.path.join(C.CONFIG, "official_domains.json"))
+    cset, n_docs = (common if common is not None else verify.common_tokens())[:2]
+    if n_docs <= 0:
+        return []
+    rows = []
+    for c in docs:
+        d = parse_date(c.get("published"))
+        org = counts_as_agency(c, domains)
+        if org and d and 0 <= (today - d).days <= window and c.get("title"):
+            rows.append({**c, "_org": org, "_date": d})
+    org_names = {re.sub(r"[^0-9a-z가-힣]", "", c["_org"].lower()) for c in rows}
+    # 제목 핵심어 문서 빈도(전달받은 문서 전체 기준) — 흔한 말 제외
+    all_titles = [c for c in docs if c.get("title")]
+    df = {}
+    for c in all_titles:
+        for t in title_terms(c["title"], org_names):
+            df[t] = df.get(t, 0) + 1
+    df_limit = max(TITLE_DF_MIN, int(-(-len(all_titles) * TITLE_DF_RATIO // 1)))
+    terms = [{t for t in title_terms(c["title"], org_names) if df.get(t, 0) <= df_limit} for c in rows]
+    buckets = {}   # 어간 → 문서 번호 집합
+    for i in range(len(rows)):
+        for j in range(i + 1, len(rows)):
+            a, b = rows[i], rows[j]
+            if a["_org"] == b["_org"] or abs((a["_date"] - b["_date"]).days) > gap:
+                continue
+            stems = {s for ta in terms[i] for tb in terms[j] for s in [_stem_match(ta, tb)] if s}
+            if len(stems) < 2 and not any(len(s) >= PAIR_STEM_MIN for s in stems):   # 짧은 낱말 하나만 겹치면('연구'·'대응') 같은 사안이 아님
+                continue
+            if same_release(a, b):
+                continue
+            for s in stems:
+                buckets.setdefault(s, set()).update((i, j))
+    sets = {}      # frozenset(문서 번호) → 어간들
+    for s, idx in buckets.items():
+        order = sorted(idx, key=lambda k: rows[k]["_date"])
+        wins = []
+        for k in order:
+            w = frozenset(m for m in order if 0 <= (rows[m]["_date"] - rows[k]["_date"]).days <= gap)
+            if len({rows[m]["_org"] for m in w}) >= 2:
+                wins.append(w)
+        for w in wins:
+            if not any(w < o for o in wins):   # 더 큰 창에 들어가는 부분 집합은 버림
+                sets.setdefault(w, set()).add(s)
+    cache = {}
+
+    def distinct(i):
+        if i not in cache:
+            toks = verify.source_tokens(rows[i]["content"])
+            # G1 기여 판정과 같은 함수(단위 있는 숫자만 — 단위 없는 긴 숫자는 페이지 번호·기사 ID 일 수 있다)
+            cache[i] = sorted(t for t in toks if verify.is_distinctive_number(t, cset))
+        return cache[i]
+    out, seen = [], {}
+    for w, stems in sets.items():
+        per_org = {}
+        for m in sorted(w):
+            if distinct(m):
+                per_org.setdefault(rows[m]["_org"], []).append(m)
+        if len(per_org) < 2:
+            continue
+        keep = sorted(m for ms in per_org.values() for m in ms)
+        key = frozenset(rows[m]["url"] for m in keep)
+        if key in seen:
+            seen[key]["_stems"] |= stems
+            continue
+        b = {"_stems": set(stems), "orgs": sorted(per_org),
+             "docs": [{"url": rows[m]["url"], "org": rows[m]["_org"], "published": rows[m]["_date"].isoformat(),
+                       "title": rows[m]["title"], "distinct": distinct(m)[:5]} for m in keep],
+             "latest": max(rows[m]["_date"] for m in keep).isoformat()}
+        seen[key] = b
+        out.append(b)
+    for b in out:
+        stems = sorted(b.pop("_stems"), key=lambda s: (-len(s), s))
+        b["kw"], b["kws"] = stems[0], stems
+    out.sort(key=lambda b: (-len(b["orgs"]), [-int(x) for x in b["latest"].split("-")], b["kw"]))
+    return out
+
+
+def pair_candidates(acc, today, discover, domains=None, topic=None, evidence_fn=None, max_tries=PAIR_MAX_TRIES):
+    """discover.pairs(today)(두 기관 묶음)를 계정 범위·금칙에 거른 시도 후보 [{kw, src:'pair', evidence, orgs, ...}], 걸러진 묶음 [{kw, reason}].
+    discover 에 pairs 가 없으면(시험용 주입 등) 후보 없음. topic 이 있으면 그 kw 와 일치(같거나 한쪽이 다른 쪽을 포함)하는 묶음만."""
+    from . import trends
+    fn = getattr(discover, "pairs", None)
+    if not callable(fn):
+        return [], []
+    try:
+        bundles = fn(today) or []
+    except Exception:  # noqa: BLE001 — 묶음 탐색 실패가 트렌드 경로를 막지 않게
+        return [], []
+    banned = C.load_json(os.path.join(C.CONFIG, "common_banned.json"))["categories"]
+    all_banned = {**banned}
+    if acc.get("banned_topics_extra"):
+        all_banned["account_extra"] = acc["banned_topics_extra"]
+    seeds = acc.get("seed_keywords", [])
+    out, notes = [], []
+    nt = trends._norm(topic) if topic is not None else None
+    for b in bundles:
+        if nt is not None and not any(trends._norm(k) and (nt in trends._norm(k) or trends._norm(k) in nt) for k in b["kws"]):
+            continue
+        titles = [d["title"] for d in b["docs"]]
+        cat = next((c for c in (trends.is_banned(x, all_banned) for x in [*b["kws"], *titles]) if c), None)
+        if cat:
+            notes.append({"kw": b["kw"], "reason": f"두 기관 묶음 — 금칙 분류 {cat}(키워드·제목) — 시도 안 함"})
+            continue
+        ok, why = trends.in_scope(b["kw"], titles, seeds)
+        if not ok:
+            notes.append({"kw": b["kw"], "reason": f"두 기관 묶음 — 계정 범위 밖({why}) — 시도 안 함"})
+            continue
+        if len(out) >= max_tries:
+            continue
+        ev = evidence_fn(b["kw"]) if evidence_fn else trends.indicator_evidence(b["kw"], today, whole_word=True)[0]
+        out.append({"kw": b["kw"], "src": "pair", "evidence": bool(ev), "orgs": b["orgs"], "kws": b["kws"]})
+    return out, notes
 
 
 if __name__ == "__main__":

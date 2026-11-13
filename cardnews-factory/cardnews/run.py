@@ -61,14 +61,17 @@ def _usage_snapshot():
 
 def run(acc, banned, today=None, now=None, fetchers=None, generate=None, classify=None, notify=None,
         ledger_dir=None, out_root=None, hold_root=None, sources_dir=None, stop_file=None, bg_manifest=None, rehearsal=False,
-        draft_file=None, drafts_dir=None):
+        draft_file=None, drafts_dir=None, topic=None):
     """rehearsal=True(compose~design 실경로 시험용): evidence=none 보류 규칙만 건너뛴다(G1~G7 은 그대로 전부 적용).
     결과는 data/rehearsal/<날짜>/ 에, manifest·캡션.txt·HTML 맨 위에 '리허설 — 게시 불가' 표시, cost/run_ledger 에 rehearsal=true.
     G5 용 ALL 행은 남기지 않는다(리허설이 실제 실행을 중복으로 막지 않게).
     좌석 작성 방식(종량 API 꺼짐이 기본): draft_file(또는 기본 data/drafts/<날짜>/<계정>.json) 의 초안을 받아 G1~G7 그대로 돈다.
       파일 없으면 status=skipped + 알림 1회. G3 분류는 <계정>.g3.json(리뷰어 판정), G2 만 실패하면 <계정>.retry.json 으로 1회 재검사.
       generate 를 주입하거나 CARDNEWS_ALLOW_METERED_API=1 이면(draft_file 없을 때) 예전처럼 compose 가 글을 쓴다.
+    topic: 리허설 전용 지정 주제 — research 가 트렌드 순위 대신 '두 기관 같은 사안' 묶음 중 kw 가 일치하는 것으로 돈다(rehearsal=True 에서만 허용).
     fetchers: {"trends": {...trends.run fetchers}, "research": {"discover": f(kw)}} (시험용 주입, 없으면 실제 수집)."""
+    if topic is not None and not rehearsal:
+        raise ValueError("--topic 은 --rehearsal 과 같이만 쓸 수 있다")
     now = now or dt.datetime.now()
     today = today or now.date()
     day = today.isoformat()
@@ -145,7 +148,7 @@ def run(acc, banned, today=None, now=None, fetchers=None, generate=None, classif
         # 2) research
         checkgate("research")
         rrec = research.run(acc, today=today, fetchers=fetchers.get("research"), ledger_dir=ledger_dir,
-                            sources_dir=sources_dir, notify=notify)
+                            sources_dir=sources_dir, notify=notify, topic=topic, rehearsal=rehearsal)
         state["kw"] = rrec.get("kw")
         if rrec.get("status") != "ok":
             raise _Done(finish("held", "research", rrec.get("reason", "research 보류"), hold_path=None))  # research 가 이미 알림 1회
@@ -312,14 +315,17 @@ def main(argv=None):
     ap.add_argument("--draft-file", nargs="?", const="", default=None,
                     help="좌석이 쓴 초안 JSON 경로(값 없이 쓰면 data/drafts/<날짜>/<계정>.json). 종량 API 꺼짐이 기본이라 이 방식이 기본 동작")
     ap.add_argument("--rehearsal", action="store_true", help="evidence=none 보류만 건너뛰고 data/rehearsal/ 에 '리허설 — 게시 불가' 로 출력")
+    ap.add_argument("--topic", default=None, help="리허설 전용: 트렌드 순위 대신 '두 기관 같은 사안' 묶음 중 kw 가 일치하는 것으로 research 를 돈다(--rehearsal 필수)")
     a = ap.parse_args(argv)
+    if a.topic is not None and not a.rehearsal:
+        ap.error("--topic 은 --rehearsal 과 같이만 쓸 수 있다")
     acc = C.load_account(a.account)
     ok, why = C.run_gate(acc)
     if not ok:
         print("중단:", why)
         return 0
     banned = C.load_json(os.path.join(C.CONFIG, "common_banned.json"))["categories"]
-    r = run(acc, banned, rehearsal=a.rehearsal, draft_file=a.draft_file or None)
+    r = run(acc, banned, rehearsal=a.rehearsal, draft_file=a.draft_file or None, topic=a.topic)
     print(json.dumps({k: r[k] for k in ("status", "stage", "reason", "kw", "hold_path", "out_dir", "html", "cost")},
                      ensure_ascii=False, indent=1))
     return 0
