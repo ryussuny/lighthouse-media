@@ -281,6 +281,53 @@ class TestVerify(unittest.TestCase):
         self.assertIn("선언했지만 내용에 쓰이지 않은 기관: 행정안전부", r["G1"][1])
         self.assertEqual(V.contribution_tokens(self.dr("대상 약 136만 명, 번호 148975407")), {"136만명"})
 
+    # T-G2L: 라벨 바로 앞이 숫자면 숫자까지 라벨('47종에서 50종' → 라벨 '47종에서')
+    def g2l(self, card_body, src_a, src_b="<html><body>다른 기관 안내: 대상 100종.</body></html>"):
+        srcs = [self.src("la.html", f"<html><body>2026년 기초연금 {src_a}</body></html>", "https://www.mohw.go.kr/a", "보건복지부"),
+                self.src("lb.html", src_b, "https://www.mois.go.kr/b", "행정안전부")]
+        return V.check_g2(self.draft(card_body), srcs)
+
+    def test_g2l_same_sentence_as_source_passes(self):
+        # 원문 한 문장은 '47종에서 50종으로', 다른 문장은 '…종에서 209종' — 같은 문장이므로 통과해야 한다
+        ok, why, _ = self.g2l("지원 품목이 47종에서 50종으로 늘었다.", "지원 품목이 47종에서 50종으로 늘었다. 전체 품목은 120종에서 209종으로 확대, 100종 유지.")
+        self.assertTrue(ok, why)
+
+    def test_g2l_wrong_pair_is_held(self):
+        ok, why, _ = self.g2l("지원 품목이 47종에서 55종으로 늘었다.", "지원 품목이 47종에서 50종으로 늘었다. 55종 안내도 있다.")
+        self.assertFalse(ok)
+        self.assertIn("47종에서", why)
+
+    def test_g2l_endpoint_mismatch_still_held(self):
+        ok, why, _ = self.g2l("지원금이 2만원에서 3만원으로 늘었다.", "지원금이 2만원에서 5만원으로 늘었다. 3만원 안내도 있다.")
+        self.assertFalse(ok)
+        self.assertIn("값 불일치", why)
+        ok, why, _ = self.g2l("지원금이 2만원에서 5만원으로 늘었다.", "지원금이 2만원에서 5만원으로 늘었다.")
+        self.assertTrue(ok, why)
+
+    def test_g2l_label_not_matched_inside_longer_number(self):
+        # 라벨 '2만원에서' 가 원문 '12만원에서 9만원' 의 일부로 잘못 맞지 않는다
+        ok, why, _ = self.g2l("지원금이 2만원에서 5만원으로 늘었다.", "지원금이 2만원에서 5만원으로 늘었다. 따로 12만원에서 9만원까지 조정.")
+        self.assertTrue(ok, why)
+
+    def test_g2l_one_char_label_not_activated_by_number_prefix(self):
+        # '월'+'11' = '11월' 이 되어 같은 원문의 '11월 30일' 과 충돌 판정되면 안 된다(충실한 날짜 인용)
+        ok, why, _ = self.g2l("11월 3일 기준으로 점검했다.", "점검 기준일은 11월 3일, 후속 조치는 11월 30일까지 완료한다.")
+        self.assertTrue(ok, why)
+        ok, why, _ = self.g2l("후속 조치는 11월 30일까지 완료한다.", "점검 기준일은 11월 3일, 후속 조치는 11월 30일까지 완료한다.")
+        self.assertTrue(ok, why)
+
+    def test_g2l_sentence_initial_and_after_comma_labels_still_compared(self):
+        # 공백 제거 원문에서 문장 첫머리는 '다.2만원에서', 쉼표 뒤는 ',2만원에서' — 끝점 변조는 보류
+        src = "지원이 늘었다. 2만원에서 5만원으로 오른다. 별도 안내다. 2만원에서 7만원으로 오른다. 상한은 9만원, 하한은 1만원."
+        ok, why, _ = self.g2l("지원금이 2만원에서 9만원으로 늘었다.", src)
+        self.assertFalse(ok)
+        self.assertIn("값 불일치", why)
+        src2 = "발표에 따르면, 2만원에서 5만원으로 오른다. 상한은 9만원."
+        ok, why, _ = self.g2l("지원금이 2만원에서 9만원으로 늘었다.", src2)
+        self.assertFalse(ok)
+        ok, why, _ = self.g2l("지원금이 2만원에서 5만원으로 늘었다.", src2)
+        self.assertTrue(ok, why)
+
     def test_ordinal_units_do_not_buy_an_org(self):
         # '276차'·'244번'·'100회' 를 본문에 끼워 타 기관을 채우는 초안 → G1 보류
         other = "<html><body>행정안전부 제276차 회의, 안건 244번, 누적 100회 개최.</body></html>"

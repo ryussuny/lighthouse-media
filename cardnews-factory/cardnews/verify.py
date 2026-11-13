@@ -198,9 +198,15 @@ def check_g2(draft, sources):
             if not lab or not unit:
                 continue
             label = _ns(lab.group(1))
-            if len(label) < 2:  # '월'·'약' 같은 한 글자 라벨은 너무 흔해 불일치 판정에 쓰지 않는다
+            if len(label) < 2:  # '월'·'약' 같은 한 글자 라벨은 너무 흔해 불일치 판정에 쓰지 않는다 — 숫자 접두를 붙이기 전 길이로 판정('월'→'11월' 활성화 금지)
                 continue
-            pat = re.compile(re.escape(label) + r"(?<![\d,.])(" + NUM + r")" + re.escape(unit))
+            # 라벨 바로 앞이 숫자면 그 숫자까지 라벨('47종에서 50종' 의 라벨 = '47종에서'): 다른 문장의 '…종에서 209종' 과 엉뚱하게 부딪치지 않고,
+            # '2만원에서 3만원' 처럼 앞 끝점이 다르면 라벨이 달라져 못 잡던 값 불일치를 라벨 전체로 대조한다(라벨 검사 자체는 그대로).
+            pre = re.search(r"(\d(?:[\d,]*\d)?(?:\.\d+)?)\s*$", ctext[:lab.start(1)])
+            if pre:
+                label = _ns(pre.group(1)) + label
+            # 라벨이 숫자로 시작하면 앞 경계: 더 긴 수의 일부('12만원에서' 안의 '2만원에서')만 막는다. 공백 제거 원문의 문장 첫머리 '다.2만원에서'·쉼표 뒤는 허용(PRE 와 같은 경계)
+            pat = re.compile((r"(?<!\d)(?<!\d[,.])" if label[0].isdigit() else "") + re.escape(label) + r"(?<![\d,.])(" + NUM + r")" + re.escape(unit))
             for u, t in texts.items():
                 for other in pat.findall(t):
                     if other != num:
