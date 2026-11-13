@@ -33,6 +33,25 @@ class _Done(Exception):
         self.result = result
 
 
+def used_records(meta, sources):
+    """draft 모드: 초안의 used_sources(이번 실행 출처 url 중 실제로 쓴 것)에 해당하는 source_ledger 레코드만 돌려준다.
+    없음·배열 아님·빈 배열·문자열 아닌 항목·중복·이번 실행 출처에 없는 url 은 ComposeError(보류)."""
+    used = meta.get("used_sources")
+    if used is None:
+        raise compose.ComposeError("초안에 used_sources 없음(실제로 쓴 출처 url 배열 필수)")
+    if not isinstance(used, list) or not used:
+        raise compose.ComposeError("used_sources 가 비어 있거나 배열이 아님")
+    if not all(isinstance(u, str) and u.strip() for u in used):
+        raise compose.ComposeError("used_sources 항목은 비어 있지 않은 문자열(url)이어야 함")
+    if len(set(used)) != len(used):
+        raise compose.ComposeError("used_sources 에 중복 url 이 있음")
+    known = {s["url"] for s in sources}
+    unknown = [u for u in used if u not in known]
+    if unknown:
+        raise compose.ComposeError(f"used_sources 에 이번 실행 출처가 아닌 url: {unknown[:3]}")
+    return [s for s in sources if s["url"] in set(used)]
+
+
 def _usage_snapshot():
     return dict(compose.USAGE), dict(guard.USAGE)
 
@@ -134,6 +153,7 @@ def run(acc, banned, today=None, now=None, fetchers=None, generate=None, classif
         # 3~4) compose → verify G1·G2. G2 만 실패하면 verify 사유를 피드백으로 넘겨 같은 출처로 딱 1회 다시 쓴다(전 관문 처음부터).
         #      G1 실패·compose 실패는 재작성 없이 바로 보류. (G3 는 아래 guard — 금칙이라 재작성하지 않는다.)
         feedback = None
+        vsources = sources   # G1·G2·캡션이 보는 출처. draft 모드에서는 초안이 실제로 쓴 것(used_sources)만
         if draft_mode and not os.path.exists(draft_path):
             state["stage"] = "draft"
             why = f"초안 파일 없음: {draft_path} (키워드 {state['kw']!r}, 출처 {len(sources)}건) — 좌석이 쓰면 다시 실행"
@@ -165,7 +185,8 @@ def run(acc, banned, today=None, now=None, fetchers=None, generate=None, classif
                         raise compose.ComposeError("초안에 kw 없음/빈 값")
                     if meta["kw"] != state["kw"]:
                         raise compose.ComposeError(f"초안 kw {meta['kw']!r} 가 오늘 주제 {state['kw']!r} 와 다름")
-                    draft = compose.compose(state["kw"], sources, account_id=acc["account_id"], generate=lambda p: raw_text,
+                    vsources = used_records(meta, sources)
+                    draft = compose.compose(state["kw"], vsources, account_id=acc["account_id"], generate=lambda p: raw_text,
                                             today=today)
                 else:
                     draft = compose.compose(state["kw"], sources, account_id=acc["account_id"], generate=gen, today=today,
@@ -173,7 +194,7 @@ def run(acc, banned, today=None, now=None, fetchers=None, generate=None, classif
             except (compose.ComposeError, OSError) as e:
                 hold("compose", None, [("COMPOSE", False, str(e))], f"글 생성 실패({attempt}차): {e}")
             checkgate("verify")
-            v = verify.run(draft, sources, ledger_dir)
+            v = verify.run(draft, vsources, ledger_dir)
             if v["pass"]:
                 gates.append({"gate": "G1", "pass": v["G1"][0], "reason": v["G1"][1]})
                 gates.append({"gate": "G2", "pass": v["G2"][0], "reason": v["G2"][1]})

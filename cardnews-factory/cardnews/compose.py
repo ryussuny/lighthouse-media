@@ -4,6 +4,7 @@
 ★ compose 결과는 그대로 믿지 않는다. 반드시 T-05 verify(G1·G2: 숫자·날짜·금액 원문 대조)를 통과해야만
   다음 단계(design → guard G3·G4·G5·G7)로 간다. AI 가 원문에 없는 수치를 쓰면 verify 가 보류시킨다.
 
+※ 종량 경로(default_generate, 기본 꺼짐)는 아직 전체 출처 기준 — 켜기 전에 같은 규칙(실제로 쓴 출처만 G1·G2·캡션) 적용 필요.
 입력 sources : research 가 남긴 source_ledger 레코드 [{url, org, published, saved_path, sha256, ...}]
 출력 draft   : {"account_id","kw","cards":[{"title","body"}]*5,"caption","hashtags":[...],"sources":[{url,org}]}
                (bg_path·bg_origin·font·image_path 는 design 이 채운다)

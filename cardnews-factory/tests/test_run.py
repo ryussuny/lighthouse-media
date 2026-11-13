@@ -38,6 +38,7 @@ def gen_wrong_number(prompt):
                        "caption_body": "안내", "hashtags": ["기초연금"]}, ensure_ascii=False)
 
 
+USED_DEFAULT = ("https://www.korea.kr/news/a", "https://www.mohw.go.kr/b")   # fx() 기본 두 출처
 ok_classify = lambda t: (True, "none", "정상")  # noqa: E731
 bad_classify = lambda t: (False, "adult", "가짜 분류기: 위반")  # noqa: E731
 
@@ -436,6 +437,7 @@ class RunTest(unittest.TestCase):
             obj = json.loads(obj_or_text) if isinstance(obj_or_text, str) else dict(obj_or_text)
             obj.setdefault("kw", "기초연금")
             obj.setdefault("author_surface", "worker-1")
+            obj.setdefault("used_sources", list(USED_DEFAULT))
             obj_or_text = obj
         with open(p, "w", encoding="utf-8") as f:
             f.write(obj_or_text if isinstance(obj_or_text, str) else json.dumps(obj_or_text, ensure_ascii=False))
@@ -446,7 +448,7 @@ class RunTest(unittest.TestCase):
         return guard.file_sha256(p)
 
     def _seat(self, acc=None, **kw):
-        return R.run(acc or self.acc, BANNED, today=TODAY, now=NOW, fetchers=self.fx(), notify=lambda *a: self.alerts.append(a),
+        return R.run(acc or self.acc, BANNED, today=TODAY, now=NOW, fetchers=kw.pop("fetchers", None) or self.fx(), notify=lambda *a: self.alerts.append(a),
                      ledger_dir=self.d["ledger"], out_root=self.d["out"], hold_root=self.d["hold"], sources_dir=self.d["sources"],
                      stop_file=self.stop, bg_manifest=[], drafts_dir=self.d["drafts"], **kw)
 
@@ -669,6 +671,72 @@ class RunTest(unittest.TestCase):
             return not guard.g5(d, led, today)[0]
         self.assertTrue(hit(2))
         self.assertFalse(hit(3))
+
+    # ---- T-SRC1: 실제로 쓴 출처만 ----
+    def _held_c(self, r, needle):
+        self.assertEqual((r["status"], r["stage"]), ("held", "compose"), r["reason"])
+        self.assertIn(needle, r["reason"])
+
+    def _draft_with(self, **over):
+        d = dict(json.loads(gen_ok("")), kw="기초연금", author_surface="worker-1")
+        d.update(over)
+        p = self._write("test.json", json.dumps(d, ensure_ascii=False), raw=True)
+        self._verdict(p)
+        return p
+
+    def test_src_used_sources_missing_holds(self):
+        d = dict(json.loads(gen_ok("")), kw="기초연금", author_surface="worker-1")
+        p = self._write("test.json", json.dumps(d, ensure_ascii=False), raw=True)
+        self._verdict(p)
+        self._held_c(self._seat(), "used_sources 없음")
+
+    def test_src_used_sources_empty_or_wrong_type_holds(self):
+        for bad in ([], "https://www.mohw.go.kr/b", [""], [1]):
+            self._draft_with(used_sources=bad)
+            self._held_c(self._seat(), "used_sources")
+
+    def test_src_unknown_url_holds(self):
+        self._draft_with(used_sources=["https://www.mohw.go.kr/b", "https://evil.example/x"])
+        self._held_c(self._seat(), "이번 실행 출처가 아닌 url")
+
+    def test_src_duplicate_url_holds(self):
+        self._draft_with(used_sources=["https://www.mohw.go.kr/b", "https://www.mohw.go.kr/b"])
+        self._held_c(self._seat(), "중복")
+
+    def test_src_two_orgs_in_run_but_one_used_holds_g1(self):
+        self._draft_with(used_sources=["https://www.mohw.go.kr/b"])
+        r = self._seat()
+        self.assertEqual((r["status"], r["stage"]), ("held", "verify"), r["reason"])
+        self.assertIn("G1", r["reason"])
+
+    def test_src_both_used_passes_and_caption_lists_only_used(self):
+        self._draft_with(used_sources=list(USED_DEFAULT))
+        r = self._seat()
+        self.assertEqual(r["status"], "ok", r["reason"])
+        cap = _rd(os.path.join(r["out_dir"], "캡션.txt"))
+        lines = [x for x in cap.splitlines() if x.startswith("출처:")]
+        self.assertEqual(len(lines), 2)
+        self.assertTrue(any("mohw.go.kr/b" in x for x in lines) and any("korea.kr/news/a" in x for x in lines))
+
+    def test_src_number_only_in_unused_source_holds_g2(self):
+        # 3번째 출처(미사용)에만 '99만원' 이 있고 초안이 그 숫자를 쓰면, 쓰지 않은 출처 덕에 통과하면 안 된다
+        extra = "<html><body><p>국민연금공단 안내. 기초연금 월 99만원 지급.</p></body></html>".encode("utf-8")
+        docs = [("https://www.korea.kr/news/a", "행정안전부", DOC_A), ("https://www.mohw.go.kr/b", "보건복지부", DOC_B),
+                ("https://www.nps.or.kr/c", "국민연금공단", extra)]
+        d = json.loads(gen_wrong_number(""))
+        d.update(kw="기초연금", author_surface="worker-1", used_sources=list(USED_DEFAULT))
+        p = self._write("test.json", json.dumps(d, ensure_ascii=False), raw=True)
+        self._verdict(p)
+        r = self._seat(fetchers=self.fx(docs=docs))
+        self.assertEqual((r["status"], r["stage"]), ("held", "verify"), r["reason"])
+        self.assertIn("G2", r["reason"])
+
+    def test_src_retry_file_same_rule(self):
+        self._write("test.json", gen_wrong_number(""))
+        rd = dict(json.loads(gen_ok("")), kw="기초연금", author_surface="worker-1")   # used_sources 없음
+        rp = self._write("test.retry.json", json.dumps(rd, ensure_ascii=False), raw=True)
+        self._verdict(rp)
+        self._held_c(self._seat(), "used_sources 없음")
 
 
 if __name__ == "__main__":
