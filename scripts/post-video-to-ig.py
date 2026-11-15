@@ -95,7 +95,11 @@ def upload_ig_reels(vpath, caption, token):
     if "id" not in d:
         print(f"  IG 컨테이너 실패: {d.get('error', d)}")
         return None
-    cid = d["id"]
+    return _publish_container(d["id"], token)
+
+
+def _publish_container(cid, token):
+    """컨테이너가 FINISHED 가 될 때까지 기다렸다가 게시한다(Imgur 길·재개 업로드 길 공통)."""
     print(f"  IG 컨테이너: {cid}")
     for attempt in range(18):
         time.sleep(10)
@@ -112,6 +116,32 @@ def upload_ig_reels(vpath, caption, token):
             return None
         print(f"  처리 중... ({(attempt + 1) * 10}s)")
     return None
+
+
+def upload_ig_reels_resumable(vpath, caption, token):
+    """60초 넘는 영상용(2026-11-14 변경안): Imgur 를 거치지 않고 인스타 공식 재개 가능 업로드로 올린다.
+    docs: developers.facebook.com/docs/instagram-platform/instagram-api-with-facebook-login/content-publishing
+    (upload_type=resumable → POST rupload.facebook.com/ig-api-upload/<버전>/<컨테이너 id>, 헤더 Authorization: OAuth · offset · file_size)
+    주의: 문서에 '페이스북 로그인 for Business 를 구현한 앱 전용'이라고 적혀 있다 — 우리 앱에서 되는지는 실계정 시험 전까지 확인 못 함.
+    """
+    size = os.path.getsize(vpath)
+    r = requests.post(f"https://graph.facebook.com/v21.0/{IG_ID}/media",
+                      data={"media_type": "REELS", "upload_type": "resumable", "caption": caption, "access_token": token}, timeout=30)
+    d = r.json()
+    if "id" not in d:
+        print(f"  재개 업로드 세션 실패: {d.get('error', d)}")
+        return None
+    cid = d["id"]
+    with open(vpath, "rb") as f:
+        ur = requests.post(f"https://rupload.facebook.com/ig-api-upload/v21.0/{cid}",
+                           headers={"Authorization": f"OAuth {token}", "offset": "0", "file_size": str(size)},
+                           data=f, timeout=900)
+    ud = ur.json() if ur.content else {}
+    if not ud.get("success"):
+        print(f"  재개 업로드 실패: HTTP {ur.status_code} {str(ud)[:200]}")
+        return None
+    print(f"  재개 업로드 OK ({size / 1e6:.1f}MB)")
+    return _publish_container(cid, token)
 
 
 def main():
@@ -151,7 +181,12 @@ def main():
     if a.dry_run:
         print("  --dry-run: 게시하지 않음")
         return 0
-    mid = upload_ig_reels(vpath, caption, token)
+    dur = float(probe(vpath)["format"]["duration"])
+    if dur > 60:       # Imgur 는 1분 넘는 영상을 거절한다("Video exceeds maximum duration of 1 minute")
+        print(f"  {dur:.1f}초 > 60초: Imgur 대신 인스타 재개 업로드 사용")
+        mid = upload_ig_reels_resumable(vpath, caption, token)
+    else:
+        mid = upload_ig_reels(vpath, caption, token)
     if not mid:
         print("  게시 실패")
         return 1
