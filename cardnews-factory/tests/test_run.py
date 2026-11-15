@@ -57,6 +57,10 @@ class RunTest(unittest.TestCase):
         pc = mock.patch("cardnews.verify.common_tokens", return_value=(frozenset(), 999, 5))   # 실제 source_cache 를 읽지 않음
         pc.start()
         self.addCleanup(pc.stop)
+        # 원장 ts 를 실제 시계가 아닌 시험 고정 NOW 로 — 안 그러면 TODAY+2일을 넘긴 날부터 G5 시험이 날짜 때문에 깨진다
+        pn = mock.patch("cardnews.ledger.now_iso", return_value=NOW.isoformat(timespec="seconds"))
+        pn.start()
+        self.addCleanup(pn.stop)
 
     def discover(self, docs=None):
         docs = docs if docs is not None else [("https://www.korea.kr/news/a", "행정안전부", DOC_A), ("https://www.mohw.go.kr/b", "보건복지부", DOC_B)]
