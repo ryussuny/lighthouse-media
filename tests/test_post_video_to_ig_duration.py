@@ -87,5 +87,36 @@ class ResumableFunction(unittest.TestCase):
         pub.assert_not_called()
 
 
+    def nonjson(self, text, status=502):
+        r = mock.Mock()
+        r.json.side_effect = ValueError("not json")
+        r.content = text.encode()
+        r.text = text
+        r.status_code = status
+        return r
+
+    def run_capture(self, responses):
+        import contextlib, io
+        buf = io.StringIO()
+        with mock.patch.object(self.m.requests, "post", side_effect=responses), \
+             mock.patch.object(self.m, "_publish_container") as pub, \
+             contextlib.redirect_stdout(buf):
+            result = self.m.upload_ig_reels_resumable(self.path, "c", "SECRET_TOKEN_XYZ")
+        pub.assert_not_called()
+        return result, buf.getvalue()
+
+    def test_session_nonjson_returns_none_without_token(self):
+        result, out = self.run_capture([self.nonjson("<html>502 Bad Gateway token=SECRET_TOKEN_XYZ</html>")])
+        self.assertIsNone(result)
+        self.assertIn("502", out)
+        self.assertNotIn("SECRET_TOKEN_XYZ", out)
+
+    def test_upload_nonjson_returns_none_without_token(self):
+        result, out = self.run_capture([self.resp({"id": "C1"}), self.nonjson("<html>error SECRET_TOKEN_XYZ</html>", 500)])
+        self.assertIsNone(result)
+        self.assertIn("500", out)
+        self.assertNotIn("SECRET_TOKEN_XYZ", out)
+
+
 if __name__ == "__main__":
     unittest.main()

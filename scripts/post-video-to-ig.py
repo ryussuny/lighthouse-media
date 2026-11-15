@@ -127,18 +127,28 @@ def upload_ig_reels_resumable(vpath, caption, token):
     size = os.path.getsize(vpath)
     r = requests.post(f"https://graph.facebook.com/v21.0/{IG_ID}/media",
                       data={"media_type": "REELS", "upload_type": "resumable", "caption": caption, "access_token": token}, timeout=30)
-    d = r.json()
+    def _safe(text):      # 오류 출력에 access_token 이 섞이지 않게 한다
+        return str(text).replace(token, "***")
+    try:
+        d = r.json()
+    except ValueError:
+        print(f"  재개 업로드 세션 실패: HTTP {r.status_code} (JSON 아님) {_safe(r.text[:200])}")
+        return None
     if "id" not in d:
-        print(f"  재개 업로드 세션 실패: {d.get('error', d)}")
+        print(f"  재개 업로드 세션 실패: {_safe(d.get('error', d))}")
         return None
     cid = d["id"]
     with open(vpath, "rb") as f:
         ur = requests.post(f"https://rupload.facebook.com/ig-api-upload/v21.0/{cid}",
                            headers={"Authorization": f"OAuth {token}", "offset": "0", "file_size": str(size)},
                            data=f, timeout=900)
-    ud = ur.json() if ur.content else {}
+    try:
+        ud = ur.json() if ur.content else {}
+    except ValueError:
+        print(f"  재개 업로드 실패: HTTP {ur.status_code} (JSON 아님) {_safe(ur.text[:200])}")
+        return None
     if not ud.get("success"):
-        print(f"  재개 업로드 실패: HTTP {ur.status_code} {str(ud)[:200]}")
+        print(f"  재개 업로드 실패: HTTP {ur.status_code} {_safe(ud)[:200]}")
         return None
     print(f"  재개 업로드 OK ({size / 1e6:.1f}MB)")
     return _publish_container(cid, token)
